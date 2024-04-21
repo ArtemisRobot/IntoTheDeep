@@ -21,6 +21,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.opencv.core.Mat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -363,7 +364,7 @@ public class Drive extends Thread {
             rightBackSign  = -1;
         }
 
-        // If the direction have changed get the encoder positions.
+        // If the direction has changed get the encoder positions.
         if (direction != lastDirection) {
             leftFrontStartPos = leftFrontDrive.getCurrentPosition();
             rightFrontStartPos = rightFrontDrive.getCurrentPosition();
@@ -557,6 +558,261 @@ public class Drive extends Thread {
                 getOrientation(),
                 elapsedTime.seconds());
     }
+
+
+    /**
+     *  Method to perform a relative move, based on encoder counts.
+     *  Encoders are not reset as the move is based on the current position.
+     *  Move will stop if any of three conditions occur:
+     *  1) Move gets to the desired position
+     *  2) Move runs out of time
+     *  3) Driver stops the OpMode running.
+     *
+     * @param direction direction to move
+     * @param speed motor speed (-1 to 1)
+     * @param inches  distance to move in inches, positive for forward, negative for backward
+     * @param timeout timeout in milliseconds, 0 for no timeout
+     */
+    public void moveDistanceWithGyro(DIRECTION direction, double speed, double inches, double timeout) {
+
+        // variables to set the sign of the motor power value
+        int leftFrontSign = 0;
+        int rightFrontSign = 0;
+        int leftBackSign = 0;
+        int rightBackSign = 0;
+
+        if (direction == DIRECTION.FORWARD) {
+            leftFrontSign  = 1;
+            rightFrontSign = 1;
+            leftBackSign   = 1;
+            rightBackSign  = 1;
+        } else if (direction == DIRECTION.BACK) {
+            leftFrontSign  = -1;
+            rightFrontSign = -1;
+            leftBackSign   = -1;
+            rightBackSign  = -1;
+        } else if (direction == DIRECTION.LEFT) {
+            leftFrontSign  = -1;
+            rightFrontSign =  1;
+            leftBackSign   =  1;
+            rightBackSign  = -1;
+        } else if (direction == DIRECTION.RIGHT) {
+            leftFrontSign  =  1;
+            rightFrontSign = -1;
+            leftBackSign   = -1;
+            rightBackSign  =  1;
+        } else if (direction == DIRECTION.TURN_LEFT) {
+            leftFrontSign  = -1;
+            rightFrontSign =  1;
+            leftBackSign   = -1;
+            rightBackSign  =  1;
+        } else if (direction == DIRECTION.TURN_RIGHT){
+            leftFrontSign  =  1;
+            rightFrontSign = -1;
+            leftBackSign   =  1;
+            rightBackSign  = -1;
+        }
+
+        // variables to compensate for drift
+        int leftFrontPositiveDrift = 0;
+        int rightFrontPositiveDrift = 0;
+        int leftBackPositiveDrift = 0;
+        int rightBackPositiveDrift = 0;
+        int leftFrontNegativeDrift = 0;
+        int rightFrontNegativeDrift = 0;
+        int leftBackNegativeDrift = 0;
+        int rightBackNegativeDrift = 0;
+
+        if (direction == DIRECTION.FORWARD) {
+            rightFrontPositiveDrift = 1;
+            rightBackPositiveDrift = 1;
+            leftFrontNegativeDrift = 1;
+            leftBackNegativeDrift = 1;
+        } else if (direction == DIRECTION.BACK) {
+            leftFrontPositiveDrift = 1;
+            leftBackPositiveDrift = 1;
+            rightFrontNegativeDrift = 1;
+            rightBackNegativeDrift = 1;
+        } else if (direction == DIRECTION.LEFT) {
+            rightFrontPositiveDrift = 1;
+            leftBackPositiveDrift = 1;
+            leftFrontNegativeDrift = 1;
+            rightBackNegativeDrift = 1;
+        } else if (direction == DIRECTION.RIGHT) {
+            leftFrontPositiveDrift = 1;
+            rightBackPositiveDrift = 1;
+            rightFrontNegativeDrift = 1;
+            leftBackNegativeDrift = 1;
+        }
+
+        DcMotor.RunMode mode = leftFrontDrive.getMode();
+        for (DcMotor motor : motors) {
+            motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
+
+        // Determine new target position, and pass to motor controller
+        int target = (int) (inches * encoderTicksPerInch());
+        leftFrontDrive.setTargetPosition(target * leftFrontSign);
+        rightFrontDrive.setTargetPosition(target * rightFrontSign);
+        leftBackDrive.setTargetPosition(target * leftBackSign);
+        rightBackDrive.setTargetPosition(target * rightBackSign);
+
+        // Turn On RUN_TO_POSITION
+        for (DcMotor motor : motors)
+            motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+
+        double lastLeftFrontPos = Math.abs(leftFrontDrive.getCurrentPosition());
+        double lastRightFrontPos = Math.abs(rightFrontDrive.getCurrentPosition());
+        double lastLeftBackPos = Math.abs(leftBackDrive.getCurrentPosition());
+        double lastRightBackPos = Math.abs(rightBackDrive.getCurrentPosition());
+        double startHeading = getOrientation();
+        double totalDrift = 0;
+
+        // Looping until we move the desired distance
+        elapsedTime.reset();
+        boolean moving = true;
+        while (opMode.opModeIsActive() && moving) {
+
+            // Correct for the differance of the motor speeds
+            double leftFrontPos = Math.abs(leftFrontDrive.getCurrentPosition());
+            double rightFrontPos = Math.abs(rightFrontDrive.getCurrentPosition());
+            double leftBackPos = Math.abs(leftBackDrive.getCurrentPosition());
+            double rightBackPos = Math.abs(rightBackDrive.getCurrentPosition());
+            double maxPos = Math.max(Math.max(Math.max(leftFrontPos, rightFrontPos), leftBackPos), rightBackPos);
+
+            double speedRange = Math.max(Math.abs(speed) - RAMP_MIN_SPEED, 0);
+            double ramUp = (elapsedTime.milliseconds() / RAMP_TIME) * speedRange + RAMP_MIN_SPEED;
+            double ramDown = (Math.pow((Math.abs(target) - maxPos), 2) / Math.pow(RAMP_DISTANCE, 2)) * speedRange + RAMP_MIN_SPEED;
+            double rampPower = Math.min(Math.min(ramUp, ramDown), speed);
+
+            double scale = .0015;
+            double leftFrontAdjust = (maxPos - leftFrontPos) * scale;
+            double rightFrontAdjust = (maxPos - rightFrontPos) * scale;
+            double leftBackAdjust = (maxPos - leftBackPos) * scale;
+            double rightBackAdjust = (maxPos - rightBackPos) * scale;
+
+            double heading = getOrientation();
+            double traveled =  (Math.abs(leftFrontPos - lastLeftFrontPos) +
+                    Math.abs(rightFrontPos - lastRightFrontPos) +
+                    Math.abs(leftBackPos - lastLeftBackPos) +
+                    Math.abs(rightBackPos - lastRightBackPos) ) / 2 / encoderTicksPerInch();
+
+            double angle = heading - startHeading;
+            double drift = traveled * Math.sin(Math.toRadians(angle));
+            totalDrift += drift;
+
+            double driftScale = 0.0;
+            double leftFrontDriftAdjust = 0;
+            double rightFrontDriftAdjust = 0;
+            double leftBackDriftAdjust = 0;
+            double rightBackDriftAdjust = 0;
+
+            if (drift > 0.5) {
+                leftFrontDriftAdjust = drift * driftScale * leftFrontPositiveDrift;
+                rightFrontDriftAdjust = drift * driftScale * rightFrontPositiveDrift;
+                leftBackDriftAdjust = drift * driftScale * leftBackPositiveDrift;
+                rightBackDriftAdjust = drift * driftScale * rightBackPositiveDrift;
+            } else if (drift < -0.5) {
+                leftFrontDriftAdjust = Math.abs(drift) * driftScale * leftFrontNegativeDrift;
+                rightFrontDriftAdjust = Math.abs(drift) * driftScale * rightFrontNegativeDrift;
+                leftBackDriftAdjust = Math.abs(drift) * driftScale * leftBackNegativeDrift;
+                rightBackDriftAdjust = Math.abs(drift) * driftScale * rightBackNegativeDrift;
+            }
+
+            double driftAdjust = Math.abs(drift) * 0.0;
+            if (drift > 0.5) {
+                if (direction == DIRECTION.FORWARD) {
+                    rightFrontDriftAdjust = driftAdjust;
+                    rightBackDriftAdjust = driftAdjust;
+                } else if (direction == DIRECTION.BACK) {
+                    leftFrontDriftAdjust = driftAdjust;
+                    leftBackDriftAdjust = driftAdjust;
+                } else if (direction == DIRECTION.LEFT) {
+                    rightFrontDriftAdjust = driftAdjust;
+                    leftBackDriftAdjust = driftAdjust;
+                } else if (direction == DIRECTION.RIGHT) {
+                    leftFrontDriftAdjust = driftAdjust;
+                    rightBackDriftAdjust = driftAdjust;
+                }
+            } else if (drift < -0.5) {
+                if (direction == DIRECTION.FORWARD) {
+                    leftFrontDriftAdjust = driftAdjust;
+                    leftBackDriftAdjust = driftAdjust;
+                } else if (direction == DIRECTION.BACK) {
+                    rightFrontDriftAdjust = driftAdjust;
+                    rightBackDriftAdjust = driftAdjust;
+                } else if (direction == DIRECTION.LEFT) {
+                    leftFrontDriftAdjust = driftAdjust;
+                    rightBackDriftAdjust = driftAdjust;
+                } else if (direction == DIRECTION.RIGHT) {
+                    rightFrontDriftAdjust = driftAdjust;
+                    leftBackDriftAdjust = driftAdjust;
+                }
+            }
+
+
+
+            lastLeftFrontPos = leftFrontPos;
+            lastRightFrontPos = rightFrontPos;
+            lastLeftBackPos = leftBackPos;
+            lastRightBackPos = rightBackPos;
+
+            leftFrontDrive.setPower((rampPower + leftFrontAdjust + leftFrontDriftAdjust) * leftFrontSign);
+            rightFrontDrive.setPower((rampPower + rightFrontAdjust + rightFrontDriftAdjust) * rightFrontSign);
+            leftBackDrive.setPower((rampPower + leftBackAdjust + leftBackDriftAdjust) * leftBackSign);
+            rightBackDrive.setPower((rampPower + rightBackAdjust + rightBackDriftAdjust) * rightBackSign);
+
+            for (DcMotor motor : motors)
+                if (! motor.isBusy())
+                    moving = false;
+
+            if (timeout > 0 && elapsedTime.milliseconds() >= timeout) {
+                Logger.message("moveDistance: timed out");
+                break;
+            }
+
+            if (LOG_VERBOSE)
+                Logger.message("power: %4.2f %4.2f %4.2f %4.2f   adjust: %6.4f %6.4f %6.4f %6.4f    position: %6d %6d %6d %6d    heading %6.2f    angle %6.2f    traveled %6.2f    drift %6.3f",
+                        leftFrontDrive.getPower(),
+                        rightFrontDrive.getPower(),
+                        leftBackDrive.getPower(),
+                        rightBackDrive.getPower(),
+                        leftFrontAdjust,
+                        rightFrontAdjust,
+                        leftBackAdjust,
+                        rightBackAdjust,
+                        leftFrontDrive.getCurrentPosition(),
+                        rightFrontDrive.getCurrentPosition(),
+                        leftBackDrive.getCurrentPosition(),
+                        rightBackDrive.getCurrentPosition(),
+                        getOrientation(),
+                        angle,
+                        traveled,
+                        drift);
+        }
+
+        // Stop all motion;
+        for (DcMotor motor : motors)
+            motor.setPower(0);
+
+        // Restore run mode to prior state
+        for (DcMotor motor : motors)
+            motor.setMode(mode);
+
+        Logger.message("%s  target  %6.2f  traveled %6.2f %6.2f %6.2f %6.2f  heading %6.2f  drift %6.2f  time %6.2f",
+                direction,
+                (double)target / encoderTicksPerInch(),
+                (double)leftFrontDrive.getCurrentPosition() / encoderTicksPerInch(),
+                (double)rightFrontDrive.getCurrentPosition() / encoderTicksPerInch(),
+                (double)leftBackDrive.getCurrentPosition() / encoderTicksPerInch(),
+                (double)rightBackDrive.getCurrentPosition() / encoderTicksPerInch(),
+                getOrientation(),
+                totalDrift,
+                elapsedTime.seconds());
+    }
+
 
     /**
      * Move the robot until the specified color is detected.
