@@ -613,38 +613,6 @@ public class Drive extends Thread {
             rightBackSign  = -1;
         }
 
-        // variables to compensate for drift
-        int leftFrontPositiveDrift = 0;
-        int rightFrontPositiveDrift = 0;
-        int leftBackPositiveDrift = 0;
-        int rightBackPositiveDrift = 0;
-        int leftFrontNegativeDrift = 0;
-        int rightFrontNegativeDrift = 0;
-        int leftBackNegativeDrift = 0;
-        int rightBackNegativeDrift = 0;
-
-        if (direction == DIRECTION.FORWARD) {
-            rightFrontPositiveDrift = 1;
-            rightBackPositiveDrift = 1;
-            leftFrontNegativeDrift = 1;
-            leftBackNegativeDrift = 1;
-        } else if (direction == DIRECTION.BACK) {
-            leftFrontPositiveDrift = 1;
-            leftBackPositiveDrift = 1;
-            rightFrontNegativeDrift = 1;
-            rightBackNegativeDrift = 1;
-        } else if (direction == DIRECTION.LEFT) {
-            rightFrontPositiveDrift = 1;
-            leftBackPositiveDrift = 1;
-            leftFrontNegativeDrift = 1;
-            rightBackNegativeDrift = 1;
-        } else if (direction == DIRECTION.RIGHT) {
-            leftFrontPositiveDrift = 1;
-            rightBackPositiveDrift = 1;
-            rightFrontNegativeDrift = 1;
-            leftBackNegativeDrift = 1;
-        }
-
         DcMotor.RunMode mode = leftFrontDrive.getMode();
         for (DcMotor motor : motors) {
             motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -687,7 +655,7 @@ public class Drive extends Thread {
             double ramDown = (Math.pow((Math.abs(target) - maxPos), 2) / Math.pow(RAMP_DISTANCE, 2)) * speedRange + RAMP_MIN_SPEED;
             double rampPower = Math.min(Math.min(ramUp, ramDown), speed);
 
-            double scale = .0015;
+            double scale = 0.0015;
             double leftFrontAdjust = (maxPos - leftFrontPos) * scale;
             double rightFrontAdjust = (maxPos - rightFrontPos) * scale;
             double leftBackAdjust = (maxPos - leftBackPos) * scale;
@@ -700,29 +668,21 @@ public class Drive extends Thread {
                     Math.abs(rightBackPos - lastRightBackPos) ) / 2 / encoderTicksPerInch();
 
             double angle = heading - startHeading;
+            // The heading range is from -180 to 180. Check if the heading wrapped around.
+            if (angle > 180)
+                angle = 360 - angle;
+            else if (angle < -180)
+                angle = angle + 360;
             double drift = traveled * Math.sin(Math.toRadians(angle));
             totalDrift += drift;
 
-            double driftScale = 0.0;
+            double driftAdjust = Math.abs(totalDrift) * 0.0015;
             double leftFrontDriftAdjust = 0;
             double rightFrontDriftAdjust = 0;
             double leftBackDriftAdjust = 0;
             double rightBackDriftAdjust = 0;
 
-            if (drift > 0.5) {
-                leftFrontDriftAdjust = drift * driftScale * leftFrontPositiveDrift;
-                rightFrontDriftAdjust = drift * driftScale * rightFrontPositiveDrift;
-                leftBackDriftAdjust = drift * driftScale * leftBackPositiveDrift;
-                rightBackDriftAdjust = drift * driftScale * rightBackPositiveDrift;
-            } else if (drift < -0.5) {
-                leftFrontDriftAdjust = Math.abs(drift) * driftScale * leftFrontNegativeDrift;
-                rightFrontDriftAdjust = Math.abs(drift) * driftScale * rightFrontNegativeDrift;
-                leftBackDriftAdjust = Math.abs(drift) * driftScale * leftBackNegativeDrift;
-                rightBackDriftAdjust = Math.abs(drift) * driftScale * rightBackNegativeDrift;
-            }
-
-            double driftAdjust = Math.abs(drift) * 0.0;
-            if (drift > 0.5) {
+            if (totalDrift > 0.5) {
                 if (direction == DIRECTION.FORWARD) {
                     rightFrontDriftAdjust = driftAdjust;
                     rightBackDriftAdjust = driftAdjust;
@@ -736,7 +696,7 @@ public class Drive extends Thread {
                     leftFrontDriftAdjust = driftAdjust;
                     rightBackDriftAdjust = driftAdjust;
                 }
-            } else if (drift < -0.5) {
+            } else if (totalDrift < -0.5) {
                 if (direction == DIRECTION.FORWARD) {
                     leftFrontDriftAdjust = driftAdjust;
                     leftBackDriftAdjust = driftAdjust;
@@ -751,8 +711,6 @@ public class Drive extends Thread {
                     leftBackDriftAdjust = driftAdjust;
                 }
             }
-
-
 
             lastLeftFrontPos = leftFrontPos;
             lastRightFrontPos = rightFrontPos;
@@ -774,7 +732,7 @@ public class Drive extends Thread {
             }
 
             if (LOG_VERBOSE)
-                Logger.message("power: %4.2f %4.2f %4.2f %4.2f   adjust: %6.4f %6.4f %6.4f %6.4f    position: %6d %6d %6d %6d    heading %6.2f    angle %6.2f    traveled %6.2f    drift %6.3f",
+                Logger.message("power: %4.2f %4.2f %4.2f %4.2f    adjust: %6.4f %6.4f %6.4f %6.4f    position: %6d %6d %6d %6d    heading %6.2f    angle %6.2f    traveled %6.2f    drift %6.3f    adjust: %6.4f %6.4f %6.4f %6.4f",
                         leftFrontDrive.getPower(),
                         rightFrontDrive.getPower(),
                         leftBackDrive.getPower(),
@@ -790,7 +748,11 @@ public class Drive extends Thread {
                         getOrientation(),
                         angle,
                         traveled,
-                        drift);
+                        drift,
+                        leftFrontDriftAdjust,
+                        rightFrontDriftAdjust,
+                        leftBackDriftAdjust,
+                        rightBackDriftAdjust);
         }
 
         // Stop all motion;

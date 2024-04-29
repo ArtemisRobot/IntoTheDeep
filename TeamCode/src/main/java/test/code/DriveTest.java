@@ -4,12 +4,21 @@
 package test.code;
 
 import android.annotation.SuppressLint;
+import android.os.Environment;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 
 import common.Drive;
 import common.Logger;
@@ -34,6 +43,12 @@ public class DriveTest extends LinearOpMode {
       drive.start();
 
       waitForStart();
+
+      //recordEncoders();
+      //readEncoders();
+
+      drive.moveDistanceWithGyro(Drive.DIRECTION.FORWARD, 0.5, 96, 0);
+      //drive.moveDistance(Drive.DIRECTION.FORWARD, 0.25, 200, 0);
 
       /*
       for (double power=0.2; power<=0.801; power+=0.05) {
@@ -106,4 +121,72 @@ public class DriveTest extends LinearOpMode {
         drive.stopRobot();
     }
 
+
+
+    private void recordEncoders() {
+        FileOutputStream fos = null;
+        DataOutputStream dos = null;
+        double[] dbuf = {65.56,66.89,67.98,68.82,69.55,70.37};
+
+        try {
+            String path = String.format("%s%s", AppUtil.FIRST_FOLDER.getAbsolutePath(), "/temp/drive.txt");
+            Logger.message (path);
+
+            fos = new FileOutputStream(path);
+            dos = new DataOutputStream(fos);
+
+            // for each byte in the buffer
+            for (double d:dbuf) {
+                // write double to the data output stream
+                dos.writeDouble(d);
+            }
+
+            // force bytes to the underlying stream
+            dos.flush();
+            dos.close();
+            fos.close();
+
+        } catch(Exception e) {
+            e.printStackTrace();
+
+        } finally {
+            // releases all system resources from the streams
+        }
+    }
+
+    private void readEncoders() {
+        InputStream is = null;
+        DataInputStream dis = null;
+
+        try {
+             // create file input stream
+            String path = String.format("%s%s", AppUtil.FIRST_FOLDER.getAbsolutePath(), "/temp/drive.txt");
+
+            is = new FileInputStream(path);
+
+            // create new data input stream
+            dis = new DataInputStream(is);
+
+            // read till end of the stream
+            while(dis.available()>0) {
+
+                // read double
+                double c = dis.readDouble();
+
+                // print
+                Logger.message("%f", c);
+            }
+
+            if(is!=null)
+                is.close();
+            if(dis!=null)
+                dis.close();
+
+        } catch(Exception e) {
+            // if any I/O error occurs
+            e.printStackTrace();
+        } finally {
+            // releases all system resources from the streams
+        }
+    }
 }
