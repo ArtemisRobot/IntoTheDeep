@@ -915,8 +915,8 @@ public class Drive extends Thread {
 
     public double encoderTicksPerInch() {
         return (COUNTS_PER_INCH * DRIVE_FACTOR);
-
     }
+
     public List<Double> getWheelPositions() {
 
         List<Double> wheelPositions = new ArrayList<>();
