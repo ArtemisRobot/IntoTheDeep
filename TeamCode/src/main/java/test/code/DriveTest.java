@@ -23,7 +23,7 @@ import java.io.InputStream;
 import common.Drive;
 import common.Logger;
 
-@TeleOp(name=" Drive Test", group="Test")
+@TeleOp(name="Drive Test", group="Test")
 @SuppressWarnings("unused")
 @SuppressLint("DefaultLocale")
 public class DriveTest extends LinearOpMode {
@@ -47,6 +47,7 @@ public class DriveTest extends LinearOpMode {
       //recordEncoders();
       //readEncoders();
 
+      drive.setBraking(false);
       drive.moveDistanceWithGyro(Drive.DIRECTION.FORWARD, 0.5, 96, 0);
       //drive.moveDistance(Drive.DIRECTION.FORWARD, 0.25, 200, 0);
 
@@ -144,6 +145,7 @@ public class DriveTest extends LinearOpMode {
             // force bytes to the underlying stream
             dos.flush();
             dos.close();
+
             fos.close();
 
         } catch(Exception e) {
