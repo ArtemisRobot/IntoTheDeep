@@ -36,8 +36,18 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.SortedSet;
 
@@ -100,6 +110,7 @@ public class CalibrateMotor extends LinearOpMode {
     public void runOpMode() {
 
         getMotors();
+        readCalibration();
 
         telemetry.addLine("Press start");
         telemetry.update();
@@ -254,6 +265,8 @@ public class CalibrateMotor extends LinearOpMode {
             targetMsg.setValue("%d", target);
             telemetry.update();
         }
+
+        writeCalibration();
     }
 
     /**
@@ -352,5 +365,92 @@ public class CalibrateMotor extends LinearOpMode {
         }
         motor.setPower(0);
     }
+
+    private void writeCalibration() {
+        try {
+            String path = String.format("%s%s", AppUtil.FIRST_FOLDER.getAbsolutePath(), "/temp/motorCalibration.txt");
+            Logger.message (path);
+
+            FileWriter f = new FileWriter(path);
+
+            for (int i = 0; i < motors.length; i++) {
+                if (motors[i] != null) {
+                    motors[i].home = i * 100;
+                    motors[i].target = i * 2000;
+                    String str = String.format(Locale.ENGLISH, "%s,%d,%d\n", motors[i].name, motors[i].home, motors[i].target);
+                    f.write(str);
+                    Logger.message(str);
+                }
+            }
+
+            // force bytes to the underlying stream
+            f.flush();
+            f.close();
+
+        } catch(Exception e) {
+            e.printStackTrace();
+
+        } finally {
+            // releases all system resources from the streams
+        }
+    }
+
+
+    private void readCalibration() {
+        try {
+            String path = String.format("%s%s", AppUtil.FIRST_FOLDER.getAbsolutePath(), "/temp/motorCalibration.txt");
+            Logger.message (path);
+
+            BufferedReader reader;
+            try {
+                reader = new BufferedReader(new FileReader(path));
+            } catch (java.io.FileNotFoundException ex) {
+                Logger.message("Motor calibration file not found");
+                return;
+            }
+
+            String line = reader.readLine();
+            while (line != null) {
+                // parse the line read
+                String name;
+                String homeStr;
+                String targetStr;
+                int start;
+                int end = line.indexOf(',');
+                if (end > 0) {
+                    name = line.substring(0, end);
+                    start = end + 1;
+                    end = line.indexOf(',', start);
+                    if (end > 0) {
+                        homeStr =  line.substring(start, end);
+                        start = end + 1;
+                        targetStr = line.substring(start);
+                        for (MotorInfo motorInfo : motors) {
+                            if (motorInfo != null && name.equals(motorInfo.name)) {
+                                motorInfo.home = Integer.parseInt(homeStr);
+                                motorInfo.target = Integer.parseInt(targetStr);
+                                String str = String.format(Locale.ENGLISH, "%s,%d,%d\n", motorInfo.name, motorInfo.home, motorInfo.target);
+                                Logger.message(str);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                line = reader.readLine();
+            }
+
+            reader.close();
+
+        } catch(Exception e) {
+            e.printStackTrace();
+
+        } finally {
+            // releases all system resources from the streams
+        }
+    }
+
+
+
 }
 
