@@ -39,13 +39,8 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
@@ -367,17 +362,16 @@ public class CalibrateMotor extends LinearOpMode {
     }
 
     private void writeCalibration() {
+
         try {
             String path = String.format("%s%s", AppUtil.FIRST_FOLDER.getAbsolutePath(), "/temp/motorCalibration.txt");
             Logger.message (path);
 
             FileWriter f = new FileWriter(path);
 
-            for (int i = 0; i < motors.length; i++) {
-                if (motors[i] != null) {
-                    motors[i].home = i * 100;
-                    motors[i].target = i * 2000;
-                    String str = String.format(Locale.ENGLISH, "%s,%d,%d\n", motors[i].name, motors[i].home, motors[i].target);
+            for (MotorInfo motorInfo : motors) {
+                if (motorInfo != null) {
+                    String str = String.format(Locale.ENGLISH, "%s,%d,%d\n", motorInfo.name, motorInfo.home, motorInfo.target);
                     f.write(str);
                     Logger.message(str);
                 }
@@ -390,11 +384,8 @@ public class CalibrateMotor extends LinearOpMode {
         } catch(Exception e) {
             e.printStackTrace();
 
-        } finally {
-            // releases all system resources from the streams
         }
     }
-
 
     private void readCalibration() {
         try {
@@ -444,9 +435,6 @@ public class CalibrateMotor extends LinearOpMode {
 
         } catch(Exception e) {
             e.printStackTrace();
-
-        } finally {
-            // releases all system resources from the streams
         }
     }
 
