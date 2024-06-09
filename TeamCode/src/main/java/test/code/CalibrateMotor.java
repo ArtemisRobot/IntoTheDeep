@@ -36,7 +36,6 @@ package test.code;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -60,18 +59,18 @@ public class CalibrateMotor extends LinearOpMode {
 
     public enum MOTOR_SELECT { PREVIOUS, NEXT }
 
-    private final ElapsedTime     runtime = new ElapsedTime();
+    private final ElapsedTime runtime = new ElapsedTime();
 
     private final double incrementSlow = 1;
     private final double incrementMedium = 10;
     private final double incrementFast = 100;
 
     private final double speed = 0.25;
-    private DcMotorEx motor   = null;
+    private DcMotor motor   = null;
 
     private static class MotorInfo implements Comparable<MotorInfo>{
         String      name;
-        DcMotorEx   motor;
+        DcMotor   motor;
         int         home;
         int         target;
 
@@ -89,8 +88,6 @@ public class CalibrateMotor extends LinearOpMode {
     @Override
     public void runOpMode() {
 
-        boolean save = true;
-
         getMotors();
         readCalibration();
 
@@ -98,7 +95,6 @@ public class CalibrateMotor extends LinearOpMode {
         telemetry.update();
         telemetry.setAutoClear(false);
 
-        // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
         Telemetry.Item motorNameMsg =  telemetry.addData("Motor name", 0);
@@ -107,11 +103,11 @@ public class CalibrateMotor extends LinearOpMode {
         Telemetry.Item homeMsg = telemetry.addData("Home position", 0);
         Telemetry.Item targetMsg = telemetry.addData("Target position", 0);
 
-        motorNameMsg.setValue("%s  (%d)", motors[currentMotor].name, motor.getPortNumber());
-        directionMsg.setValue("%s", motor.getDirection());
-        positionMsg.setValue( "%d", motor.getCurrentPosition());
-        homeMsg.setValue("%d", motors[currentMotor].home);
-        targetMsg.setValue("%d", motors[currentMotor].target);
+        setDisplayName (motorNameMsg);
+        setDisplayDirection(directionMsg);
+        setDisplayPosition(positionMsg);
+        setDisplayHome(homeMsg);
+        setDisplayTarget(targetMsg);
 
         telemetry.addData("\nMotor Calibration Controls", "\n" +
                 "  dpad left - select previous motor\n" +
@@ -128,32 +124,31 @@ public class CalibrateMotor extends LinearOpMode {
                 "\n");
 
         telemetry.update();
+        boolean save = true;
 
         while (opModeIsActive()) {
 
             if (gamepad1.a) {
                 // set target position to current position
                 motors[currentMotor].target = motor.getCurrentPosition();
-                targetMsg.setValue("%d", motors[currentMotor].target);
 
             } else if (gamepad1.y) {
                 // set the home position to the current position
                 motors[currentMotor].home = motor.getCurrentPosition();
 
             } else if (gamepad1.x) {
-                // run to zero position
+                // run to home position
                 runToPosition(motors[currentMotor].home);
 
             } else if (gamepad1.b) {
-                // Run motor to an target position
+                // run motor to an target position
                 runToPosition(motors[currentMotor].target);
 
             } else if (gamepad1.left_trigger > 0) {
                 // manually run the motor backwards
                 motor.setPower(-speed);
                 while (gamepad1.left_trigger > 0) {
-                    int position = motor.getCurrentPosition();
-                    positionMsg.setValue( "%d", position);
+                    setDisplayPosition(positionMsg);
                     telemetry.update();
                     Logger.message("y %f", gamepad1.left_trigger);
                     sleep(100);
@@ -164,8 +159,7 @@ public class CalibrateMotor extends LinearOpMode {
                 // manually run the motor forward
                 motor.setPower(speed);
                 while (gamepad1.right_trigger > 0) {
-                    int position = motor.getCurrentPosition();
-                    positionMsg.setValue( "%d", position);
+                    setDisplayPosition(positionMsg);
                     telemetry.update();
                     sleep(100);
                 }
@@ -176,7 +170,7 @@ public class CalibrateMotor extends LinearOpMode {
                 runtime.reset();
                 while (gamepad1.left_stick_y > 0) {
                     motors[currentMotor].target -= increment(incrementSlow, incrementMedium, incrementFast);
-                    targetMsg.setValue("%d", motors[currentMotor].target);
+                    setDisplayTarget(targetMsg);
                     telemetry.update();
                 }
 
@@ -185,7 +179,7 @@ public class CalibrateMotor extends LinearOpMode {
                 runtime.reset();
                 while (gamepad1.left_stick_y < 0) {
                     motors[currentMotor].target += increment(incrementSlow, incrementMedium, incrementFast);
-                    targetMsg.setValue("%d", motors[currentMotor].target);
+                    setDisplayTarget(targetMsg);
                     telemetry.update();
                 }
                 motor.setPower(0);
@@ -195,7 +189,7 @@ public class CalibrateMotor extends LinearOpMode {
                 runtime.reset();
                 while (gamepad1.right_stick_y > 0) {
                     motors[currentMotor].home -= increment(incrementSlow, incrementMedium, incrementFast);
-                    homeMsg.setValue("%d", motors[currentMotor].home);
+                    setDisplayHome(homeMsg);
                     telemetry.update();
                 }
 
@@ -204,7 +198,7 @@ public class CalibrateMotor extends LinearOpMode {
                 runtime.reset();
                 while (gamepad1.right_stick_y < 0) {
                     motors[currentMotor].home += increment(incrementSlow, incrementMedium, incrementFast);
-                    homeMsg.setValue("%d", motors[currentMotor].home);
+                    setDisplayHome(homeMsg);
                     telemetry.update();
                 }
                 motor.setPower(0);
@@ -215,7 +209,7 @@ public class CalibrateMotor extends LinearOpMode {
                 while (gamepad1.dpad_left){
                     sleep(10);
                 }
-                motorNameMsg.setValue("%s  (%d)", motors[currentMotor].name, motors[currentMotor].motor.getPortNumber());
+                setDisplayName (motorNameMsg);
 
             } else if (gamepad1.dpad_right) {
                 // select the previous motor
@@ -223,39 +217,55 @@ public class CalibrateMotor extends LinearOpMode {
                 while (gamepad1.dpad_right){
                     sleep(10);
                 }
-                motorNameMsg.setValue("%s  (%d)", motors[currentMotor].name, motors[currentMotor].motor.getPortNumber());
+                setDisplayName (motorNameMsg);
 
             } else if (gamepad1.dpad_up) {
                 // change the direction of the motor
-                if (motor.getDirection() == DcMotorEx.Direction.FORWARD)
-                    motor.setDirection(DcMotorEx.Direction.REVERSE);
+                if (motor.getDirection() == DcMotor.Direction.FORWARD)
+                    motor.setDirection(DcMotor.Direction.REVERSE);
                 else
-                    motor.setDirection(DcMotorEx.Direction.FORWARD);
-                directionMsg.setValue("%s", motor.getDirection());
+                    motor.setDirection(DcMotor.Direction.FORWARD);
+                setDisplayDirection(directionMsg);
                 while (gamepad1.dpad_up) {
                     sleep(10);
                 }
 
             } else if (gamepad1.back) {
+                // exit opmode without saving calibration data
                 save = false;
                 requestOpModeStop();
                 break;
-
-            } else if (gamepad1.dpad_down) {
-                while (gamepad1.dpad_down){
-                    sleep(10);
-                }
             }
 
-            positionMsg.setValue( "%d", motor.getCurrentPosition());
-            homeMsg.setValue("%d", motors[currentMotor].home);
-            targetMsg.setValue("%d", motors[currentMotor].target);
+            setDisplayPosition(positionMsg);
+            setDisplayHome(homeMsg);
+            setDisplayTarget(targetMsg);
             telemetry.update();
         }
 
         if (save) {
             writeCalibration();
         }
+    }
+
+    void setDisplayName (Telemetry.Item item) {
+        item.setValue("%s  (port: %d)", motors[currentMotor].name, motor.getPortNumber());
+    }
+
+    void setDisplayPosition (Telemetry.Item item) {
+        item.setValue( "%d", motors[currentMotor].motor.getCurrentPosition());
+    }
+
+    void setDisplayHome (Telemetry.Item item) {
+        item.setValue( "%d", motors[currentMotor].home);
+    }
+
+    void setDisplayTarget (Telemetry.Item item) {
+        item.setValue( "%d", motors[currentMotor].target);
+    }
+
+    void setDisplayDirection (Telemetry.Item item) {
+        item.setValue("%s", motors[currentMotor].motor.getDirection());
     }
 
     /**
@@ -301,16 +311,15 @@ public class CalibrateMotor extends LinearOpMode {
     private void getMotors(){
 
         motorCount = 0;
-        SortedSet<String> names = hardwareMap.getAllNames(DcMotorEx.class);
+        SortedSet<String> names = hardwareMap.getAllNames(DcMotor.class);
         for (String name: names){
-            DcMotorEx m = hardwareMap.get(DcMotorEx.class, name);
+            DcMotor m = hardwareMap.get(DcMotor.class, name);
             
             motors[motorCount] = new MotorInfo();
             motors[motorCount].name = name;
             motors[motorCount].motor = m;
             motors[motorCount].home = 0;
             motors[motorCount].target = 0;
-
             motorCount++;
         }
 
