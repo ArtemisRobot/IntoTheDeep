@@ -31,90 +31,69 @@ package test.code;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.ServoController;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
-import java.io.PipedOutputStream;
-import java.util.Objects;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.util.Locale;
 import java.util.SortedSet;
 
-import common.Config;
 import common.Logger;
-import common.Robot;
 
 /*
  * This OpMode calibrate any of the robot servos.
  */
 
-@TeleOp(name="Calibrate Servo", group="Test")
+@TeleOp(name=" Calibrate Servo", group="Test")
 @SuppressWarnings("unused")
 
 public class CalibrateServo extends LinearOpMode {
 
-    /* Declare OpMode members. */
+    private final String calibrationPath = "/temp/servoCalibration.txt";
+
+    private enum SERVO_SELECT { PREVIOUS, NEXT }
+
     private final ElapsedTime     runtime = new ElapsedTime();
 
+    private final double incrementSlow = 0.01;
+    private final double incrementMedium = 0.02;
+    private final double incrementFast = 0.04;
+
     private Servo servo   = null;
-    private double position = 0;
-    private double home = 0.5;
-    private double target = 0.5;
 
     private static class ServoInfo {
         String  name;
         Servo   servo;
         double  home;
         double  target;
-
     }
     ServoInfo[] servos = new ServoInfo[12];
     int servoCount;
     int currentServo;
 
-     class ServoPositions {
-        String name;
-        double home;
-        double target;
-
-         public  ServoPositions (String name, Double home, Double target ){
-             this.name = name;
-             this.home = home;
-             this.target = target;
-         }
-    }
-    ServoPositions[] positions = new ServoPositions[12];
-
-
     @Override
     public void runOpMode() {
 
-        // default position
-        /*
-        positions[0] = new ServoPositions(Config.DRONE_ANGLE,   Robot.DRONE_ANGLE_DOWN,         Robot.DRONE_ANGLE_UP );
-        positions[1] = new ServoPositions(Config.DRONE_FIRE,    Robot.DRONE_FIRE_DOWN,          Robot.DRONE_FIRE_UP);
-        positions[2] = new ServoPositions(Config.PIXEL_DROPPER, Robot.DROPPER_CLOSE,            Robot.DROPPER_OPEN);
-        positions[3] = new ServoPositions(Config.HANGING_ELBOW, HangingArm.ELBOW_HOME_POSITION, HangingArm.ELBOW_TARGET_POSITION);
-        positions[4] = new ServoPositions(Config.HANGING_WRIST, HangingArm.WRIST_HOME_POSITION, HangingArm.WRIST_TARGET_POSITION);
-        positions[5] = new ServoPositions(Config.HANDING_THUMB, HangingArm.THUMB_CLOSE,         HangingArm.THUMB_OPEN);
-         */
-
         getServos();
+        readCalibration();
 
         telemetry.addLine("Press start");
         telemetry.update();
         telemetry.setAutoClear(false);
 
-        // Wait for the game to start (driver presses PLAY)
         waitForStart();
 
         telemetry.addData("Servo Calibration Controls", "\n" +
-                "  back - select next servo\n" +
-                "  left stick - manual control servo position\n" +
-                "  left trigger - decrease target position\n" +
-                "  right trigger - increase target position\n" +
-                "  left bumper - decrease home position\n" +
-                "  right bumper - increase home position\n" +
+                "  dpad left - select previous servo\n" +
+                "  dpad right - select next servo\n" +
+                "  left trigger - run servo backwards\n" +
+                "  right trigger - run the servo forward\n" +
+                "  left stick - increase/decrease target position\n" +
+                "  right stick - increase/decrease home position\n" +
                 "  y - set home position to current position\n" +
                 "  a - set target position to current position\n" +
                 "  x - run to home position\n" +
@@ -122,154 +101,146 @@ public class CalibrateServo extends LinearOpMode {
                 "\n");
 
         Telemetry.Item servoNameMsg =  telemetry.addData("Servo name", 0);
-//        Telemetry.Item directionMsg = telemetry.addData("Servo direction", 0);
+        Telemetry.Item directionMsg = telemetry.addData("Servo direction", 0);
         Telemetry.Item positionMsg = telemetry.addData("Servo position", 0);
         Telemetry.Item homeMsg = telemetry.addData("Home position", 0);
         Telemetry.Item targetMsg = telemetry.addData("Target position", 0);
 
-        servoNameMsg.setValue("%s", servos[currentServo].name);
-//        directionMsg.setValue("%s", servo.getDirection());
-        positionMsg.setValue( "%f", servo.getPosition());
-        homeMsg.setValue("%f", home);
-        targetMsg.setValue("%f", target);
+        servoNameMsg.setValue("%s  (%d)", servos[currentServo].name, servos[currentServo].servo.getPortNumber());
+        directionMsg.setValue("%s", servo.getDirection());
+        //positionMsg.setValue( "%f", servo.getPosition());
+        //homeMsg.setValue("%f", servos[currentServo].home);
+        //targetMsg.setValue("%5.3f", servos[currentServo].target);
 
         telemetry.update();
+
+        boolean save = true;
 
         while (opModeIsActive()) {
 
             if (gamepad1.a) {
                 // set target position to current position
-                target = servo.getPosition();
-                targetMsg.setValue("%f", target);
+                servos[currentServo].target = servo.getPosition();
 
             } else if (gamepad1.y) {
                 // set the home position to the current position
-                home = servo.getPosition();
-                homeMsg.setValue("%f", home);
+                servos[currentServo].home = servo.getPosition();
 
             } else if (gamepad1.x) {
                 // run to zero position
-                servo.setPosition(home);
+                servo.setPosition(servos[currentServo].home);
 
             } else if (gamepad1.b) {
                 // Run servo to an target position
-                servo.setPosition(target);
-
-            } else if (gamepad1.right_trigger > 0) {
-                // increase target position
-                runtime.reset();
-                while (gamepad1.right_trigger > 0) {
-                    target += increment(.01, .02, .04);
-                    targetMsg.setValue("%f", target);
-                    telemetry.update();
-                }
+                servo.setPosition(servos[currentServo].target);
 
             } else if (gamepad1.left_trigger > 0) {
-                // decrease the target position
-                runtime.reset();
+                // manually run the servo backwards
                 while (gamepad1.left_trigger > 0) {
-                    target -= increment(.01, .02, .04);
-                    targetMsg.setValue("%f", target);
-                    telemetry.update();
-                }
-
-            } else if (gamepad1.right_bumper) {
-                // increase target position
-                runtime.reset();
-                while (gamepad1.right_bumper) {
-                    home += increment(.01, .02, .04);
-                    homeMsg.setValue("%f", home);
-                    telemetry.update();
-                }
-
-            } else if (gamepad1.left_bumper) {
-                // decrease the target position
-                runtime.reset();
-                while (gamepad1.left_bumper) {
-                    home -= increment(.01, .02, .04);
-                    homeMsg.setValue("%f", home);
-                    telemetry.update();
-                }
-
-            } else if (gamepad1.left_stick_y > 0) {
-                // manually run the servo
-                while (gamepad1.left_stick_y > 0) {
-                    position = servo.getPosition();
+                    double position = servo.getPosition();
                     if (Double.isNaN(position)) {
-                        position = home;
-                    } else {
-                        position += 0.001;
-                    }
-                    servo.setPosition(position);
-//                    positionMsg.setValue( "%f", position);
-//                    telemetry.update();
-                    sleep(100);
-                }
-
-            } else if (gamepad1.left_stick_y < 0) {
-                // manually run the motor forward
-                while (gamepad1.left_stick_y < 0) {
-                    position = servo.getPosition();
-                    if (Double.isNaN(position)) {
-                        position = home;
+                        Logger.message("Servo position not set");
+                        break;
                     } else {
                         position -= 0.001;
                     }
                     servo.setPosition(position);
-//                    positionMsg.setValue( "%f", position);
-//                    telemetry.update();
+                    positionMsg.setValue( "%5.3f", position);
+                    telemetry.update();
                     sleep(100);
                 }
 
-            } else if (gamepad1.back) {
-                nextServo();
-                while (gamepad1.back) {
+            } else if (gamepad1.right_trigger > 0) {
+                // manually run the motor forward
+                while (gamepad1.right_trigger > 0) {
+                    double position = servo.getPosition();
+                    if (Double.isNaN(position)) {
+                        Logger.message("Servo position not set");
+                        break;
+                    } else {
+                        position += 0.001;
+                    }
+                    servo.setPosition(position);
+                    positionMsg.setValue( "%5.3f", position);
+                    telemetry.update();
+                    sleep(100);
+                }
+
+            } else if (gamepad1.left_stick_y < 0) {
+                // increase target position
+                runtime.reset();
+                while (gamepad1.left_stick_y < 0) {
+                    servos[currentServo].target = Math.min(1, servos[currentServo].target + increment(incrementSlow, incrementMedium, incrementFast));
+                    targetMsg.setValue("%5.3f", servos[currentServo].target);
+                    telemetry.update();
+                }
+
+            } else if (gamepad1.left_stick_y > 0) {
+                // decrease the target position
+                runtime.reset();
+                while (gamepad1.left_stick_y > 0) {
+                    servos[currentServo].target = Math.max(0, servos[currentServo].target - increment(incrementSlow, incrementMedium, incrementFast));
+                    targetMsg.setValue("%5.3f", servos[currentServo].target);
+                    telemetry.update();
+                }
+
+            } else if (gamepad1.right_stick_y < 0) {
+                // increase home position
+                runtime.reset();
+                while (gamepad1.right_stick_y < 0) {
+                    servos[currentServo].home = Math.min(1, servos[currentServo].home + increment(incrementSlow, incrementMedium, incrementFast));
+                    homeMsg.setValue("%5.3f", servos[currentServo].home);
+                    telemetry.update();
+                }
+
+            } else if (gamepad1.right_stick_y > 0) {
+                // decrease the home position
+                runtime.reset();
+                while (gamepad1.right_stick_y > 0) {
+                    servos[currentServo].home = Math.max(0, servos[currentServo].home - increment(incrementSlow, incrementMedium, incrementFast));
+                    homeMsg.setValue("%5.3f", servos[currentServo].home);
+                    telemetry.update();
+                }
+
+            } else if (gamepad1.dpad_left) {
+                // select the next motor
+                selectServo(SERVO_SELECT.PREVIOUS);
+                while (gamepad1.dpad_left){
                     sleep(10);
                 }
-                servoNameMsg.setValue("%s", servos[currentServo].name);
+                servoNameMsg.setValue("%s  (%d)", servos[currentServo].name, servos[currentServo].servo.getPortNumber());
+
+            } else if (gamepad1.dpad_right) {
+                // select the previous servo
+                selectServo(SERVO_SELECT.NEXT);
+                while (gamepad1.dpad_right) {
+                    sleep(10);
+                }
+                servoNameMsg.setValue("%s  (%d)", servos[currentServo].name, servos[currentServo].servo.getPortNumber());
 
             } else if (gamepad1.dpad_up) {
-                position = servo.getPosition();
-                if (Double.isNaN(position)) {
-                    position = home;
-                } else {
-                    position -= 0.001;
-                }
-                servo.setPosition(position);
-
-                while (gamepad1.dpad_up){
-                    sleep(100);
-                }
-
-            } else if (gamepad1.dpad_down) {
-                position = servo.getPosition();
-                if (Double.isNaN(position)) {
-                    position = home;
-                } else {
-                    position += 0.001;
-                }
-                servo.setPosition(position);
-
-                while (gamepad1.dpad_down){
-                    sleep(100);
-                }
-            }
-
-
-            /*else if (gamepad1.dpad_left) {
                 // change the direction of the servo
                 if (servo.getDirection() == Servo.Direction.FORWARD)
                     servo.setDirection(Servo.Direction.REVERSE);
                 else
                     servo.setDirection(Servo.Direction.FORWARD);
                 directionMsg.setValue("%s", servo.getDirection());
-                while (gamepad1.dpad_down) sleep(10);
-            }  */
+                while (gamepad1.dpad_up) sleep(10);
 
-            positionMsg.setValue( "%f", servo.getPosition());
-            homeMsg.setValue("%f", home);
-            targetMsg.setValue("%f", target);
+            } else if (gamepad1.back) {
+                save = false;
+                requestOpModeStop();
+                break;
+            }
+
+            positionMsg.setValue( "%5.3f", servo.getPosition());
+            homeMsg.setValue("%5.3f", servos[currentServo].home);
+            targetMsg.setValue("%5.3f", servos[currentServo].target);
             telemetry.update();
+        }
+
+        if (save) {
+            writeCalibration();
         }
     }
 
@@ -280,18 +251,20 @@ public class CalibrateServo extends LinearOpMode {
     public double increment(double v1, double v2, double v3){
         int sleepTime;
         double delta;
-        if (runtime.seconds() < 3){
+        if (runtime.seconds() < 3) {
             delta = v1;
             sleepTime = 500;
-        }
-        else if (runtime.seconds() < 6){
+        } else if (runtime.seconds() < 6) {
             delta = v2;
-            sleepTime = 200;
-        }
-        else{
+            sleepTime = 500;
+        } else if (runtime.seconds() < 9) {
             delta = v3;
-            sleepTime = 100;
+            sleepTime = 500;
+        } else {
+            delta = v3;
+            sleepTime = 250;
         }
+
         sleep(sleepTime);
         return delta;
     }
@@ -305,29 +278,19 @@ public class CalibrateServo extends LinearOpMode {
         SortedSet<String> names = hardwareMap.getAllNames(Servo.class);
         for (String name: names){
             Servo s = hardwareMap.get(Servo.class, name);
-            ServoController controller = s.getController();
             servos[servoCount] = new ServoInfo();
             servos[servoCount].name = name;
             servos[servoCount].servo = s;
             servos[servoCount].home = 0.5;
             servos[servoCount].target = 0.5;
 
-            for (ServoPositions p : positions) {
-                if (p != null && Objects.equals(p.name, name)) {
-                    servos[servoCount].home = p.home;
-                    servos[servoCount].target = p.target;
-                    break;
-                }
-            }
-        servoCount++;
+            servoCount++;
         }
 
         for (int i = 0; i < servos.length; i++) {
             if (servos[i] != null) {
                 if (servo == null) {
                     servo = servos[i].servo;
-                    home = servos[i].home;
-                    target = servos[i].target;
                     currentServo = i;
                 }
                 Logger.message("servo name %s port %d", servos[i].name, servos[i].servo.getPortNumber());
@@ -335,20 +298,93 @@ public class CalibrateServo extends LinearOpMode {
         }
     }
 
-    private void nextServo(){
-
+    private void selectServo (SERVO_SELECT select){
         int index;
-        for (int i = currentServo + 1; i <= currentServo + servos.length; i++) {
-            index = i %  servos.length;
+        for (int i = 1; i <= servos.length; i++) {
+            if (select == SERVO_SELECT.NEXT)
+                index = (currentServo + i) %  servos.length;
+            else
+                index = (currentServo + servos.length - i) %  servos.length;
+
             if (servos[index] != null){
                 servo = servos[index].servo;
-                home = servos[index].home;
-                target = servos[index].target;
                 currentServo = index;
                 break;
             }
         }
     }
 
+    // Write the calibration values to a comma separated text file.
+    private void writeCalibration() {
+
+        try {
+            String path = String.format("%s%s", AppUtil.FIRST_FOLDER.getAbsolutePath(), calibrationPath);
+            Logger.message ("Writing calibration data to %s", path);
+
+            FileWriter f = new FileWriter(path);
+
+            for (ServoInfo servosInfo : servos) {
+                if (servosInfo != null) {
+                    String str = String.format(Locale.ENGLISH, "%s,%f,%f\n", servosInfo.name, servosInfo.home, servosInfo.target);
+                    f.write(str);
+                    Logger.message(str);
+                }
+            }
+
+            f.flush();
+            f.close();
+
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Read the calibration values from a comma separated text file.
+    private void readCalibration() {
+        try {
+            String path = String.format("%s%s", AppUtil.FIRST_FOLDER.getAbsolutePath(), calibrationPath);
+            Logger.message ("Reading calibration data from %s", path);
+
+            BufferedReader reader;
+            try {
+                reader = new BufferedReader(new FileReader(path));
+            } catch (java.io.FileNotFoundException ex) {
+                Logger.message("Servo calibration file not found");
+                return;
+            }
+
+            String line = reader.readLine();
+            while (line != null) {
+                // parse the line read
+                int end = line.indexOf(',');
+                if (end > 0) {
+                    String name = line.substring(0, end);
+                    int start = end + 1;
+                    end = line.indexOf(',', start);
+                    if (end > 0) {
+                        String homeStr =  line.substring(start, end);
+                        start = end + 1;
+                        String targetStr = line.substring(start);
+                        for (ServoInfo servosInfo : servos) {
+                            if (servosInfo != null && name.equals(servosInfo.name)) {
+                                servosInfo.home = Double.parseDouble(homeStr);
+                                servosInfo.target = Double.parseDouble(targetStr);
+                                String str = String.format(Locale.ENGLISH, "%s,%f,%f\n", servosInfo.name, servosInfo.home, servosInfo.target);
+                                Logger.message(str);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                line = reader.readLine();
+            }
+
+            reader.close();
+
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
 
