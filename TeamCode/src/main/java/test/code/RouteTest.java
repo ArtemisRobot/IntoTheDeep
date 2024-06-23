@@ -1,12 +1,18 @@
 package test.code;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import common.Drive;
+import common.Logger;
+import common.Settings;
 
 @TeleOp(name="Route Test", group="Test")
 public class RouteTest extends LinearOpMode {
@@ -16,8 +22,9 @@ public class RouteTest extends LinearOpMode {
     private enum TUNING { DRIVE, STRAFE, TURN }
     private TUNING tuning = TUNING.DRIVE;
 
-    private double factor = Drive.DRIVE_FACTOR;
+    private double factor;
 
+    private DcMotorEx sideOdometer;
 
     private static final double ODOMETER_TICKS_PER_REV = 2000;
     private static final double ODOMETER_WHEEL_DIAMETER = 1.90278;  //  1.92913;       // 0.9863 in inches, 48mm diameter
@@ -34,32 +41,37 @@ public class RouteTest extends LinearOpMode {
     public void runOpMode() {
         drive = new Drive(this);
 
+        sideOdometer = hardwareMap.get(DcMotorEx.class, "odometer");
+        sideOdometer.setDirection(DcMotorSimple.Direction.REVERSE);
+
         telemetry.addLine("push start");
         telemetry.update();
+        telemetry.setAutoClear(false);
 
         waitForStart();
 
-        telemetry.setAutoClear(false);
-        telemetry.addData("Controls", "\n" +
+        double inches = 12;
+        factor = Settings.getDriveFactor();
+        factorMsg = telemetry.addData("drive factor", FACTOR_FORMAT, factor);
+        toTravelMsg = telemetry.addData("inches to travel", INCHES_FORMAT, inches);
+        traveled1Msg = telemetry.addData("inches traveled odometer", 0);
+        traveled2Msg = telemetry.addData("inches traveled encoders", 0);
+        telemetry.addData("\nControls", "\n" +
                 "  y - move forward\n" +
                 "  a - move backward\n" +
                 "  x - strafe left\n" +
                 "  b - strafe right\n" +
                 "  dpad_left - turn left\n" +
-                "  dpad_right - turn right\n\n" +
+                "  dpad_right - turn right\n" +
                 "  left bumper - decrease inches to move\n" +
                 "  right bumper - increase inches to move\n" +
                 "  left trigger - decrease tuning factor\n" +
                 "  right trigger - increase tuning factor\n" +
+                "  back - select factor\n" +
+                "  start - save settings\n" +
                 "\n");
 
-        double inches = 12;
-        factorMsg = telemetry.addData("drive factor", FACTOR_FORMAT, factor);
-        toTravelMsg = telemetry.addData("inches to travel", INCHES_FORMAT, inches);
-        traveled1Msg = telemetry.addData("inches traveled odometer", 0);
-        traveled2Msg = telemetry.addData("inches traveled encoders", 0);
         telemetry.update();
-
 
         while (opModeIsActive()) {
 
@@ -70,10 +82,10 @@ public class RouteTest extends LinearOpMode {
                 moveForwardBackward(Drive.DIRECTION.BACK, inches);
             }
             if (gamepad1.x) {
-                drive.strafeLeft(inches);
+                moveLeftRight(Drive.DIRECTION.LEFT, inches);
             }
             if (gamepad1.b) {
-                drive.strafeRight(inches);
+                moveLeftRight(Drive.DIRECTION.RIGHT, inches);
             }
             if (gamepad1.dpad_left){
                 drive.turn(90);
@@ -84,7 +96,7 @@ public class RouteTest extends LinearOpMode {
             if (gamepad1.left_bumper) {
                 runtime.reset();
                 while (gamepad1.left_bumper) {
-                    inches -= (double) increment(.5, 1, 2);
+                    inches -= increment(.5, 1, 2);
                     toTravelMsg.setValue( INCHES_FORMAT, inches);
                     telemetry.update();
                 }
@@ -92,7 +104,7 @@ public class RouteTest extends LinearOpMode {
             if (gamepad1.right_bumper) {
                 runtime.reset();
                 while (gamepad1.right_bumper) {
-                    inches += (double) increment(.5, 1, 2);
+                    inches += increment(.5, 1, 2);
                     toTravelMsg.setValue( INCHES_FORMAT, inches);
                     telemetry.update();
                 }
@@ -100,14 +112,14 @@ public class RouteTest extends LinearOpMode {
             if (gamepad1.left_trigger != 0) {
                 runtime.reset();
                 while (gamepad1.left_trigger != 0) {
-                    factor -= (double) increment(0.001, 0.005, 0.01);
+                    factor -= increment(0.001, 0.005, 0.01);
                     SetTuningFactor(factor);
                 }
             }
             if (gamepad1.right_trigger != 0) {
                 runtime.reset();
                 while (gamepad1.right_trigger != 0) {
-                    factor += (double) increment(0.001, 0.005, 0.01);
+                    factor +=  increment(0.001, 0.005, 0.01);
                     SetTuningFactor(factor);
                 }
             }
@@ -115,34 +127,43 @@ public class RouteTest extends LinearOpMode {
                 SelectTuning();
                 while (gamepad1.back) sleep(100);
             }
+
+            if (gamepad1.start) {
+                while (gamepad1.start) sleep(100);
+            }
+
+            traveled1Msg.setValue("%f", (double)sideOdometer.getCurrentPosition() / ODOMETER_COUNTS_PER_INCH);
+            telemetry.update();
          }
     }
 
+    // Select the tuning factor to edit
     private void SelectTuning () {
         if (tuning == TUNING.DRIVE) {
             tuning = TUNING.STRAFE;
-            factor = Drive.STRAFE_FACTOR;
+            factor = Settings.getStrafeFactor();
             factorMsg.setCaption("strafe factor");
         } else if (tuning == TUNING.STRAFE) {
             tuning = TUNING.TURN;
-            factor = Drive.TURN_FACTOR;
+            factor = Settings.getTurnFactor();
             factorMsg.setCaption("turn factor");
         } else if (tuning == TUNING.TURN) {
             tuning = TUNING.DRIVE;
-            factor = Drive.DRIVE_FACTOR;
+            factor = Settings.getDriveFactor();
             factorMsg.setCaption("drive factor");
         }
         factorMsg.setValue( FACTOR_FORMAT, factor);
         telemetry.update();
     }
 
+    // Set the tuning factor
     private void SetTuningFactor (double factor) {
         if (tuning == TUNING.DRIVE) {
-            Drive.DRIVE_FACTOR = factor;
+            Settings.setDriveFactor(factor);
         } else if (tuning == TUNING.STRAFE) {
-            Drive.STRAFE_FACTOR = factor;
+            Settings.setStrafeFactor(factor);
         } else if (tuning == TUNING.TURN) {
-            Drive.TURN_FACTOR = factor;
+            Settings.setTurnFactor(factor);
         }
         factorMsg.setValue( FACTOR_FORMAT, factor);
         telemetry.update();
@@ -151,16 +172,21 @@ public class RouteTest extends LinearOpMode {
 
     private void moveForwardBackward (Drive.DIRECTION direction, double inches) {
 
-        //double odometerStart = (double)drive.sideEncoder.getCurrentPosition() / ODOMETER_COUNTS_PER_INCH;
+        double odometerStart = (double)sideOdometer.getCurrentPosition() / ODOMETER_COUNTS_PER_INCH;
 
         if (direction == Drive.DIRECTION.FORWARD)
             drive.forward(inches);
         else if (direction == Drive.DIRECTION.BACK)
             drive.back(inches);
 
-        sleep(1000);
-        //double odometerEnd = (double)drive.sideEncoder.getCurrentPosition() / ODOMETER_COUNTS_PER_INCH;
-        // traveled1Msg.setValue(INCHES_FORMAT, odometerEnd - odometerStart);
+        // Wait for the robot to come to a complete stop
+        double traveled = drive.getDistanceTraveled();
+        do {
+            sleep(100);
+        } while (traveled != drive.getDistanceTraveled());
+
+        double odometerEnd = (double)sideOdometer.getCurrentPosition() / ODOMETER_COUNTS_PER_INCH;
+        traveled1Msg.setValue(INCHES_FORMAT, odometerEnd - odometerStart);
         traveled2Msg.setValue(INCHES_FORMAT, drive.getDistanceTraveled());
         telemetry.update();
     }
