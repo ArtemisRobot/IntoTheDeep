@@ -31,64 +31,165 @@ package test.code;
 
 import android.annotation.SuppressLint;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.kauailabs.navx.ftc.AHRS;
 import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
 import common.Drive;
+import common.Gyro;
 import common.Logger;
+import utils.Increment;
 
+@TeleOp(name="* Gyro Test", group="Test")
+@SuppressLint("DefaultLocale")
+@com.acmerobotics.dashboard.config.Config
 
-@TeleOp(name="Gyro Test", group="Test")
-@Disabled
 public class GyroTest extends LinearOpMode {
+
+    final static double TURN_SPEED      = 0.25;
+    final double TURN_MIN_SPEED         = 0.2;
+    final double TURN_MAX_SPEED         = 0.9;
 
     final double TURN_RAMP_UP_TIME      = 1000;                       // turn ramp up time in milliseconds
     final double TURN_RAMP_DOWN_DEGREES = 5;
-    final double TURN_SPEED             = 0.25;
-    final double TURN_MIN_SPEED         = 0.2;
 
-    Drive drive;
-    AHRS gyro;
-    private final ElapsedTime runtime = new ElapsedTime();
+    public static double speed = TURN_SPEED;
+    private double heading;
+
+    private Telemetry.Item speedMsg;
+
+    private Drive drive;
+    private AHRS gyro;
+
+    Gyro gyro1;
+    Gyro gyro2;
+    Gyro gyro3;
 
     @Override
     public void runOpMode() {
-        telemetry.addData("Status", "Initialized");
-        telemetry.update();
+
+        try {
+            run();
+        } catch (Exception e)  {
+            Logger.error(e, "Exception");
+        }
+    }
+
+    private void run() {
+
+        gyro1 = new Gyro(hardwareMap, "navx");
+        gyro2 = new Gyro(hardwareMap, "imu");
+        gyro3 = new Gyro(hardwareMap, "imuExpansion",
+                RevHubOrientationOnRobot.LogoFacingDirection.DOWN, RevHubOrientationOnRobot.UsbFacingDirection.FORWARD);
 
         drive = new Drive(this);
         initGyro();
+        heading = 0;
+
+        Increment speedIncrement = new Increment(0.01, 0.05, 0.1);
+
+        telemetry.addLine("Press start");
+        telemetry.update();
+        telemetry.setAutoClear(false);
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-        runtime.reset();
+        telemetry.clear();
 
-        // run until the end of the match (driver presses STOP)
+        speedMsg =  telemetry.addData("Speed", "%4.2f", speed);
+        Telemetry.Item compassMsg =  telemetry.addData("compass heading", 0);
+        Telemetry.Item yawNavxMsg =  telemetry.addData("yaw navx", 0);
+        Telemetry.Item yawImuMsg =  telemetry.addData("yaw imu", 0);
+
+        telemetry.addData("\nControls", "\r\n" +
+                "  dpad up - increase speed\n" +
+                "  dpad down - decrease speed\n" +
+                "  y - turn north\n" +
+                "  a - turn east\n" +
+                "  x - turn south\n" +
+                "  b - turn west\n" +
+                "\n");
+
         while (opModeIsActive()) {
+            if (gamepad1.y) {
+                heading = 0;
+                turnTo(heading);
+            }
 
-            if (gamepad1.y)
-                turnTo(0);
+            else if (gamepad1.b) {
+                heading = 90;
+                turnTo(heading);
+            }
 
-            if (gamepad1.b)
-                turnTo(90);
+            else if (gamepad1.a) {
+                heading = 180;
+                turnTo(heading);
+            }
 
-            if (gamepad1.a)
-                turnTo(180);
+            else if (gamepad1.x) {
+                heading = 270;
+                turnTo(heading);
+            }
 
-            if (gamepad1.x)
-                turnTo(270);
+            else if (gamepad1.dpad_up) {
+                // increase the speed to travel
+                speedIncrement.reset();
+                while (gamepad1.dpad_up) {
+                    speed = Math.min(speed + speedIncrement.get(), TURN_MAX_SPEED);
+                    setDisplaySpeed();
+                    telemetry.update();
+                }
 
-            // Show the elapsed game time and wheel power.
-            telemetry.addData("Run Time", "%6.0f ", runtime.seconds());
-            telemetry.addData("calibrated", "%s ", gyro.isCalibrating() ? "false" : "true");
-            telemetry.addData("yaw navx", "%6.2f ", gyro.getYaw());
-            telemetry.addData("yaw imu", "%6.2f ", drive.getOrientation());
+            } else if (gamepad1.dpad_down) {
+                // decrease the speed the travel
+                speedIncrement.reset();
+                while (gamepad1.dpad_down) {
+                    speed = Math.max(speed - speedIncrement.get(), TURN_MIN_SPEED);
+                    setDisplaySpeed();
+                    telemetry.update();
+                }
+            }
+
+            setDisplaySpeed();
+            compassMsg.setValue("%f", gyro.getCompassHeading());
+            yawNavxMsg.setValue("%6.2f (error: %6.2f)", gyro1.getYaw(), heading - gyro1.getYaw());
+            yawImuMsg.setValue("%6.2f (error: %6.2f)", gyro2.getYaw(), heading - gyro2.getYaw());
             telemetry.update();
+
+            displayDashboardTelemetry();
+
         }
+    }
+
+    private void displayDashboardTelemetry() {
+
+        Telemetry dashboardTelemetry = FtcDashboard.getInstance().getTelemetry();
+
+        dashboardTelemetry.addLine("  ");
+        dashboardTelemetry.addLine("Controls");
+        dashboardTelemetry.addLine("  a - turn east");
+        dashboardTelemetry.addLine("  b - turn west");
+        dashboardTelemetry.addLine("  x - turn south");
+        dashboardTelemetry.addLine("  y - turn north");
+
+        dashboardTelemetry.addData("1. speed", "%4.2f", speed);
+        //dashboardTelemetry.addData("2. calibrated", "%b", ! gyro1.isCalibrating());
+        dashboardTelemetry.addData("3. yaw navx", "%6.2f (error: %6.2f)", gyro1.getYaw(), heading - gyro1.getYaw());
+        dashboardTelemetry.addData("4. yaw imu (control)", "%6.2f (error: %6.2f)", gyro2.getYaw(), heading - gyro2.getYaw());
+        dashboardTelemetry.addData("5. yaw imu (expansion)", "%6.2f (error: %6.2f)", gyro3.getYaw(), heading - gyro3.getYaw());
+
+        dashboardTelemetry.update();
+    }
+
+    private void setDisplaySpeed () {
+        speedMsg.setValue("%4.2f", speed);
     }
 
     private void initGyro ()
@@ -102,8 +203,8 @@ public class GyroTest extends LinearOpMode {
         gyro.zeroYaw();
     }
 
-    private float getOrientation () {
-        return gyro.getYaw();
+    private double getOrientation () {
+        return gyro1.getYaw();
     }
 
     /**
@@ -116,23 +217,23 @@ public class GyroTest extends LinearOpMode {
      * @return motor power (0-1)
      */
     private double getRampedPower (double startTime, double speed, double degreesToGo) {
+
         double speedRange = Math.max(Math.abs(speed) - TURN_MIN_SPEED, 0);
         double ramUp = (startTime / TURN_RAMP_UP_TIME) * speedRange + TURN_MIN_SPEED;
         double ramDown = (Math.pow(degreesToGo, 2) / Math.pow(TURN_RAMP_DOWN_DEGREES, 2)) * speedRange + TURN_MIN_SPEED;
         return Math.min(Math.min(ramUp, ramDown), speed);
     }
 
-    @SuppressLint("DefaultLocale")
-    public void turnTo(float toDegrees) {
+    public void turnTo(double toDegrees) {
 
-        float target;
+        double target;
         if (toDegrees <= 180)
             target = toDegrees;
         else
             target = -(360 - toDegrees);
 
-        float start = getOrientation();
-        float degrees = target - start;
+        double start = getOrientation();
+        double degrees = target - start;
 
         // Determine the shortest direction to turn
         Drive.DIRECTION direction;
@@ -150,24 +251,25 @@ public class GyroTest extends LinearOpMode {
             return;
         }
 
-        float lastPos = start;
-        float current;
+        double lastPos = start;
+        double current;
         double lastTime = 0;
         double velocity = 0;
         double degreesTurned = 0;
-        double degreesEstimated = 0;
+        double degreesEstimated;
         double degreesToTurn = Math.abs(degrees);
         degreesToTurn = Math.min(degreesToTurn, 360 - degreesToTurn);
 
         ElapsedTime elapsedTime = new ElapsedTime();
         elapsedTime.reset();
-        drive.moveRobot(direction, 0.1);
 
         while (opModeIsActive()) {
+            double rampSpeed = getRampedPower(elapsedTime.milliseconds(), speed, degreesToTurn - degreesTurned);
+            drive.moveRobot(direction, rampSpeed);
             current = getOrientation();
             if (current != lastPos) {
                 double currentTime = elapsedTime.milliseconds();
-                float diff = Math.abs(current - lastPos);
+                double diff = Math.abs(current - lastPos);
                 diff = Math.min(diff, 360-diff);
                 velocity = diff / (currentTime - lastTime);
                 lastTime = currentTime;
@@ -190,6 +292,9 @@ public class GyroTest extends LinearOpMode {
                     String.format("  last: %-6.4f", lastPos));
 
             if (degreesTurned + degreesEstimated >= degreesToTurn)
+                break;
+
+            if (elapsedTime.seconds() > 5)
                 break;
         }
 
