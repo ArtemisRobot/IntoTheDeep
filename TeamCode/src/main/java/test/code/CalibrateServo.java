@@ -48,7 +48,7 @@ import common.Logger;
  * This OpMode calibrate any of the robot servos.
  */
 
-@TeleOp(name=" Calibrate Servo", group="Test")
+@TeleOp(name="Calibrate Servo", group="Test")
 @SuppressWarnings("unused")
 
 public class CalibrateServo extends LinearOpMode {
@@ -57,13 +57,9 @@ public class CalibrateServo extends LinearOpMode {
 
     private enum SERVO_SELECT { PREVIOUS, NEXT }
 
-    private final ElapsedTime     runtime = new ElapsedTime();
+    private final ElapsedTime runtime = new ElapsedTime();
 
-    private final double incrementSlow = 0.01;
-    private final double incrementMedium = 0.02;
-    private final double incrementFast = 0.04;
-
-    private Servo servo   = null;
+    private Servo servo = null;
 
     private static class ServoInfo {
         String  name;
@@ -87,6 +83,15 @@ public class CalibrateServo extends LinearOpMode {
 
         waitForStart();
 
+        Telemetry.Item servoNameMsg =  telemetry.addData("Servo name", 0);
+        Telemetry.Item directionMsg = telemetry.addData("Servo direction", 0);
+        Telemetry.Item positionMsg = telemetry.addData("Servo position", 0);
+        Telemetry.Item homeMsg = telemetry.addData("Home position", 0);
+        Telemetry.Item targetMsg = telemetry.addData("Target position", 0);
+
+        setDisplayName(servoNameMsg);
+        setDisplayDirection(directionMsg);
+
         telemetry.addData("Servo Calibration Controls", "\n" +
                 "  dpad left - select previous servo\n" +
                 "  dpad right - select next servo\n" +
@@ -99,18 +104,6 @@ public class CalibrateServo extends LinearOpMode {
                 "  x - run to home position\n" +
                 "  b - run servo to target position\n" +
                 "\n");
-
-        Telemetry.Item servoNameMsg =  telemetry.addData("Servo name", 0);
-        Telemetry.Item directionMsg = telemetry.addData("Servo direction", 0);
-        Telemetry.Item positionMsg = telemetry.addData("Servo position", 0);
-        Telemetry.Item homeMsg = telemetry.addData("Home position", 0);
-        Telemetry.Item targetMsg = telemetry.addData("Target position", 0);
-
-        servoNameMsg.setValue("%s  (%d)", servos[currentServo].name, servos[currentServo].servo.getPortNumber());
-        directionMsg.setValue("%s", servo.getDirection());
-        //positionMsg.setValue( "%f", servo.getPosition());
-        //homeMsg.setValue("%f", servos[currentServo].home);
-        //targetMsg.setValue("%5.3f", servos[currentServo].target);
 
         telemetry.update();
 
@@ -131,7 +124,7 @@ public class CalibrateServo extends LinearOpMode {
                 servo.setPosition(servos[currentServo].home);
 
             } else if (gamepad1.b) {
-                // Run servo to an target position
+                // run servo to an target position
                 servo.setPosition(servos[currentServo].target);
 
             } else if (gamepad1.left_trigger > 0) {
@@ -145,7 +138,7 @@ public class CalibrateServo extends LinearOpMode {
                         position -= 0.001;
                     }
                     servo.setPosition(position);
-                    positionMsg.setValue( "%5.3f", position);
+                    setDisplayPosition(positionMsg);
                     telemetry.update();
                     sleep(100);
                 }
@@ -161,7 +154,7 @@ public class CalibrateServo extends LinearOpMode {
                         position += 0.001;
                     }
                     servo.setPosition(position);
-                    positionMsg.setValue( "%5.3f", position);
+                    setDisplayPosition(positionMsg);
                     telemetry.update();
                     sleep(100);
                 }
@@ -170,8 +163,8 @@ public class CalibrateServo extends LinearOpMode {
                 // increase target position
                 runtime.reset();
                 while (gamepad1.left_stick_y < 0) {
-                    servos[currentServo].target = Math.min(1, servos[currentServo].target + increment(incrementSlow, incrementMedium, incrementFast));
-                    targetMsg.setValue("%5.3f", servos[currentServo].target);
+                    servos[currentServo].target = Math.min(1, servos[currentServo].target + increment());
+                    setDisplayTarget(targetMsg);
                     telemetry.update();
                 }
 
@@ -179,8 +172,8 @@ public class CalibrateServo extends LinearOpMode {
                 // decrease the target position
                 runtime.reset();
                 while (gamepad1.left_stick_y > 0) {
-                    servos[currentServo].target = Math.max(0, servos[currentServo].target - increment(incrementSlow, incrementMedium, incrementFast));
-                    targetMsg.setValue("%5.3f", servos[currentServo].target);
+                    servos[currentServo].target = Math.max(0, servos[currentServo].target - increment());
+                    setDisplayTarget(targetMsg);
                     telemetry.update();
                 }
 
@@ -188,8 +181,8 @@ public class CalibrateServo extends LinearOpMode {
                 // increase home position
                 runtime.reset();
                 while (gamepad1.right_stick_y < 0) {
-                    servos[currentServo].home = Math.min(1, servos[currentServo].home + increment(incrementSlow, incrementMedium, incrementFast));
-                    homeMsg.setValue("%5.3f", servos[currentServo].home);
+                    servos[currentServo].home = Math.min(1, servos[currentServo].home + increment());
+                    setDisplayHome(homeMsg);
                     telemetry.update();
                 }
 
@@ -197,8 +190,8 @@ public class CalibrateServo extends LinearOpMode {
                 // decrease the home position
                 runtime.reset();
                 while (gamepad1.right_stick_y > 0) {
-                    servos[currentServo].home = Math.max(0, servos[currentServo].home - increment(incrementSlow, incrementMedium, incrementFast));
-                    homeMsg.setValue("%5.3f", servos[currentServo].home);
+                    servos[currentServo].home = Math.max(0, servos[currentServo].home - increment());
+                    setDisplayHome(homeMsg);
                     telemetry.update();
                 }
 
@@ -208,7 +201,7 @@ public class CalibrateServo extends LinearOpMode {
                 while (gamepad1.dpad_left){
                     sleep(10);
                 }
-                servoNameMsg.setValue("%s  (%d)", servos[currentServo].name, servos[currentServo].servo.getPortNumber());
+                setDisplayName(servoNameMsg);
 
             } else if (gamepad1.dpad_right) {
                 // select the previous servo
@@ -216,7 +209,7 @@ public class CalibrateServo extends LinearOpMode {
                 while (gamepad1.dpad_right) {
                     sleep(10);
                 }
-                servoNameMsg.setValue("%s  (%d)", servos[currentServo].name, servos[currentServo].servo.getPortNumber());
+                setDisplayName(servoNameMsg);
 
             } else if (gamepad1.dpad_up) {
                 // change the direction of the servo
@@ -224,18 +217,19 @@ public class CalibrateServo extends LinearOpMode {
                     servo.setDirection(Servo.Direction.REVERSE);
                 else
                     servo.setDirection(Servo.Direction.FORWARD);
-                directionMsg.setValue("%s", servo.getDirection());
+                setDisplayDirection(directionMsg);
                 while (gamepad1.dpad_up) sleep(10);
 
             } else if (gamepad1.back) {
+                // exit opmode without saving calibration data
                 save = false;
                 requestOpModeStop();
                 break;
             }
 
-            positionMsg.setValue( "%5.3f", servo.getPosition());
-            homeMsg.setValue("%5.3f", servos[currentServo].home);
-            targetMsg.setValue("%5.3f", servos[currentServo].target);
+            setDisplayPosition(positionMsg);
+            setDisplayHome(homeMsg);
+            setDisplayTarget(targetMsg);
             telemetry.update();
         }
 
@@ -244,24 +238,50 @@ public class CalibrateServo extends LinearOpMode {
         }
     }
 
+    private void setDisplayName (Telemetry.Item item) {
+        item.setValue("%s  (port: %d)", servos[currentServo].name, servos[currentServo].servo.getPortNumber());
+    }
+
+    private void setDisplayDirection (Telemetry.Item item) {
+        item.setValue("%s", servos[currentServo].servo.getDirection());
+    }
+
+    private void setDisplayPosition (Telemetry.Item item) {
+        item.setValue( "%5.3f", servos[currentServo].servo.getPosition());
+    }
+
+    private void setDisplayHome (Telemetry.Item item) {
+        item.setValue("%5.3f", servos[currentServo].home);
+    }
+
+    private void setDisplayTarget (Telemetry.Item item) {
+        item.setValue("%5.3f", servos[currentServo].target);
+    }
+
+
     /**
      * Based on the elapsed time return a value to increment by
      * @return value to increment by
      */
-    public double increment(double v1, double v2, double v3){
+    private double increment() {
+
+        double incrementSlow = 0.01;
+        double incrementMedium = 0.02;
+        double incrementFast = 0.04;
         int sleepTime;
         double delta;
+
         if (runtime.seconds() < 3) {
-            delta = v1;
+            delta = incrementSlow;
             sleepTime = 500;
         } else if (runtime.seconds() < 6) {
-            delta = v2;
+            delta = incrementMedium;
             sleepTime = 500;
         } else if (runtime.seconds() < 9) {
-            delta = v3;
+            delta = incrementFast;
             sleepTime = 500;
         } else {
-            delta = v3;
+            delta = incrementFast;
             sleepTime = 250;
         }
 
@@ -283,7 +303,6 @@ public class CalibrateServo extends LinearOpMode {
             servos[servoCount].servo = s;
             servos[servoCount].home = 0.5;
             servos[servoCount].target = 0.5;
-
             servoCount++;
         }
 

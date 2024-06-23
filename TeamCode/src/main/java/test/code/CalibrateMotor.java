@@ -252,19 +252,19 @@ public class CalibrateMotor extends LinearOpMode {
         item.setValue("%s  (port: %d)", motors[currentMotor].name, motor.getPortNumber());
     }
 
-    void setDisplayPosition (Telemetry.Item item) {
+    private void setDisplayPosition (Telemetry.Item item) {
         item.setValue( "%d", motors[currentMotor].motor.getCurrentPosition());
     }
 
-    void setDisplayHome (Telemetry.Item item) {
+    private void setDisplayHome (Telemetry.Item item) {
         item.setValue( "%d", motors[currentMotor].home);
     }
 
-    void setDisplayTarget (Telemetry.Item item) {
+    private void setDisplayTarget (Telemetry.Item item) {
         item.setValue( "%d", motors[currentMotor].target);
     }
 
-    void setDisplayDirection (Telemetry.Item item) {
+    private void setDisplayDirection (Telemetry.Item item) {
         item.setValue("%s", motors[currentMotor].motor.getDirection());
     }
 
@@ -323,6 +323,7 @@ public class CalibrateMotor extends LinearOpMode {
             motorCount++;
         }
 
+        // Sort by port numbers
         Arrays.sort(motors, 0, motorCount);
 
         for (int i = 0; i < motors.length; i++) {
