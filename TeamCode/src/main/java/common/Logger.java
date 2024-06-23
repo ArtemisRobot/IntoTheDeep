@@ -1,10 +1,12 @@
+/**
+ * This class contains methods to log messages to Android Studio's Logcat window.
+ */
+
 package common;
 
 import android.util.Log;
 
-/**
- *
-*/
+import java.util.Arrays;
 
 public final class Logger {
     private static final String TAG = "DELMAR";
@@ -22,6 +24,10 @@ public final class Logger {
     public static void error (Exception e, String msg) {
         Log.println(Log.ERROR, TAG, msg);
         Log.e(TAG, e.getMessage());
+
+        for (StackTraceElement element :  e.getStackTrace()) {
+            Log.e(TAG, element.toString());
+        }
     }
 
     public static void warning(String warning) {
