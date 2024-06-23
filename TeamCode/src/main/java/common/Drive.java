@@ -21,7 +21,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-import org.opencv.core.Mat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,11 +28,7 @@ import java.util.List;
 
 public class Drive extends Thread {
 
-    static final boolean LOG_VERBOSE = true;
-
-    public static double DRIVE_FACTOR  = 0.94;      // 1;
-    public static double STRAFE_FACTOR = 1.2;       // 1.11;
-    public static double TURN_FACTOR   = 13.38;     // (24.9/2);
+    static final boolean LOG_VERBOSE = false;
 
     // Drive train
     private final double WHEEL_DIAMETER_INCHES = (96 / 25.4);    // 96 mm wheels converted to inches
@@ -101,8 +96,8 @@ public class Drive extends Thread {
             leftBackDrive = opMode.hardwareMap.get(DcMotorEx.class, Config.LEFT_BACK);
             rightBackDrive = opMode.hardwareMap.get(DcMotorEx.class, Config.RIGHT_BACK);
 
-            colorSensor = opMode.hardwareMap.get(NormalizedColorSensor.class, Config.COLOR_SENSOR);
-            colorSensor.setGain(COLOR_SENSOR_GAIN);
+            //colorSensor = opMode.hardwareMap.get(NormalizedColorSensor.class, Config.COLOR_SENSOR);
+            //colorSensor.setGain(COLOR_SENSOR_GAIN);
 
             distanceSensor = opMode.hardwareMap.get(DistanceSensor.class, Config.DISTANCE_SENSOR);
 
@@ -783,13 +778,16 @@ public class Drive extends Thread {
      * @param x positive for forward, negative for backwards
      * @param y positive for strafe left ???, negative for strafe right ???
      * @param speed drive speed
-     * @param timeout timeout in milliseconds
+     * @param maxInches maximum distance to travel in inches, (0 for no maximum)
+     * @param timeout timeout in milliseconds (0 for no timeout)
      */
-    public boolean moveToColor(COLOR color, double x, double y, double speed, double timeout){
+    public boolean moveToColor(COLOR color, double x, double y, double speed, double maxInches, double timeout){
 
         boolean found = false;
         float[] hsvValues = new float[3];
         ElapsedTime elapsedTime = new ElapsedTime();
+        float lastHue = 0;
+        float lastSaturation = 0;
 
         resetEncoders();
         moveRobot(x, y, 0, speed);
@@ -803,7 +801,12 @@ public class Drive extends Thread {
             Color.colorToHSV(colors.toColor(), hsvValues);
             float hue = hsvValues[0];
             float saturation = hsvValues[1];
-            //Logger.message("hue %f saturation %f", hue, saturation);
+
+            if (hue != lastHue || saturation != lastSaturation) {
+                Logger.message("hue %f saturation %f", hue, saturation);
+                lastHue = hue;
+                lastSaturation = saturation;
+            }
             if (color == COLOR.BLUE) {
                 if (hue >= 190 && hue <= 230 && saturation >= .5) {
                     Logger.message("blue line found");
@@ -815,11 +818,11 @@ public class Drive extends Thread {
                     found = true;
                 }
             }
-            //if (maxInches && (maxInches <= getDistanceTraveled())) {
-            //    Logger.warning("no line found, traveled %5.2f inches", getDistanceTraveled());
-            //    break;
-            //}
-            if (elapsedTime.milliseconds() > timeout){
+            if (maxInches > 0 && (maxInches <= getDistanceTraveled())) {
+                Logger.warning("no line found, traveled %5.2f inches", getDistanceTraveled());
+                break;
+            }
+            if (timeout > 0 && elapsedTime.milliseconds() > timeout){
                 Logger.warning("timeout, no line found, traveled %5.2f inches", getDistanceTraveled());
                 break;
             }
@@ -914,7 +917,7 @@ public class Drive extends Thread {
     }
 
     public double encoderTicksPerInch() {
-        return (COUNTS_PER_INCH * DRIVE_FACTOR);
+        return (COUNTS_PER_INCH * Settings.getDriveFactor());
     }
 
     public List<Double> getWheelPositions() {
@@ -959,19 +962,19 @@ public class Drive extends Thread {
 
     public void strafeLeft (double distance) {
         //distance = Math.sqrt(Math.pow(distance,2 ) + Math.pow(distance,2));
-        distance *= STRAFE_FACTOR;
+        distance *= Settings.getStrafeFactor();
         moveDistance(DIRECTION.LEFT,.4, distance, 0);
     }
 
     public void strafeRight (double distance) {
         //distance = Math.sqrt(Math.pow(distance,2 ) + Math.pow(distance,2));
-        distance *= STRAFE_FACTOR;
+        distance *= Settings.getStrafeFactor();
         moveDistance(DIRECTION.RIGHT,.4, distance, 0);
     }
 
     public void turn(double degrees) {
 
-        double circumference = 2 * Math.PI * TURN_FACTOR;
+        double circumference = 2 * Math.PI * Settings.getTurnFactor();
         double inches = Math.abs(degrees) / 360 * circumference;
         if (degrees > 0)
             moveDistance(DIRECTION.TURN_LEFT, 0.4,  inches, 0 );
@@ -1000,6 +1003,13 @@ public class Drive extends Thread {
             }
         }
         stopRobot();
+    }
+
+    public double distanceToObject () {
+        if (distanceSensor != null)
+            return distanceSensor.getDistance(DistanceUnit.INCH);
+
+        return -1;
     }
 
 } // end of class
