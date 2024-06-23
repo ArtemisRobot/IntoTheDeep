@@ -6,15 +6,14 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import common.Drive;
-import common.Robot;
 
 /*
- * Test code for the hanging arm
+ * Test code f
  */
-@TeleOp(name="Drive To Line Test", group="Test")
+@TeleOp(name="Drive To Line", group="Test")
 @Disabled
 @SuppressWarnings("unused")
-public class DriveToLineTest extends LinearOpMode {
+public class DriveToLine extends LinearOpMode {
 
   private static final double MIN_SPEED = 0.20;
 
@@ -25,20 +24,25 @@ public class DriveToLineTest extends LinearOpMode {
     telemetry.addData("Status", "Press start");
     telemetry.update();
 
-    Robot robot = new Robot(this);
-    robot.init();
+    Drive drive = new Drive(this);
+    drive.start();
+
+    telemetry.addLine("a - drive forward to the red line");
+    telemetry.update();
 
     // Wait for the game to start (driver presses PLAY)
     waitForStart();
     runtime.reset();
 
-    robot.drive.moveToColor(Drive.COLOR.RED, 1, 0, MIN_SPEED, 4000);
-
     // run until the end of the match (driver presses STOP)
     while (opModeIsActive()) {
 
-      telemetry.addData("Status", "Run Time: " + runtime);
-      telemetry.update();
+      if (gamepad1.a) {
+        drive.moveToColor(Drive.COLOR.RED, 1, 0, MIN_SPEED, 0, 4000);
+        while (gamepad1.a && opModeIsActive()) {
+          sleep(10);
+        }
       }
+    }
   }
 }
