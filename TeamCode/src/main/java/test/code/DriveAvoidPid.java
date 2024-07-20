@@ -1,5 +1,3 @@
-
-
 // Simple autonomous program that drives bot forward until end of period
 // or touch sensor is hit. If touched, backs up a bit and turns 90 degrees
 // right and keeps going. Demonstrates obstacle avoidance and use of the
@@ -26,6 +24,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
+import common.Config;
+import common.Logger;
 import common.PIDController;
 
 @Autonomous(name="Drive Avoid PID", group="Exercises")
@@ -44,8 +44,8 @@ public class DriveAvoidPid extends LinearOpMode
     @Override
     public void runOpMode() throws InterruptedException
     {
-        leftMotor = hardwareMap.dcMotor.get("left_motor");
-        rightMotor = hardwareMap.dcMotor.get("right_motor");
+        leftMotor = hardwareMap.dcMotor.get(Config.LEFT_FRONT);
+        rightMotor = hardwareMap.dcMotor.get(Config.RIGHT_FRONT);
 
         leftMotor.setDirection(DcMotor.Direction.REVERSE);
 
@@ -53,7 +53,7 @@ public class DriveAvoidPid extends LinearOpMode
         rightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // get a reference to REV Touch sensor.
-        touch = hardwareMap.touchSensor.get("touch_sensor");
+        //touch = hardwareMap.touchSensor.get("touch_sensor");
 
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
 
@@ -114,6 +114,8 @@ public class DriveAvoidPid extends LinearOpMode
             // Use PID with imu input to drive in a straight line.
             correction = pidDrive.performPID(getAngle());
 
+            Logger.message("correction %f", correction);
+
             telemetry.addData("1 imu heading", lastAngles.firstAngle);
             telemetry.addData("2 global heading", globalAngle);
             telemetry.addData("3 correction", correction);
@@ -130,7 +132,7 @@ public class DriveAvoidPid extends LinearOpMode
 
             aButton = gamepad1.a;
             bButton = gamepad1.b;
-            touched = touch.isPressed();
+            //touched = touch.isPressed();
 
             if (touched || aButton || bButton)
             {

@@ -79,7 +79,7 @@ public class DriveToObject extends LinearOpMode {
 
       if (gamepad1.a) {
         // drive to the object
-        boolean found = drive.moveToObject(inches, speed, 10000);
+        boolean found = drive.moveToObject(speed, inches, 10000);
         Logger.message("object found: %b", found);
         while (gamepad1.a && opModeIsActive()) {
           sleep(10);

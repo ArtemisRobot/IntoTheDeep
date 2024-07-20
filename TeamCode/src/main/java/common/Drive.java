@@ -13,6 +13,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
@@ -28,7 +29,7 @@ import java.util.List;
 
 public class Drive extends Thread {
 
-    static final boolean LOG_VERBOSE = false;
+    static final boolean LOG_VERBOSE = true;
 
     // Drive train
     private final double WHEEL_DIAMETER_INCHES = (96 / 25.4);    // 96 mm wheels converted to inches
@@ -57,12 +58,19 @@ public class Drive extends Thread {
     public DcMotorEx leftBackDrive = null;    //  Used to control the left back drive wheel
     public DcMotorEx rightBackDrive = null;   //  Used to control the right back drive wheel
 
-    private IMU imu; 
+
+    private Gyro gyro;
+    private IMU imu;
+    public double yaw = 0;
+
     private NormalizedColorSensor colorSensor = null;
 
     public DistanceSensor distanceSensor;
 
     private final ElapsedTime elapsedTime = new ElapsedTime();
+
+    private PIDController pidDrive;
+    private double startHeading = 0;
 
     private boolean running = true;
     private boolean driving = false;
@@ -72,11 +80,25 @@ public class Drive extends Thread {
     private int leftBackStartPos   = 0;
     private int rightBackStartPos  = 0;
 
+    // Sign on motor power, 1 for forward, -1 for backwards
+    private int leftFrontSign  = 0;
+    private int rightFrontSign = 0;
+    private int leftBackSign   = 0;
+    private int rightBackSign  = 0;
+
+    private int lastPosition = 0;
+    public double totalDrift = 0;
+
     private DIRECTION lastDirection = DIRECTION.STOOPED;
 
     List<DcMotorEx> motors;
     LinearOpMode opMode;
 
+    /**
+     * Contractor
+     *
+     * @param opMode
+     */
     public Drive(LinearOpMode opMode) {
         this.opMode = opMode;
         this.setName("Drive");
@@ -88,7 +110,15 @@ public class Drive extends Thread {
      */
     private void init() {
 
+        //gyro = new Gyro(opMode.hardwareMap, "imu");
+        gyro = new Gyro(opMode.hardwareMap, "imuExpansion",
+                RevHubOrientationOnRobot.LogoFacingDirection.DOWN, RevHubOrientationOnRobot.UsbFacingDirection.FORWARD);
+
         initIMU();
+
+        // Set PID proportional value to produce non-zero correction value when robot veers off
+        // straight line. P value controls how sensitive the correction is.
+        pidDrive = new PIDController(.05, 0, 0);
 
         try {
             leftFrontDrive = opMode.hardwareMap.get(DcMotorEx.class, Config.LEFT_FRONT);
@@ -105,14 +135,10 @@ public class Drive extends Thread {
             Logger.error(e, "Hardware not found");
         }
 
-
         leftFrontDrive.setDirection(DcMotorSimple.Direction.REVERSE);
         rightFrontDrive.setDirection(DcMotorSimple.Direction.FORWARD);
         leftBackDrive.setDirection(DcMotorSimple.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotorSimple.Direction.FORWARD);
-
-
-
 
         motors = Arrays.asList(leftFrontDrive, rightFrontDrive, leftBackDrive, rightBackDrive);
 
@@ -129,8 +155,7 @@ public class Drive extends Thread {
         RevHubOrientationOnRobot.UsbFacingDirection  usbDirection  = RevHubOrientationOnRobot.UsbFacingDirection.UP;
         RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
         imu.initialize(new IMU.Parameters(orientationOnRobot));
-
-        //imu.resetYaw();
+        imu.resetYaw();
     }
 
     /**
@@ -226,6 +251,49 @@ public class Drive extends Thread {
         running = false;
     }
 
+
+    // Set the sign of the motor power value for each motor. The sign determines
+    // the direction of the motor.
+    private void setMotorDirections (DIRECTION direction) {
+
+        if (direction == DIRECTION.FORWARD) {
+            leftFrontSign  = 1;
+            rightFrontSign = 1;
+            leftBackSign   = 1;
+            rightBackSign  = 1;
+        } else if (direction == DIRECTION.BACK) {
+            leftFrontSign  = -1;
+            rightFrontSign = -1;
+            leftBackSign   = -1;
+            rightBackSign  = -1;
+        } else if (direction == DIRECTION.LEFT) {
+            leftFrontSign  = -1;
+            rightFrontSign =  1;
+            leftBackSign   =  1;
+            rightBackSign  = -1;
+        } else if (direction == DIRECTION.RIGHT) {
+            leftFrontSign  =  1;
+            rightFrontSign = -1;
+            leftBackSign   = -1;
+            rightBackSign  =  1;
+        } else if (direction == DIRECTION.TURN_LEFT) {
+            leftFrontSign  = -1;
+            rightFrontSign =  1;
+            leftBackSign   = -1;
+            rightBackSign  =  1;
+        } else if (direction == DIRECTION.TURN_RIGHT){
+            leftFrontSign  =  1;
+            rightFrontSign = -1;
+            leftBackSign   =  1;
+            rightBackSign  = -1;
+        } else {
+            leftFrontSign = 0;
+            rightFrontSign = 0;
+            leftBackSign = 0;
+            rightBackSign = 0;
+        }
+    }
+
     /**
      * Move robot according to desired axes motions
      *
@@ -266,7 +334,6 @@ public class Drive extends Thread {
         double leftBackPower;
         double rightBackPower;
 
-
         if (x == 0 && y == 0 && yaw == 0 ) {
             leftFrontPower = 0;
             rightFrontPower = 0;
@@ -284,13 +351,12 @@ public class Drive extends Thread {
             max = Math.max(max, Math.abs(leftBackPower));
             max = Math.max(max, Math.abs(rightBackPower));
 
-            // ToDo remove, done in run
             if (speed == 0)
                 speed = MIN_SPEED;
             else if (speed > MAX_SPEED) {
                 speed = MAX_SPEED;
             }
-            if (x == 0 && y == 0 && yaw != 0) {
+            if (yaw != 0 && (x == 0 && y == 0)) {
                 if (speed > MAX_ROTATE_SPEED)
                     speed = MAX_ROTATE_SPEED;
             }
@@ -311,6 +377,69 @@ public class Drive extends Thread {
 
         if (LOG_VERBOSE) {
             Logger.message("power %f %f %f %f %f", speed, leftFrontPower, rightFrontPower, leftBackPower, rightBackPower);
+        }
+    }
+
+
+    public void moveRobotWithPIDControl(DIRECTION direction, double speed) {
+
+        // If the direction has changed get the encoder positions and motor directions
+        if (direction != lastDirection) {
+            setMotorDirections(direction);
+            lastDirection = direction;
+
+            // Set up parameters for driving in a straight line.
+            pidDrive.setSetpoint(0);
+            pidDrive.setOutputRange(0, speed);   // ToDo should be Max_SPEED ?
+            pidDrive.setInputRange(-90, 90);
+            pidDrive.enable();
+
+            startHeading = getOrientation();
+            lastPosition = leftFrontDrive.getCurrentPosition();
+            totalDrift = 0;
+        }
+
+        int position = leftFrontDrive.getCurrentPosition();
+        double heading = getOrientation();
+        double angle = heading - startHeading;
+        // The heading range is from -180 to 180. Check if the heading wrapped around.
+        if (angle > 180)
+            angle = 360 - angle;
+        else if (angle < -180)
+            angle = angle + 360;
+        double traveled =  (double) (Math.abs(position - lastPosition)) / encoderTicksPerInch();;
+        double drift = traveled * Math.sin(Math.toRadians(angle));
+        lastPosition = position;
+        totalDrift += drift;
+
+        // Use PID with gyro input to drive in a straight line.
+        double correction = pidDrive.performPID(angle);
+
+        double leftFrontPower =  (speed - (correction * leftFrontSign)) * leftFrontSign;
+        double leftBackPower =   (speed - (correction * leftBackSign)) * leftBackSign;
+        double rightFrontPower = (speed + (correction * rightFrontSign)) * rightFrontSign;
+        double rightBackPower =  (speed + (correction * rightBackSign)) * rightBackSign;
+
+        leftFrontDrive.setPower(leftFrontPower);
+        rightFrontDrive.setPower(rightFrontPower);
+        leftBackDrive.setPower(leftBackPower);
+        rightBackDrive.setPower(rightBackPower);
+
+        if (LOG_VERBOSE) {
+            Logger.message("power: %4.2f %4.2f %4.2f %4.2f    position: %6d %6d %6d %6d    angle: %4.2f    traveled: %4.2f    drift: %6.2f    total: %6.2f    correction: %4.2f",
+                    leftFrontPower,
+                    rightFrontPower,
+                    leftBackPower,
+                    rightBackPower,
+                    leftFrontDrive.getCurrentPosition(),
+                    rightFrontDrive.getCurrentPosition(),
+                    leftBackDrive.getCurrentPosition(),
+                    rightBackDrive.getCurrentPosition(),
+                    angle,
+                    traveled,
+                    drift,
+                    totalDrift,
+                    correction);
         }
     }
 
@@ -361,10 +490,12 @@ public class Drive extends Thread {
 
         // If the direction has changed get the encoder positions.
         if (direction != lastDirection) {
+            //setMotorDirections(direction);
             leftFrontStartPos = leftFrontDrive.getCurrentPosition();
             rightFrontStartPos = rightFrontDrive.getCurrentPosition();
             leftBackStartPos = leftBackDrive.getCurrentPosition();
             rightBackStartPos = rightBackDrive.getCurrentPosition();
+            lastDirection = direction;
         }
 
         // Correct for drift
@@ -834,12 +965,12 @@ public class Drive extends Thread {
     /**
      * Move forward until the distance sensor detects an object at the specified distance
      *
-     * @param inches  distance for the object to stop
      * @param speed   speed to move forward
+     * @param inches  distance for the object to stop
      * @param timeout timeout in milliseconds
      * @return true if an object was detected at the specified distance
      */
-    public boolean moveToObject (double inches, double speed, double timeout) {
+    public boolean moveToObject (double speed, double inches, double timeout) {
 
         // If manually driving, exit
         if (driving) return false;
@@ -942,13 +1073,16 @@ public class Drive extends Thread {
      *  Return the current orientation of the robot.
      * @return orientation in degrees in a range of -180 to 180
      */
-    public double getOrientation(){
-        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-        return orientation.getYaw(AngleUnit.DEGREES);
+    public double getOrientation() {
+        //YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+        //return orientation.getYaw(AngleUnit.DEGREES);
+        yaw = gyro.getYaw();
+        return yaw;
     }
 
     public void resetOrientation() {
-        imu.resetYaw();
+        //imu.resetYaw();
+        gyro.resetYaw();
     }
 
     public void forward (double distance) {
@@ -983,7 +1117,7 @@ public class Drive extends Thread {
     }
 
     public void turnWithIMU(double degrees) {
-        imu.resetYaw();
+        resetOrientation();
         opMode.sleep(200);
         if (degrees > 0) {
             moveRobot(0, 0, 1, 0.3);

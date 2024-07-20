@@ -4,7 +4,6 @@
 package test.code;
 
 import android.annotation.SuppressLint;
-import android.os.Environment;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -21,89 +20,125 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 
 import common.Drive;
+import common.Gyro;
 import common.Logger;
 
-@TeleOp(name="Drive Test", group="Test")
+@TeleOp(name="* Drive Test", group="Test")
 @SuppressWarnings("unused")
 @SuppressLint("DefaultLocale")
+@com.acmerobotics.dashboard.config.Config
+
 public class DriveTest extends LinearOpMode {
 
-  private final ElapsedTime runtime = new ElapsedTime();
-  //Logger logger = Logger.getLogger("MyLog");
-  Drive drive  = null;
+    public static double speed = 0.50;
+    public static double inches = 96;
+    public static double timeout = 0;
 
-  @Override
-  public void runOpMode() {
-      telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+    double velocity;
 
-      telemetry.addData("Status", "Press start");
-      telemetry.update();
+    Drive drive  = null;
 
-      drive = new Drive(this);
-      drive.start();
+    @Override
+    public void runOpMode() {
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-      waitForStart();
+        drive = new Drive(this);
+        drive.start();
 
-      //recordEncoders();
-      //readEncoders();
+        telemetry.addData("Status", "Press start");
+        telemetry.update();
 
-      drive.setBraking(false);
-      drive.moveDistanceWithGyro(Drive.DIRECTION.FORWARD, 0.5, 96, 0);
-      //drive.moveDistance(Drive.DIRECTION.FORWARD, 0.25, 200, 0);
+        waitForStart();
 
-      /*
-      for (double power=0.2; power<=0.801; power+=0.05) {
-          if (! opModeIsActive()) break;
-          checkAccuracy(power);
-      }
-       */
+        telemetry.clear();
 
-      while (opModeIsActive()) {
+        drive.setBraking(false);
 
-        if (gamepad1.a) {
-            for (double power=0.2; power<=0.801; power+=0.05) {
-                if (! opModeIsActive()) break;
-                checkAccuracy(power);
+        while (opModeIsActive()) {
+
+            validateConfig();
+            telemetry.addLine("Controls:");
+            telemetry.addLine("  y - move forward");
+            telemetry.addLine("  a - move backward\n");
+            telemetry.addData("Speed", "%4.2f", speed);
+            telemetry.addData("Inches", "%4.1f", inches);
+            telemetry.addData("Drift", "%8.2f", drive.totalDrift);
+            telemetry.addData("Yaw:", "%6.2f", drive.getOrientation() );
+
+            telemetry.update();
+
+            if (gamepad1.y) {
+                //drive.moveDistanceWithGyro(Drive.DIRECTION.FORWARD, speed, inches, timeout);
+                while (gamepad1.y) {
+                    drive.moveRobotWithPIDControl(Drive.DIRECTION.FORWARD, speed);
+                    telemetry.addData("Drift", "%8.2f", drive.totalDrift);
+                    telemetry.addData("Yaw:", "%6.2f", drive.getOrientation() );
+                    telemetry.update();
+
+                }
+                drive.stopRobot();
+            }
+
+            if (gamepad1.a) {
+                while (gamepad1.a) {
+                    drive.moveRobotWithPIDControl(Drive.DIRECTION.BACK, speed);
+                    telemetry.addData("Drift", "%8.2f", drive.totalDrift);
+                    telemetry.addData("Yaw:", "%6.2f", drive.getOrientation() );
+                    telemetry.update();
+                }
+                drive.stopRobot();
+            }
+
+            if (gamepad1.b) {
+                Logger.message("characterize velocity");
+                characterizeVelocity();
             }
         }
+    }
 
-        if (gamepad1.x) {
-            boolean found = drive.moveToObject(3, 0.25, 3000);
+    private void validateConfig () {
+        speed = Math.min(Math.max(speed, 0), 1);
+        inches = Math.min(Math.max(inches, 0), 120);
+        timeout = Math.max(timeout, 0);
+    }
+
+
+    private void checkAccuracy () {
+
+        ElapsedTime runtime = new ElapsedTime();
+
+        for (double power=0.2; power<=0.801; power+=0.05) {
+            if (! opModeIsActive()) break;
+
+            drive.resetEncoders();
+            drive.moveRobot(power, 0, 0);
+
+            runtime.reset();
+            while (runtime.milliseconds() < 10000 && opModeIsActive()) {
+                sleep(1);
+            }
+
+            //while (gamepad1.a) sleep(100);
+            drive.stopRobot();
+            sleep(1000);
+
+            int leftFrontPos = Math.abs(drive.leftFrontDrive.getCurrentPosition());
+            int rightFrontPos = Math.abs(drive.rightFrontDrive.getCurrentPosition());
+            int leftBackPos = Math.abs(drive.leftBackDrive.getCurrentPosition());
+            int rightBackPos = Math.abs(drive.rightBackDrive.getCurrentPosition());
+            int maxPos = Math.max(Math.max(Math.max(leftFrontPos, rightFrontPos), leftBackPos), rightBackPos);
+
+            double COUNTS_PER_MOTOR_REV = 384.5;           // Gobilda Yellow Jacket Motor 5203-2402-0001
+            double WHEEL_DIAMETER_INCHES = (96 / 25.4);    // 96 mm wheels converted to inches
+            double COUNTS_PER_INCH = COUNTS_PER_MOTOR_REV / (WHEEL_DIAMETER_INCHES * Math.PI);
+
+            Logger.message("\n");
+            Logger.message("power %5.2f", power);
+            Logger.message("left front  %6d    %5.2f    %6.3f", leftFrontPos,  (leftFrontPos / COUNTS_PER_INCH),  (((double)leftFrontPos  / maxPos) - 1) * 100);
+            Logger.message("right front %6d    %5.2f    %6.3f", rightFrontPos, (rightFrontPos / COUNTS_PER_INCH), (((double)rightFrontPos / maxPos) - 1) * 100);
+            Logger.message("left rear   %6d    %5.2f    %6.3f", leftBackPos,   (leftBackPos / COUNTS_PER_INCH),   (((double)leftBackPos   / maxPos) - 1) * 100);
+            Logger.message("right rear  %6d    %5.2f    %6.3f", rightBackPos,  (rightBackPos / COUNTS_PER_INCH),  (((double)rightBackPos  / maxPos) - 1) * 100);
         }
-      }
-  }
-
-    private void checkAccuracy (double power) {
-
-        drive.resetEncoders();
-        drive.moveRobot(power, 0, 0);
-
-        runtime.reset();
-        while (runtime.milliseconds() < 10000 && opModeIsActive()) {
-            sleep(1);
-        }
-
-        //while (gamepad1.a) sleep(100);
-        drive.stopRobot();
-        sleep(1000);
-
-        int leftFrontPos = Math.abs(drive.leftFrontDrive.getCurrentPosition());
-        int rightFrontPos = Math.abs(drive.rightFrontDrive.getCurrentPosition());
-        int leftBackPos = Math.abs(drive.leftBackDrive.getCurrentPosition());
-        int rightBackPos = Math.abs(drive.rightBackDrive.getCurrentPosition());
-        int maxPos = Math.max(Math.max(Math.max(leftFrontPos, rightFrontPos), leftBackPos), rightBackPos);
-
-        double COUNTS_PER_MOTOR_REV = 384.5;           // Gobilda Yellow Jacket Motor 5203-2402-0001
-        double WHEEL_DIAMETER_INCHES = (96 / 25.4);    // 96 mm wheels converted to inches
-        double COUNTS_PER_INCH = COUNTS_PER_MOTOR_REV / (WHEEL_DIAMETER_INCHES * Math.PI);
-
-        Logger.message("\n");
-        Logger.message("power %5.2f", power);
-        Logger.message("left front  %6d    %5.2f    %6.3f", leftFrontPos,  (leftFrontPos / COUNTS_PER_INCH),  (((double)leftFrontPos  / maxPos) - 1) * 100);
-        Logger.message("right front %6d    %5.2f    %6.3f", rightFrontPos, (rightFrontPos / COUNTS_PER_INCH), (((double)rightFrontPos / maxPos) - 1) * 100);
-        Logger.message("left rear   %6d    %5.2f    %6.3f", leftBackPos,   (leftBackPos / COUNTS_PER_INCH),   (((double)leftBackPos   / maxPos) - 1) * 100);
-        Logger.message("right rear  %6d    %5.2f    %6.3f", rightBackPos,  (rightBackPos / COUNTS_PER_INCH),  (((double)rightBackPos  / maxPos) - 1) * 100);
-
     }
 
     private void checkVelocity() {
@@ -122,7 +157,18 @@ public class DriveTest extends LinearOpMode {
         drive.stopRobot();
     }
 
+    private void characterizeVelocity() {
 
+        for (double power = 0.20; power <= 0.9; power += 0.01)
+        {
+            drive.leftFrontDrive.setPower(power);
+            velocity = drive.leftFrontDrive.getVelocity();
+            telemetry.addData("Velocity", "%8.2f", velocity);
+            telemetry.update();
+            sleep(100);
+        }
+        drive.leftFrontDrive.setPower(0);
+    }
 
     private void recordEncoders() {
         FileOutputStream fos = null;

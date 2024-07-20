@@ -6,6 +6,7 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.HardwareDevice;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
@@ -21,6 +22,14 @@ public class Gyro {
     HardwareDevice device;
     IMU imu = null;
     AHRS navx = null;
+
+    // for simulated gyro
+    private final ElapsedTime elapsedTime = new ElapsedTime();
+    private double lastTime = 0;
+    private double yaw = 0;
+    private int driftDirection = 1;
+    private double maxDrift = 2;  //in degrees
+    private int sampleRate = 50;  // in hertz
 
     public Gyro (HardwareMap hardwareMap, String deviceName) {
 
@@ -104,4 +113,22 @@ public class Gyro {
 
         return 0;
     }
+
+    public double getYawSimulated () {
+        double time = elapsedTime.milliseconds();
+        if (time - lastTime >= sampleRate) {
+            double increment = maxDrift / sampleRate;
+            yaw += (driftDirection * increment);
+            if (yaw > maxDrift) {
+                yaw = maxDrift;
+                driftDirection *= -1;
+            } else if (yaw < -maxDrift) {
+                yaw = -maxDrift;
+                driftDirection *= -1;
+            }
+            lastTime = time;
+        }
+        return yaw;
+    }
+
 }

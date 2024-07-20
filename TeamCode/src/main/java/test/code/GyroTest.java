@@ -33,6 +33,7 @@ import android.annotation.SuppressLint;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.kauailabs.navx.ftc.AHRS;
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -47,7 +48,7 @@ import common.Gyro;
 import common.Logger;
 import utils.Increment;
 
-@TeleOp(name="* Gyro Test", group="Test")
+@TeleOp(name="Gyro Test", group="Test")
 @SuppressLint("DefaultLocale")
 @com.acmerobotics.dashboard.config.Config
 
@@ -90,7 +91,7 @@ public class GyroTest extends LinearOpMode {
                 RevHubOrientationOnRobot.LogoFacingDirection.DOWN, RevHubOrientationOnRobot.UsbFacingDirection.FORWARD);
 
         drive = new Drive(this);
-        initGyro();
+        initNavx();
         heading = 0;
 
         Increment speedIncrement = new Increment(0.01, 0.05, 0.1);
@@ -180,7 +181,6 @@ public class GyroTest extends LinearOpMode {
         dashboardTelemetry.addLine("  y - turn north");
 
         dashboardTelemetry.addData("1. speed", "%4.2f", speed);
-        //dashboardTelemetry.addData("2. calibrated", "%b", ! gyro1.isCalibrating());
         dashboardTelemetry.addData("3. yaw navx", "%6.2f (error: %6.2f)", gyro1.getYaw(), heading - gyro1.getYaw());
         dashboardTelemetry.addData("4. yaw imu (control)", "%6.2f (error: %6.2f)", gyro2.getYaw(), heading - gyro2.getYaw());
         dashboardTelemetry.addData("5. yaw imu (expansion)", "%6.2f (error: %6.2f)", gyro3.getYaw(), heading - gyro3.getYaw());
@@ -192,7 +192,7 @@ public class GyroTest extends LinearOpMode {
         speedMsg.setValue("%4.2f", speed);
     }
 
-    private void initGyro ()
+    private void initNavx ()
     {
         gyro = AHRS.getInstance(hardwareMap.get(NavxMicroNavigationSensor.class, "navx"),
                 AHRS.DeviceDataType.kProcessedData);
