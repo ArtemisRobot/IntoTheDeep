@@ -20,7 +20,6 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 
 import common.Drive;
-import common.Gyro;
 import common.Logger;
 
 @TeleOp(name="* Drive Test", group="Test")
@@ -90,13 +89,33 @@ public class DriveTest extends LinearOpMode {
             }
 
             if (gamepad1.b) {
-                Logger.message("characterize velocity");
-                characterizeVelocity();
+                testCorrection(inches);
             }
         }
     }
 
+    private void testCorrection(double inches) {
+
+        // Disable drift correction and test how straight the drivetrain drives.
+        double coefficient = drive.getDriftCoefficient();
+        drive.setDriftCoefficient(0);
+        drive.resetOrientation();
+        drive.moveDistance(Drive.DIRECTION.FORWARD, speed, inches, 0 );
+        drive.setDriftCoefficient(coefficient);
+        telemetry.addData("Yaw:", "%6.2f", drive.getOrientation() );
+
+        telemetry.update();
+        sleep(5000);
+        drive.moveDistance(Drive.DIRECTION.BACK, speed, inches, 0 );
+
+        drive.resetOrientation();
+        drive.moveDistanceWithPIDControl (Drive.DIRECTION.FORWARD, speed, inches, 0);
+        telemetry.addData("Yaw:", "%6.2f", drive.getOrientation() );
+        telemetry.update();
+    }
+
     private void validateConfig () {
+        // Check if the values input in the FTC Dashboard are valid.
         speed = Math.min(Math.max(speed, 0), 1);
         inches = Math.min(Math.max(inches, 0), 120);
         timeout = Math.max(timeout, 0);
@@ -171,8 +190,8 @@ public class DriveTest extends LinearOpMode {
     }
 
     private void recordEncoders() {
-        FileOutputStream fos = null;
-        DataOutputStream dos = null;
+        FileOutputStream fos;
+        DataOutputStream dos;
         double[] dbuf = {65.56,66.89,67.98,68.82,69.55,70.37};
 
         try {
@@ -197,14 +216,12 @@ public class DriveTest extends LinearOpMode {
         } catch(Exception e) {
             e.printStackTrace();
 
-        } finally {
-            // releases all system resources from the streams
         }
     }
 
     private void readEncoders() {
-        InputStream is = null;
-        DataInputStream dis = null;
+        InputStream is;
+        DataInputStream dis;
 
         try {
              // create file input stream
@@ -225,16 +242,12 @@ public class DriveTest extends LinearOpMode {
                 Logger.message("%f", c);
             }
 
-            if(is!=null)
-                is.close();
-            if(dis!=null)
-                dis.close();
+            is.close();
+            dis.close();
 
         } catch(Exception e) {
             // if any I/O error occurs
             e.printStackTrace();
-        } finally {
-            // releases all system resources from the streams
         }
     }
 }

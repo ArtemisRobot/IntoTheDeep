@@ -13,23 +13,28 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@com.acmerobotics.dashboard.config.Config
+
 public class Drive extends Thread {
 
-    static final boolean LOG_VERBOSE = true;
+    public static double PID_DRIVE_KP = 0.02;
+    public static double PID_DRIVE_KI = 0;
+    public static double PID_DRIVE_KD = 0;
+
+    public static double DRIFT_COEFFICIENT = 0.0015;
+
+    final boolean LOG_VERBOSE = true;
 
     // Drive train
     private final double WHEEL_DIAMETER_INCHES = (96 / 25.4);    // 96 mm wheels converted to inches
@@ -118,7 +123,7 @@ public class Drive extends Thread {
 
         // Set PID proportional value to produce non-zero correction value when robot veers off
         // straight line. P value controls how sensitive the correction is.
-        pidDrive = new PIDController(.05, 0, 0);
+        pidDrive = new PIDController(PID_DRIVE_KP, PID_DRIVE_KI, PID_DRIVE_KD);
 
         try {
             leftFrontDrive = opMode.hardwareMap.get(DcMotorEx.class, Config.LEFT_FRONT);
@@ -251,6 +256,13 @@ public class Drive extends Thread {
         running = false;
     }
 
+    public double getDriftCoefficient() {
+        return DRIFT_COEFFICIENT;
+    }
+
+    public void setDriftCoefficient(double coefficient) {
+        DRIFT_COEFFICIENT = coefficient;
+    }
 
     // Set the sign of the motor power value for each motor. The sign determines
     // the direction of the motor.
@@ -390,8 +402,8 @@ public class Drive extends Thread {
 
             // Set up parameters for driving in a straight line.
             pidDrive.setSetpoint(0);
-            pidDrive.setOutputRange(0, speed);   // ToDo should be Max_SPEED ?
-            pidDrive.setInputRange(-90, 90);
+            pidDrive.setOutputRange(-PID_DRIVE_KP*3, PID_DRIVE_KP*3);   //
+            pidDrive.setInputRange(-12, 12);
             pidDrive.enable();
 
             startHeading = getOrientation();
@@ -412,13 +424,42 @@ public class Drive extends Thread {
         lastPosition = position;
         totalDrift += drift;
 
-        // Use PID with gyro input to drive in a straight line.
-        double correction = pidDrive.performPID(angle);
+        // Use PID with drift input to drive in a straight line.
+        double correction = pidDrive.performPID(totalDrift);
+        double speedCorrection = speed * correction;
 
-        double leftFrontPower =  (speed - (correction * leftFrontSign)) * leftFrontSign;
-        double leftBackPower =   (speed - (correction * leftBackSign)) * leftBackSign;
-        double rightFrontPower = (speed + (correction * rightFrontSign)) * rightFrontSign;
-        double rightBackPower =  (speed + (correction * rightBackSign)) * rightBackSign;
+        double leftFrontPower;
+        double leftBackPower;
+        double rightFrontPower;
+        double rightBackPower;
+
+        if (direction == DIRECTION.FORWARD) {
+            leftFrontPower =  speed - speedCorrection;
+            leftBackPower =   speed - speedCorrection;
+            rightFrontPower = speed + speedCorrection;
+            rightBackPower =  speed + speedCorrection;
+
+        } else if (direction == DIRECTION.BACK) {
+            leftFrontPower =  speed + speedCorrection;
+            leftBackPower =   speed + speedCorrection;
+            rightFrontPower = speed - speedCorrection;
+            rightBackPower =  speed - speedCorrection;
+
+        } else if (direction == DIRECTION.RIGHT) {
+            leftFrontPower =  speed - speedCorrection;
+            leftBackPower =   speed + speedCorrection;
+            rightFrontPower = speed + speedCorrection;
+            rightBackPower =  speed - speedCorrection;
+
+        } else if (direction == DIRECTION.LEFT) {
+            leftFrontPower =  speed + speedCorrection;
+            leftBackPower =   speed - speedCorrection;
+            rightFrontPower = speed - speedCorrection;
+            rightBackPower =  speed + speedCorrection;
+
+        } else {
+            return;
+        }
 
         leftFrontDrive.setPower(leftFrontPower);
         rightFrontDrive.setPower(rightFrontPower);
@@ -505,11 +546,10 @@ public class Drive extends Thread {
         double rightBackPos =  Math.abs(rightBackDrive.getCurrentPosition()  - rightBackStartPos);
         double maxPos = Math.max(Math.max(Math.max(leftFrontPos, rightFrontPos), leftBackPos), rightBackPos);
 
-        double scale = .0015;
-        double leftFrontAdjust = (maxPos - leftFrontPos) * scale;
-        double rightFrontAdjust = (maxPos - rightFrontPos) * scale;
-        double leftBackAdjust = (maxPos - leftBackPos) * scale;
-        double rightBackAdjust = (maxPos - rightBackPos) * scale;
+        double leftFrontAdjust = (maxPos - leftFrontPos) * DRIFT_COEFFICIENT;
+        double rightFrontAdjust = (maxPos - rightFrontPos) * DRIFT_COEFFICIENT;
+        double leftBackAdjust = (maxPos - leftBackPos) * DRIFT_COEFFICIENT;
+        double rightBackAdjust = (maxPos - rightBackPos) * DRIFT_COEFFICIENT;
 
         double leftFrontPower = (speed + leftFrontAdjust) * leftFrontSign;
         double rightFrontPower = (speed + rightFrontAdjust) * rightFrontSign;
@@ -625,11 +665,10 @@ public class Drive extends Thread {
             double ramDown = (Math.pow((Math.abs(target) - maxPos), 2) / Math.pow(RAMP_DISTANCE, 2)) * speedRange + RAMP_MIN_SPEED;
             double rampPower = Math.min(Math.min(ramUp, ramDown), speed);
 
-            double scale = .0015;
-            double leftFrontAdjust = (maxPos - leftFrontPos) * scale;
-            double rightFrontAdjust = (maxPos - rightFrontPos) * scale;
-            double leftBackAdjust = (maxPos - leftBackPos) * scale;
-            double rightBackAdjust = (maxPos - rightBackPos) * scale;
+            double leftFrontAdjust = (maxPos - leftFrontPos) * DRIFT_COEFFICIENT;
+            double rightFrontAdjust = (maxPos - rightFrontPos) * DRIFT_COEFFICIENT;
+            double leftBackAdjust = (maxPos - leftBackPos) * DRIFT_COEFFICIENT;
+            double rightBackAdjust = (maxPos - rightBackPos) * DRIFT_COEFFICIENT;
 
             leftFrontDrive.setPower((rampPower + leftFrontAdjust) * leftFrontSign);
             rightFrontDrive.setPower((rampPower + rightFrontAdjust) * rightFrontSign);
@@ -664,6 +703,87 @@ public class Drive extends Thread {
                         leftBackDrive.getVelocity(),
                         rightBackDrive.getVelocity(),
                         getOrientation());
+        }
+
+        // Stop all motion;
+        for (DcMotor motor : motors)
+            motor.setPower(0);
+
+        // Restore run mode to prior state
+        for (DcMotor motor : motors)
+            motor.setMode(mode);
+
+        Logger.message("%s  target  %6.2f  traveled %6.2f %6.2f %6.2f %6.2f  heading %6.2f  time %6.2f",
+                direction,
+                (double)target / encoderTicksPerInch(),
+                (double)leftFrontDrive.getCurrentPosition() / encoderTicksPerInch(),
+                (double)rightFrontDrive.getCurrentPosition() / encoderTicksPerInch(),
+                (double)leftBackDrive.getCurrentPosition() / encoderTicksPerInch(),
+                (double)rightBackDrive.getCurrentPosition() / encoderTicksPerInch(),
+                getOrientation(),
+                elapsedTime.seconds());
+    }
+
+    /**
+     *  Method to perform a relative move, based on encoder counts.
+     *  Encoders are not reset as the move is based on the current position.
+     *  Move will stop if any of three conditions occur:
+     *  1) Move gets to the desired position
+     *  2) Move runs out of time
+     *  3) Driver stops the OpMode running.
+     *
+     * @param direction direction to move
+     * @param speed motor speed (-1 to 1)
+     * @param inches  distance to move in inches, positive for forward, negative for backward
+     * @param timeout timeout in milliseconds, 0 for no timeout
+     */
+    public void moveDistanceWithPIDControl(DIRECTION direction, double speed, double inches, double timeout) {
+
+        DcMotor.RunMode mode = leftFrontDrive.getMode();
+        for (DcMotor motor : motors) {
+            motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
+
+        // Determine new target position, and pass to motor controller
+        setMotorDirections(direction);
+        int target = (int) (inches * encoderTicksPerInch());
+        leftFrontDrive.setTargetPosition(target * leftFrontSign);
+        rightFrontDrive.setTargetPosition(target * rightFrontSign);
+        leftBackDrive.setTargetPosition(target * leftBackSign);
+        rightBackDrive.setTargetPosition(target * rightBackSign);
+
+        // Turn On RUN_TO_POSITION
+        for (DcMotor motor : motors)
+            motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        // Looping until we move the desired distance
+        elapsedTime.reset();
+        boolean moving = true;
+        while (opMode.opModeIsActive() && moving) {
+
+            // Correct for drift
+            double leftFrontPos = Math.abs(leftFrontDrive.getCurrentPosition());
+            double rightFrontPos = Math.abs(rightFrontDrive.getCurrentPosition());
+            double leftBackPos = Math.abs(leftBackDrive.getCurrentPosition());
+            double rightBackPos = Math.abs(rightBackDrive.getCurrentPosition());
+            double maxPos = Math.max(Math.max(Math.max(leftFrontPos, rightFrontPos), leftBackPos), rightBackPos);
+
+            double speedRange = Math.max(Math.abs(speed) - RAMP_MIN_SPEED, 0);
+            double ramUp = (elapsedTime.milliseconds() / RAMP_TIME) * speedRange + RAMP_MIN_SPEED;
+            double ramDown = (Math.pow((Math.abs(target) - maxPos), 2) / Math.pow(RAMP_DISTANCE, 2)) * speedRange + RAMP_MIN_SPEED;
+            double rampPower = Math.min(Math.min(ramUp, ramDown), speed);
+
+            moveRobotWithPIDControl(direction, rampPower);
+
+            for (DcMotor motor : motors)
+                if (! motor.isBusy())
+                    moving = false;
+
+            if (timeout > 0 && elapsedTime.milliseconds() >= timeout) {
+                Logger.message("moveDistance: timed out");
+                break;
+            }
         }
 
         // Stop all motion;
@@ -756,7 +876,6 @@ public class Drive extends Thread {
         for (DcMotor motor : motors)
             motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-
         double lastLeftFrontPos = Math.abs(leftFrontDrive.getCurrentPosition());
         double lastRightFrontPos = Math.abs(rightFrontDrive.getCurrentPosition());
         double lastLeftBackPos = Math.abs(leftBackDrive.getCurrentPosition());
@@ -781,11 +900,10 @@ public class Drive extends Thread {
             double ramDown = (Math.pow((Math.abs(target) - maxPos), 2) / Math.pow(RAMP_DISTANCE, 2)) * speedRange + RAMP_MIN_SPEED;
             double rampPower = Math.min(Math.min(ramUp, ramDown), speed);
 
-            double scale = 0.0015;
-            double leftFrontAdjust = (maxPos - leftFrontPos) * scale;
-            double rightFrontAdjust = (maxPos - rightFrontPos) * scale;
-            double leftBackAdjust = (maxPos - leftBackPos) * scale;
-            double rightBackAdjust = (maxPos - rightBackPos) * scale;
+            double leftFrontAdjust = (maxPos - leftFrontPos) * DRIFT_COEFFICIENT;
+            double rightFrontAdjust = (maxPos - rightFrontPos) * DRIFT_COEFFICIENT;
+            double leftBackAdjust = (maxPos - leftBackPos) * DRIFT_COEFFICIENT;
+            double rightBackAdjust = (maxPos - rightBackPos) * DRIFT_COEFFICIENT;
 
             double heading = getOrientation();
             double traveled =  (Math.abs(leftFrontPos - lastLeftFrontPos) +
