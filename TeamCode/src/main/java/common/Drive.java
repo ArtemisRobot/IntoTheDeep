@@ -426,7 +426,7 @@ public class Drive extends Thread {
 
         // Use PID with drift input to drive in a straight line.
         double correction = pidDrive.performPID(totalDrift);
-        double speedCorrection = speed * correction;
+        double speedCorrection = (speed * correction) / 100;
 
         double leftFrontPower;
         double leftBackPower;
@@ -467,15 +467,16 @@ public class Drive extends Thread {
         rightBackDrive.setPower(rightBackPower);
 
         if (LOG_VERBOSE) {
-            Logger.message("power: %4.2f %4.2f %4.2f %4.2f    position: %6d %6d %6d %6d    angle: %4.2f    traveled: %4.2f    drift: %6.2f    total: %6.2f    correction: %4.2f",
+            //Logger.message("power: %4.2f %4.2f %4.2f %4.2f    position: %6d %6d %6d %6d    angle: %4.2f    traveled: %4.2f    drift: %6.2f    total: %6.2f    correction: %4.2f",
+            Logger.message("power: %6.4f %6.4f %6.4f %6.4f   angle: %4.2f   traveled: %4.2f   drift: %6.2f   total: %6.2f   correction: %4.2f",
                     leftFrontPower,
                     rightFrontPower,
                     leftBackPower,
                     rightBackPower,
-                    leftFrontDrive.getCurrentPosition(),
-                    rightFrontDrive.getCurrentPosition(),
-                    leftBackDrive.getCurrentPosition(),
-                    rightBackDrive.getCurrentPosition(),
+                    //leftFrontDrive.getCurrentPosition(),
+                    //rightFrontDrive.getCurrentPosition(),
+                    //leftBackDrive.getCurrentPosition(),
+                    //rightBackDrive.getCurrentPosition(),
                     angle,
                     traveled,
                     drift,
