@@ -97,6 +97,7 @@ public class DriveTest extends LinearOpMode {
     private void testCorrection(double inches) {
 
         // Disable drift correction and test how straight the drivetrain drives.
+        /*
         double coefficient = drive.getDriftCoefficient();
         drive.setDriftCoefficient(0);
         drive.resetOrientation();
@@ -107,6 +108,7 @@ public class DriveTest extends LinearOpMode {
         telemetry.update();
         sleep(5000);
         drive.moveDistance(Drive.DIRECTION.BACK, speed, inches, 0 );
+        */
 
         drive.resetOrientation();
         drive.moveDistanceWithPIDControl (Drive.DIRECTION.FORWARD, speed, inches, 0);

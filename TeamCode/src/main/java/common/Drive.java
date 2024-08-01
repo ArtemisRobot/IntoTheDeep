@@ -434,10 +434,10 @@ public class Drive extends Thread {
         double rightBackPower;
 
         if (direction == DIRECTION.FORWARD) {
-            leftFrontPower =  speed - speedCorrection;
-            leftBackPower =   speed - speedCorrection;
-            rightFrontPower = speed + speedCorrection;
-            rightBackPower =  speed + speedCorrection;
+            leftFrontPower =  speed + speedCorrection;
+            leftBackPower =   speed + speedCorrection;
+            rightFrontPower = speed - speedCorrection;
+            rightBackPower =  speed - speedCorrection;
 
         } else if (direction == DIRECTION.BACK) {
             leftFrontPower =  speed + speedCorrection;
@@ -450,7 +450,6 @@ public class Drive extends Thread {
             leftBackPower =   speed + speedCorrection;
             rightFrontPower = speed + speedCorrection;
             rightBackPower =  speed - speedCorrection;
-
         } else if (direction == DIRECTION.LEFT) {
             leftFrontPower =  speed + speedCorrection;
             leftBackPower =   speed - speedCorrection;
@@ -468,7 +467,7 @@ public class Drive extends Thread {
 
         if (LOG_VERBOSE) {
             //Logger.message("power: %4.2f %4.2f %4.2f %4.2f    position: %6d %6d %6d %6d    angle: %4.2f    traveled: %4.2f    drift: %6.2f    total: %6.2f    correction: %4.2f",
-            Logger.message("power: %6.4f %6.4f %6.4f %6.4f   angle: %4.2f   traveled: %4.2f   drift: %6.2f   total: %6.2f   correction: %4.2f",
+            Logger.message("power: %6.4f %6.4f %6.4f %6.4f   angle: %5.2f   traveled: %4.2f   drift: %6.2f   total: %6.2f   correction: %4.2f",
                     leftFrontPower,
                     rightFrontPower,
                     leftBackPower,
