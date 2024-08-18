@@ -31,7 +31,14 @@ import common.PIDController;
 
 public class DriveTest extends LinearOpMode {
 
+    double MIN_SPEED = 0.25;
+    double MAX_SPEED = 0.9;
+
     public static double speed = 0.50;
+    public static double speedX = 0;
+    public static double speedY = 0;
+    public static double speedYaw = 0;
+
     public static double inches = 96;
     public static double timeout = 0;
 
@@ -89,6 +96,26 @@ public class DriveTest extends LinearOpMode {
         }
     }
 
+    private double limitAcceleration(double speed, double lastSpeed, double currentTime, double lastTime) {
+
+        double ACCELERATION_TIME = (1000 * 1.5);   // 1.5 second to accelerate to full speed
+        double DECELERATION_TIME = (1000 * 1.0);   // 1 second to come to full stop
+
+        double accelerationPerMS = (MAX_SPEED - MIN_SPEED) / ACCELERATION_TIME;
+        double decelerationPerMS = (MAX_SPEED - MIN_SPEED) / DECELERATION_TIME;
+
+        double deltaSpeed = speed - lastSpeed;
+        double deltaTime = currentTime - lastTime;
+        double acceleration = deltaSpeed / deltaTime;
+
+        if ((deltaSpeed > 0) && acceleration > accelerationPerMS)
+            return lastSpeed + (accelerationPerMS * deltaTime);
+
+        if ((deltaSpeed < 0) && (Math.abs(acceleration) > (decelerationPerMS * deltaTime)))
+            return  lastSpeed - (decelerationPerMS * deltaTime);
+
+        return speed;
+    }
 
     public void runTest() {
 
@@ -96,11 +123,12 @@ public class DriveTest extends LinearOpMode {
         boolean running = true;
         boolean driving = false;
         Drive.DIRECTION lastDirection = Drive.DIRECTION.STOOPED;
-        double MIN_SPEED = 0.25;
-        double MAX_SPEED = 0.9;
         double MIN_ROTATE_SPEED = 0.25;
         double MAX_ROTATE_SPEED = 0.50;
         telemetry.addData("Speed", "%4.2f", speed);
+        telemetry.addData("SpeedX", "%4.2f", speedX);
+        telemetry.addData("SpeedY", "%4.2f", speedY);
+        telemetry.addData("SpeedYaw", "%4.2f", speedYaw);
         telemetry.update();
 
 
@@ -108,15 +136,10 @@ public class DriveTest extends LinearOpMode {
         Logger.message("robot drive thread started");
 
         ElapsedTime driveTime = new ElapsedTime();
-        double ACCELERATION_TIME = (1000 * 1.5);   // 1.5 second to accelerate to full speed
-        double DECELERATION_TIME = (1000 * 1.0);   // 1 second to come to full stop
-        double accelerationPerMS = 0;
-        double decelerationPerMS = 0;
-
-
         double lastTime = driveTime.milliseconds();
         double lastSpeed = 0;
 
+        double maxStick = 0;
         while (running && opModeIsActive()) {
 
             // ToDo remove, emergency stop for testing
@@ -131,14 +154,15 @@ public class DriveTest extends LinearOpMode {
             double y = -gamepad.left_stick_x;
             double yaw = -gamepad.right_stick_x;
             double noise = 0.01;
-            double speedX = 0;
-            double speedY = 0;
-            double speedYaw = 0;
+            speedX = 0;
+            speedY = 0;
             speed = 0;
 
+            // Is either being used
             if (Math.abs(x) > noise || Math.abs(y) > noise || Math.abs(yaw) > noise ) {
                 Drive.DIRECTION direction;
 
+                // Moving forward or backward
                 if (Math.abs(x) > noise && Math.abs(y) <= noise && Math.abs(yaw) <= noise) {
                     if (x > 0)
                         direction = Drive.DIRECTION.FORWARD;
@@ -146,6 +170,7 @@ public class DriveTest extends LinearOpMode {
                         direction = Drive.DIRECTION.BACK;
                     speed = Math.pow(Math.abs(x), 3) * (MAX_SPEED - MIN_SPEED) + MIN_SPEED;
 
+                // Moving left or right
                 } else if (Math.abs(y) > noise && Math.abs(x) <= noise && Math.abs(yaw) <= noise) {
                     if (y > 0)
                         direction = Drive.DIRECTION.LEFT;
@@ -153,6 +178,7 @@ public class DriveTest extends LinearOpMode {
                         direction = Drive.DIRECTION.RIGHT;
                     speed = Math.pow(Math.abs(y), 3) * (MAX_SPEED - MIN_SPEED) + MIN_SPEED;
 
+                // Turning
                 } else if (Math.abs(yaw) > noise && Math.abs(x) <= noise && Math.abs(y) <= noise) {
                     if (yaw > 0)
                         direction =  Drive.DIRECTION.TURN_LEFT;
@@ -162,36 +188,38 @@ public class DriveTest extends LinearOpMode {
 
                 } else {
                     direction =  Drive.DIRECTION.DRIVER;
+                    int count = 0;
                     if (Math.abs(x) > noise) {
-                        speedX = Math.pow(x, 3) * (MAX_SPEED - MIN_SPEED);
-                        if (x > 0)
-                            speedX += MIN_SPEED;
-                        else
-                            speedX -= MIN_SPEED;
+                        speedX = Math.pow(Math.abs(x), 3) * (MAX_SPEED - MIN_SPEED) + MIN_SPEED;
+                        count++;
                     }
-                    speedY = Math.pow(y, 3) * (MAX_SPEED - MIN_SPEED) + MIN_SPEED;
-                    speedYaw = Math.pow(yaw, 3) * (MAX_ROTATE_SPEED - MIN_ROTATE_SPEED) + MIN_ROTATE_SPEED;
+                    if (Math.abs(y) > noise) {
+                        speedY = Math.pow(Math.abs(y), 3) * (MAX_SPEED - MIN_SPEED) + MIN_SPEED;
+                        count++;
+                    }
+                    if (Math.abs(yaw) > noise) {
+                        speedYaw = Math.pow(Math.abs(yaw), 3) * (MAX_SPEED - MIN_SPEED) + MIN_SPEED;
+                        count++;
+                    }
+                    speedX /= count;
+                    speedY /= count;
+                    speedYaw /= count;
+                    if (speedX > 0  && x < 0) speedX = -speedX;
+                    if (speedY > 0  && y < 0) speedY = -speedY;
+                    if (speedYaw > 0  && yaw < 0) speedYaw = -speedY;
                 }
 
-                // limit acceleration and deceleration to prevent skidding.
                 double currentTime = driveTime.milliseconds();
-                accelerationPerMS = (MAX_SPEED - MIN_SPEED) / ACCELERATION_TIME;
-                decelerationPerMS = (MAX_SPEED - MIN_SPEED) / DECELERATION_TIME;
-
-                double deltaTime = currentTime - lastTime;
-                double acceleration = (speed - lastSpeed) / (deltaTime);
-                if ((speed > lastSpeed) && (acceleration > (accelerationPerMS * deltaTime)))
-                    speed = lastSpeed + (accelerationPerMS * deltaTime);
-                else if ((lastSpeed > 0) && (speed < lastSpeed) && (Math.abs(acceleration) > (decelerationPerMS * deltaTime)))
-                    speed = lastSpeed - (decelerationPerMS * deltaTime);
-                lastTime = currentTime;
-                lastSpeed = speed;
 
                 if (direction == Drive.DIRECTION.DRIVER) {
                     drive.moveRobot(speedX, speedY, speedYaw);
                 } else {
+                    // limit acceleration and deceleration to prevent skidding.
+                    speed = limitAcceleration(speed, lastSpeed, currentTime, lastTime);
+                    lastSpeed = speed;
                     drive.moveRobot(direction, speed);
                 }
+                lastTime = currentTime;
 
                 driving = true;
                 lastDirection = direction;
@@ -208,8 +236,10 @@ public class DriveTest extends LinearOpMode {
             }
 
             telemetry.addData("Speed", "%4.2f", speed);
+            telemetry.addData("SpeedX", "%4.2f", speedX);
+            telemetry.addData("SpeedY", "%4.2f", speedY);
+            telemetry.addData("SpeedYaw", "%4.2f", speedYaw);
             telemetry.update();
-
         }
         Logger.message("robot drive thread stopped");
     }
