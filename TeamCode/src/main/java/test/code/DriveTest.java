@@ -33,11 +33,18 @@ public class DriveTest extends LinearOpMode {
 
     double MIN_SPEED = 0.25;
     double MAX_SPEED = 0.9;
+    double MIN_ROTATE_SPEED = 0.25;
+    double MAX_ROTATE_SPEED = 0.50;
 
     public static double speed = 0.50;
     public static double speedX = 0;
     public static double speedY = 0;
     public static double speedYaw = 0;
+
+    public static double leftFrontPower  = 0;
+    public static double rightFrontPower = 0;
+    public static double leftRearPower   = 0;
+    public static double rightRearPower  = 0;
 
     public static double inches = 96;
     public static double timeout = 0;
@@ -60,7 +67,11 @@ public class DriveTest extends LinearOpMode {
 
         telemetry.clear();
 
-        runTest();
+        //checkAccuracy();
+
+       //runTest();
+
+        newDrive();
 
         drive.setBraking(false);
 
@@ -117,6 +128,89 @@ public class DriveTest extends LinearOpMode {
         return speed;
     }
 
+    public void newDrive() {
+
+        telemetry.addData("left front power", "%4.2f", leftFrontPower);
+        telemetry.addData("Right front power", "%4.2f", rightFrontPower);
+        telemetry.addData("left rear power", "%4.2f", leftRearPower);
+        telemetry.addData("Right rear power", "%4.2f", rightRearPower);
+        telemetry.update();
+
+        while (opModeIsActive()) {
+
+            // ToDo remove, emergency stop for testing
+            if (gamepad1.back) {
+                requestOpModeStop();
+                break;
+            }
+
+            // Left stick to go forward back and strafe. Right stick to rotate. Left trigger accelerate.
+            Gamepad gamepad = gamepad1;
+            double x = gamepad.left_stick_x;
+            double y = -gamepad.left_stick_y;
+            double turn = gamepad.right_stick_x;
+            double noise = 0.01;
+
+            // Is either stick being used
+            if (Math.abs(x) > noise || Math.abs(y) > noise || Math.abs(turn) > noise ) {
+
+                double heading = Math.atan2(-x, y);     // same format as the gyro
+                double angle = Math.atan2(y, x);
+                double sin = Math.sin(angle - (Math.PI / 4));
+                double cos = Math.cos(angle - (Math.PI / 4));
+                double max = Math.max(Math.abs(sin), Math.abs(cos));
+
+                double power = Math.hypot(x, y);
+                if (power != 0)
+                    power = Math.pow(Math.abs(Math.min(power, 1)), 3) * (MAX_SPEED - MIN_SPEED) + MIN_SPEED;
+                if (turn != 0)
+                    turn = Math.pow(Math.abs(Math.min(turn, 1)), 3) * (MAX_ROTATE_SPEED - MIN_ROTATE_SPEED) + MIN_ROTATE_SPEED;
+
+                leftFrontPower  = power * (cos/max) + turn;
+                rightFrontPower = power * (sin/max) - turn;
+                leftRearPower   = power * (sin/max) + turn;
+                rightRearPower  = power * (cos/max) - turn;
+
+                double scale = power + Math.abs(turn);
+                if (scale > 1) {
+                    leftFrontPower  /= scale;
+                    rightFrontPower /= scale;
+                    leftRearPower   /= scale;
+                    rightRearPower  /= scale;
+                }
+
+                //drive.leftFrontDrive.setPower(leftFrontPower);
+                //drive.rightFrontDrive.setPower(rightFrontPower);
+                //drive.leftBackDrive.setPower(leftRearPower);
+                //drive.rightBackDrive.setPower(rightRearPower);
+
+                Logger.message("%s",
+                    String.format("x: %5.2f  y: %5.2f  turn: %5.2f ", x, y, turn) +
+                    String.format("angle: %5.2f (rad)  %4.0f (deg)  ", angle, Math.toDegrees(angle)) +
+                    String.format("heading: %4.0f   ", Math.toDegrees(heading)) +
+                    String.format("power: %4.2f  sin: %5.2f  cos: %5.2f   ", power, sin, cos) +
+                    String.format("power: %5.2f  %5.2f  %5.2f  %5.2f", leftFrontPower, rightFrontPower, leftRearPower, rightRearPower)
+                );
+
+                sleep(250);
+            } else {
+                leftFrontPower  = 0;
+                rightFrontPower = 0;
+                leftRearPower   = 0;
+                rightRearPower  = 0;
+
+                drive.stopRobot();
+            }
+
+            telemetry.addData("left front power", "%4.2f", leftFrontPower);
+            telemetry.addData("Right front power", "%4.2f", rightFrontPower);
+            telemetry.addData("left rear power", "%4.2f", leftRearPower);
+            telemetry.addData("Right rear power", "%4.2f", rightRearPower);
+            telemetry.update();
+        }
+    }
+
+
     public void runTest() {
 
         // ToDo remove
@@ -158,7 +252,7 @@ public class DriveTest extends LinearOpMode {
             speedY = 0;
             speed = 0;
 
-            // Is either being used
+            // Is either stick being used
             if (Math.abs(x) > noise || Math.abs(y) > noise || Math.abs(yaw) > noise ) {
                 Drive.DIRECTION direction;
 
@@ -209,22 +303,33 @@ public class DriveTest extends LinearOpMode {
                     if (speedYaw > 0  && yaw < 0) speedYaw = -speedY;
                 }
 
+
+                double angle = Math.atan2(x, y);
+                double magnitude = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+                double power = Math.sin(angle - (Math.PI/4));
+                Logger.message("x: %6.2ff  y: %6.2f  angle: %f  %f   magnitude: %4.2f  power: %f",
+                        x, y, angle, Math.toDegrees(angle), magnitude, power);
+
+
                 double currentTime = driveTime.milliseconds();
 
                 if (direction == Drive.DIRECTION.DRIVER) {
-                    drive.moveRobot(speedX, speedY, speedYaw);
+                    //drive.moveRobot(speedX, speedY, speedYaw);
                 } else {
                     // limit acceleration and deceleration to prevent skidding.
                     speed = limitAcceleration(speed, lastSpeed, currentTime, lastTime);
                     lastSpeed = speed;
-                    drive.moveRobot(direction, speed);
+                    //drive.moveRobot(direction, speed);
                 }
                 lastTime = currentTime;
 
                 driving = true;
                 lastDirection = direction;
+                /*
                 Logger.message("%-12s   x: %6.2f  y: %6.2f  yaw: %6.2f  speed: %6.2f  speedX: %6.2f  speedY: %6.2f  speedYaw: %6.2f",
                         direction, x , y, yaw, speed, speedX, speedY, speedYaw);
+
+                 */
 
             } else if (driving) {
                 drive.stopRobot();

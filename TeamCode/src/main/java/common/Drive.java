@@ -116,10 +116,6 @@ public class Drive extends Thread {
      */
     private void init() {
 
-        //gyro = new Gyro(opMode.hardwareMap, "imu");
-        gyro = new Gyro(opMode.hardwareMap, "imuExpansion",
-                RevHubOrientationOnRobot.LogoFacingDirection.DOWN, RevHubOrientationOnRobot.UsbFacingDirection.FORWARD);
-
         initIMU();
 
         // Set PID proportional value to produce non-zero correction value when robot veers off
@@ -127,11 +123,18 @@ public class Drive extends Thread {
         pidDrive = new PIDController(PID_DRIVE_KP, PID_DRIVE_KI, PID_DRIVE_KD);
 
         try {
+            //gyro = new Gyro(opMode.hardwareMap, "imu");
+            gyro = new Gyro(opMode.hardwareMap, "imuExpansion",
+                    RevHubOrientationOnRobot.LogoFacingDirection.DOWN, RevHubOrientationOnRobot.UsbFacingDirection.FORWARD);
+        } catch (Exception e) {
+            Logger.error(e, "Hardware not found");
+        }
+
+        try {
             leftFrontDrive = opMode.hardwareMap.get(DcMotorEx.class, Config.LEFT_FRONT);
             rightFrontDrive = opMode.hardwareMap.get(DcMotorEx.class, Config.RIGHT_FRONT);
             leftBackDrive = opMode.hardwareMap.get(DcMotorEx.class, Config.LEFT_BACK);
             rightBackDrive = opMode.hardwareMap.get(DcMotorEx.class, Config.RIGHT_BACK);
-            odometer = opMode.hardwareMap.get(DcMotorEx.class, Config.ODOMETER);
 
             //colorSensor = opMode.hardwareMap.get(NormalizedColorSensor.class, Config.COLOR_SENSOR);
             //colorSensor.setGain(COLOR_SENSOR_GAIN);
@@ -142,11 +145,18 @@ public class Drive extends Thread {
             Logger.error(e, "Hardware not found");
         }
 
+        try {
+            odometer = opMode.hardwareMap.get(DcMotorEx.class, Config.ODOMETER);
+            odometer.setDirection(DcMotorSimple.Direction.REVERSE);
+        } catch (Exception e) {
+            Logger.error(e, "Hardware not found");
+        }
+
+
         leftFrontDrive.setDirection(DcMotorSimple.Direction.REVERSE);
         rightFrontDrive.setDirection(DcMotorSimple.Direction.FORWARD);
         leftBackDrive.setDirection(DcMotorSimple.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotorSimple.Direction.FORWARD);
-        odometer.setDirection(DcMotorSimple.Direction.REVERSE);
 
         motors = Arrays.asList(leftFrontDrive, rightFrontDrive, leftBackDrive, rightBackDrive);
 
@@ -429,7 +439,7 @@ public class Drive extends Thread {
     }
 
 
-    public void moveRobotWithPIDControl(DIRECTION direction, double speed) {
+    public void  moveRobotWithPIDControl(DIRECTION direction, double speed) {
 
         // If the direction has changed get the encoder positions and motor directions
         if (direction != lastDirection) {
