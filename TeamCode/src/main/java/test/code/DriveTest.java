@@ -10,6 +10,7 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
@@ -31,10 +32,15 @@ import common.PIDController;
 
 public class DriveTest extends LinearOpMode {
 
-    double MIN_SPEED = 0.25;
-    double MAX_SPEED = 0.9;
-    double MIN_ROTATE_SPEED = 0.25;
-    double MAX_ROTATE_SPEED = 0.50;
+    public static double MIN_SPEED = 0.25;
+    public static double MAX_SPEED = 0.95;
+    public static double MIN_STRAFE_SPEED = 0.35;
+    public static double MAX_STRAFE_SPEED = 0.95;
+    public static double MIN_ROTATE_SPEED = 0.25;
+    public static double MAX_ROTATE_SPEED = 0.50;
+
+    public static double PID_DRIVE_MAX_OUTPUT = 0.03;
+    public static double PID_DRIVE_KP = 0.02;
 
     public static double speed = 0.50;
     public static double speedX = 0;
@@ -50,6 +56,10 @@ public class DriveTest extends LinearOpMode {
     public static double timeout = 0;
 
     double velocity;
+
+    ElapsedTime accelerationTime = new ElapsedTime();
+    double accelerationLastSpeed;
+    double accelerationLastTime;
 
     Drive drive  = null;
 
@@ -70,6 +80,7 @@ public class DriveTest extends LinearOpMode {
         //checkAccuracy();
 
        //runTest();
+
 
         newDrive();
 
@@ -107,34 +118,92 @@ public class DriveTest extends LinearOpMode {
         }
     }
 
-    private double limitAcceleration(double speed, double lastSpeed, double currentTime, double lastTime) {
+    private void accelerationReset () {
+        accelerationTime.reset();
+        accelerationLastSpeed = 0;
+        accelerationLastTime = 0;
+    }
 
-        double ACCELERATION_TIME = (1000 * 1.5);   // 1.5 second to accelerate to full speed
+    private double accelerationLimit(double speed) {
+
+        double ACCELERATION_TIME = (1000 * 1.0);   // 1.5 second to accelerate to full speed
         double DECELERATION_TIME = (1000 * 1.0);   // 1 second to come to full stop
 
         double accelerationPerMS = (MAX_SPEED - MIN_SPEED) / ACCELERATION_TIME;
         double decelerationPerMS = (MAX_SPEED - MIN_SPEED) / DECELERATION_TIME;
 
-        double deltaSpeed = speed - lastSpeed;
-        double deltaTime = currentTime - lastTime;
+        double currentTime = accelerationTime.milliseconds();
+        double deltaSpeed = speed - accelerationLastSpeed;
+        double deltaTime = currentTime - accelerationLastTime;
         double acceleration = deltaSpeed / deltaTime;
 
         if ((deltaSpeed > 0) && acceleration > accelerationPerMS)
-            return lastSpeed + (accelerationPerMS * deltaTime);
+            return accelerationLastSpeed + (accelerationPerMS * deltaTime);
 
         if ((deltaSpeed < 0) && (Math.abs(acceleration) > (decelerationPerMS * deltaTime)))
-            return  lastSpeed - (decelerationPerMS * deltaTime);
+            return  accelerationLastSpeed - (decelerationPerMS * deltaTime);
+
+        accelerationLastSpeed = speed;
+        accelerationLastTime = currentTime;
 
         return speed;
     }
 
-    public void newDrive() {
+    private double headingDrift (double targetHeading, double heading, double traveled)
+    {
+        double angle = heading - targetHeading;
 
+        // The heading range is from -180 to 180. Check if the heading wrapped around.
+        if (angle > 180)
+            angle = -(360 - angle);
+        else if (angle < -180)
+            angle = angle + 360;
+
+        double drift = traveled * Math.sin(Math.toRadians(angle));
+
+        return drift;
+    }
+
+
+    private double getMinPower (double angle) {
+
+        if (Math.abs(Math.toDegrees(angle)) == 90)
+            return MIN_SPEED;
+        return MIN_STRAFE_SPEED;
+    }
+
+    private double getMaxPower (double angle) {
+
+        if (Math.abs(Math.toDegrees(angle)) == 90)
+            return MAX_SPEED;
+        return MAX_STRAFE_SPEED;
+    }
+
+    private double scalePower (double power, double angle) {
+
+        double minPower = getMinPower(angle);
+        double maxPower = getMaxPower(angle);
+        return power * (maxPower - minPower) + minPower;
+    }
+
+    private void displayDriveTelemetry() {
         telemetry.addData("left front power", "%4.2f", leftFrontPower);
         telemetry.addData("Right front power", "%4.2f", rightFrontPower);
         telemetry.addData("left rear power", "%4.2f", leftRearPower);
         telemetry.addData("Right rear power", "%4.2f", rightRearPower);
         telemetry.update();
+    }
+
+    public void newDrive() {
+
+        displayDriveTelemetry();
+
+        boolean moving = false;
+        double lastAngle = Double.NaN;
+        double targetHeading = 0;
+        double drift = 0;
+        double totalDrift = 0;
+        int lastPosition = 0;
 
         while (opModeIsActive()) {
 
@@ -148,53 +217,89 @@ public class DriveTest extends LinearOpMode {
             Gamepad gamepad = gamepad1;
             double x = gamepad.left_stick_x;
             double y = -gamepad.left_stick_y;
-            double turn = gamepad.right_stick_x;
+            double x2 = gamepad.right_stick_x;
             double noise = 0.01;
 
             // Is either stick being used
-            if (Math.abs(x) > noise || Math.abs(y) > noise || Math.abs(turn) > noise ) {
+            if (Math.abs(x) > noise || Math.abs(y) > noise || Math.abs(x2) > noise ) {
 
-                double heading = Math.atan2(-x, y);     // same format as the gyro
+                //double heading = Math.atan2(-x, y);     // same format as the gyro
                 double angle = Math.atan2(y, x);
                 double sin = Math.sin(angle - (Math.PI / 4));
                 double cos = Math.cos(angle - (Math.PI / 4));
                 double max = Math.max(Math.abs(sin), Math.abs(cos));
-
                 double power = Math.hypot(x, y);
-                if (power != 0)
-                    power = Math.pow(Math.abs(Math.min(power, 1)), 3) * (MAX_SPEED - MIN_SPEED) + MIN_SPEED;
-                if (turn != 0)
-                    turn = Math.pow(Math.abs(Math.min(turn, 1)), 3) * (MAX_ROTATE_SPEED - MIN_ROTATE_SPEED) + MIN_ROTATE_SPEED;
+                double turn = x2;
+                double correction = 0;
 
-                leftFrontPower  = power * (cos/max) + turn;
-                rightFrontPower = power * (sin/max) - turn;
-                leftRearPower   = power * (sin/max) + turn;
-                rightRearPower  = power * (cos/max) - turn;
-
-                double scale = power + Math.abs(turn);
-                if (scale > 1) {
-                    leftFrontPower  /= scale;
-                    rightFrontPower /= scale;
-                    leftRearPower   /= scale;
-                    rightRearPower  /= scale;
+                if (! moving) {
+                    accelerationReset();
+                    moving = true;
                 }
 
-                //drive.leftFrontDrive.setPower(leftFrontPower);
-                //drive.rightFrontDrive.setPower(rightFrontPower);
-                //drive.leftBackDrive.setPower(leftRearPower);
-                //drive.rightBackDrive.setPower(rightRearPower);
+                if (power != 0) {
+                    //power = Math.pow(Math.abs(Math.min(power, 1)), 3) * (MAX_SPEED - MIN_SPEED) + MIN_SPEED;
+                    power = Math.pow(Math.abs(Math.min(power, 1)), 3);
+                    power = scalePower(power, angle);
+                    power = Math.max(accelerationLimit(power), getMinPower(angle));
+                    turn /= 3;                              // limit turn speed when drive in any direction
+
+                    if (turn != 0) {
+                        lastAngle = Double.NaN;
+
+                    } else if (lastAngle != angle) {
+                        lastAngle = angle;
+                        targetHeading = drive.getOrientation();
+                        lastPosition = drive.leftFrontDrive.getCurrentPosition();
+                        totalDrift = 0;
+
+                    } else {
+                        int position = drive.leftFrontDrive.getCurrentPosition();
+                        double traveled =  (double) (Math.abs(position - lastPosition)) / drive.encoderTicksPerInch();
+                        lastPosition = position;
+                        drift = headingDrift(targetHeading, drive.getOrientation(), traveled);
+                        totalDrift += drift;
+                        correction = speed * Math.max(Math.min((totalDrift*PID_DRIVE_KP), PID_DRIVE_MAX_OUTPUT), -PID_DRIVE_MAX_OUTPUT);
+                        //turn += correction;
+                    }
+
+                } else  if (turn != 0) {
+                    // if only turning scale joystick value.
+                    turn = Math.pow(Math.abs(Math.min(turn, 1)), 3) * (MAX_ROTATE_SPEED - MIN_ROTATE_SPEED) + MIN_ROTATE_SPEED;
+                    if (x2 < 0) turn = - turn;
+                }
+
+                double scale = 1;
+                if (power != 0 &&(power + Math.abs(turn) > MAX_SPEED))
+                    scale = (power + Math.abs(turn)) / MAX_SPEED;
+
+                leftFrontPower  = (power * (cos/max) + turn) / scale;
+                rightFrontPower = (power * (sin/max) - turn) / scale;
+                leftRearPower   = (power * (sin/max) + turn) / scale;
+                rightRearPower  = (power * (cos/max) - turn) / scale;
+
+                if (true) {
+                    drive.leftFrontDrive.setPower(leftFrontPower);
+                    drive.rightFrontDrive.setPower(rightFrontPower);
+                    drive.leftBackDrive.setPower(leftRearPower);
+                    drive.rightBackDrive.setPower(rightRearPower);
+                } else {
+                    sleep(250);
+                }
 
                 Logger.message("%s",
-                    String.format("x: %5.2f  y: %5.2f  turn: %5.2f ", x, y, turn) +
+                    String.format("x: %5.2f  y: %5.2f  turn: %5.2f  ", x, y, turn) +
                     String.format("angle: %5.2f (rad)  %4.0f (deg)  ", angle, Math.toDegrees(angle)) +
-                    String.format("heading: %4.0f   ", Math.toDegrees(heading)) +
-                    String.format("power: %4.2f  sin: %5.2f  cos: %5.2f   ", power, sin, cos) +
+                    String.format("heading: %6.2f  drift: %5.2f  total: %5.2f  ", targetHeading, drift, totalDrift) +
+                    String.format("correction: %6.3f  ", correction) +
+                    String.format("power: %4.2f  sin: %5.2f  cos: %5.2f  ", power, sin, cos) +
                     String.format("power: %5.2f  %5.2f  %5.2f  %5.2f", leftFrontPower, rightFrontPower, leftRearPower, rightRearPower)
                 );
 
-                sleep(250);
-            } else {
-                leftFrontPower  = 0;
+            } else if (moving){
+
+                moving = false;
+                leftFrontPower = 0;
                 rightFrontPower = 0;
                 leftRearPower   = 0;
                 rightRearPower  = 0;
@@ -202,11 +307,7 @@ public class DriveTest extends LinearOpMode {
                 drive.stopRobot();
             }
 
-            telemetry.addData("left front power", "%4.2f", leftFrontPower);
-            telemetry.addData("Right front power", "%4.2f", rightFrontPower);
-            telemetry.addData("left rear power", "%4.2f", leftRearPower);
-            telemetry.addData("Right rear power", "%4.2f", rightRearPower);
-            telemetry.update();
+            displayDriveTelemetry();
         }
     }
 
@@ -229,8 +330,7 @@ public class DriveTest extends LinearOpMode {
         while (!isStarted()) Thread.yield();
         Logger.message("robot drive thread started");
 
-        ElapsedTime driveTime = new ElapsedTime();
-        double lastTime = driveTime.milliseconds();
+        double lastTime = accelerationTime.milliseconds();
         double lastSpeed = 0;
 
         double maxStick = 0;
@@ -311,17 +411,14 @@ public class DriveTest extends LinearOpMode {
                         x, y, angle, Math.toDegrees(angle), magnitude, power);
 
 
-                double currentTime = driveTime.milliseconds();
 
                 if (direction == Drive.DIRECTION.DRIVER) {
                     //drive.moveRobot(speedX, speedY, speedYaw);
                 } else {
                     // limit acceleration and deceleration to prevent skidding.
-                    speed = limitAcceleration(speed, lastSpeed, currentTime, lastTime);
-                    lastSpeed = speed;
+                    speed = accelerationLimit(speed);
                     //drive.moveRobot(direction, speed);
                 }
-                lastTime = currentTime;
 
                 driving = true;
                 lastDirection = direction;
@@ -472,7 +569,7 @@ public class DriveTest extends LinearOpMode {
     private void recordEncoders() {
         FileOutputStream fos;
         DataOutputStream dos;
-        double[] dbuf = {65.56,66.89,67.98,68.82,69.55,70.37};
+        double[] buffer = {65.56,66.89,67.98,68.82,69.55,70.37};
 
         try {
             String path = String.format("%s%s", AppUtil.FIRST_FOLDER.getAbsolutePath(), "/temp/drive.txt");
@@ -482,7 +579,7 @@ public class DriveTest extends LinearOpMode {
             dos = new DataOutputStream(fos);
 
             // for each byte in the buffer
-            for (double d:dbuf) {
+            for (double d:buffer) {
                 // write double to the data output stream
                 dos.writeDouble(d);
             }
