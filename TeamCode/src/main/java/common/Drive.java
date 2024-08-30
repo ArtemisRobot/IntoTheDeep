@@ -41,8 +41,9 @@ public class Drive extends Thread {
     //private final double COUNTS_PER_MOTOR_REV = 28 * 20;         // HD Hex Motor Encoder Ticks * gearing
     private final double COUNTS_PER_MOTOR_REV = 384.5;           // Gobilda Yellow Jacket Motor 5203-2402-0001
     private final double COUNTS_PER_INCH = COUNTS_PER_MOTOR_REV / (WHEEL_DIAMETER_INCHES * Math.PI);
+    private final double ODOMETER_COUNTS_PER_INCH = 2000/((48/25.4)*Math.PI); // counts per rev / wheel diameter in inches * pi
 
-    private final double RAMP_DISTANCE = COUNTS_PER_INCH * 12;   // ramp down distance in encoder counts
+    private final double RAMP_DISTANCE = COUNTS_PER_INCH * 20;   // ramp down distance in encoder counts
     private final double RAMP_TIME = 1000;                       // ramp up time in milliseconds
     private final double RAMP_MIN_SPEED = 0.2;
 
@@ -743,12 +744,15 @@ public class Drive extends Thread {
                 break;
             }
 
-            if (LOG_VERBOSE)
-                Logger.message("power: %4.2f %4.2f %4.2f %4.2f    adjust: %4.2f %4.2f %4.2f %4.2f     position: %6d %6d %6d %6d     velocity: %4.0f %4.0f %4.0f %4.0f     heading %6.1f ",
+            if (LOG_VERBOSE) {
+                double velocity = odometer.getVelocity();
+                Logger.message("power: %4.2f %4.2f %4.2f %4.2f   %4.2f %4.2f %4.2f    remaining: %5.2f    adjust: %4.2f %4.2f %4.2f %4.2f     position: %6d %6d %6d %6d %6d     velocity: %4.0f %4.0f %4.0f %4.0f %5.0f  %6.2f(in)    heading %6.1f ",
                         leftFrontDrive.getPower(),
                         rightFrontDrive.getPower(),
                         leftBackDrive.getPower(),
                         rightBackDrive.getPower(),
+                        rampPower, ramUp, ramDown,
+                        (Math.abs(target) - maxPos) / COUNTS_PER_INCH,
                         leftFrontAdjust,
                         rightFrontAdjust,
                         leftBackAdjust,
@@ -757,11 +761,15 @@ public class Drive extends Thread {
                         rightFrontDrive.getCurrentPosition(),
                         leftBackDrive.getCurrentPosition(),
                         rightBackDrive.getCurrentPosition(),
+                        odometer.getCurrentPosition(),
                         leftFrontDrive.getVelocity(),
                         rightFrontDrive.getVelocity(),
                         leftBackDrive.getVelocity(),
                         rightBackDrive.getVelocity(),
+                        velocity,
+                        velocity / ODOMETER_COUNTS_PER_INCH,
                         getOrientation());
+            }
         }
 
         // Stop all motion;
@@ -1227,8 +1235,16 @@ public class Drive extends Thread {
         }
     }
 
+
+    public void resetOdometers () {
+        DcMotor.RunMode mode = odometer.getMode();
+        odometer.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        odometer.setMode(mode);
+    }
+
     public double encoderTicksPerInch() {
-        return (COUNTS_PER_INCH * Settings.getDriveFactor());
+        //return (COUNTS_PER_INCH * Settings.getDriveFactor());
+        return (COUNTS_PER_INCH);
     }
 
     public List<Double> getWheelPositions() {

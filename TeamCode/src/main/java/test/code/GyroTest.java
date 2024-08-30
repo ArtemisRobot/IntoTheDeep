@@ -33,6 +33,7 @@ import android.annotation.SuppressLint;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.kauailabs.navx.ftc.AHRS;
+import com.kauailabs.navx.ftc.navXPIDController;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;

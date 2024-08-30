@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
@@ -42,7 +43,7 @@ public class DriveTest extends LinearOpMode {
     public static double PID_DRIVE_MAX_OUTPUT = 0.03;
     public static double PID_DRIVE_KP = 0.02;
 
-    public static double speed = 0.50;
+    public static double speed = 0.25;
     public static double speedX = 0;
     public static double speedY = 0;
     public static double speedYaw = 0;
@@ -62,15 +63,19 @@ public class DriveTest extends LinearOpMode {
     double accelerationLastTime;
 
     Drive drive  = null;
+    VoltageSensor voltageSensor;
 
     @Override
     public void runOpMode() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         drive = new Drive(this);
-        //drive.start();
+        drive.start();
+
+        voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
         telemetry.addData("Status", "Press start");
+        telemetry.addData("Voltage: %f", voltageSensor.getVoltage());
         telemetry.update();
 
         waitForStart();
@@ -81,12 +86,15 @@ public class DriveTest extends LinearOpMode {
 
        //runTest();
 
-
         newDrive();
 
-        drive.setBraking(false);
+        drive.setBraking(true);
+        drive.resetOdometers();
 
         while (opModeIsActive()) {
+
+            int odometerPos = Math.abs(drive.odometer.getCurrentPosition());
+            double odometerInches = odometerPos / (2000/((48/25.4)*Math.PI));
 
             validateConfig();
             telemetry.addLine("Controls:");
@@ -96,16 +104,17 @@ public class DriveTest extends LinearOpMode {
             telemetry.addData("Inches", "%4.1f", inches);
             telemetry.addData("Drift", "%8.2f", drive.totalDrift);
             telemetry.addData("Yaw:", "%6.2f", drive.getOrientation() );
-            telemetry.addData("Odometer:", "%d", drive.odometer.getCurrentPosition());
+            telemetry.addData("Odometer:", "%d  %6.2f", odometerPos, odometerInches);
+            telemetry.addData("Voltage: %f", voltageSensor.getVoltage());
 
             telemetry.update();
 
             if (gamepad1.y) {
-                testCorrection(inches, Drive.DIRECTION.FORWARD);
+                testDistance(inches, Drive.DIRECTION.FORWARD);
             }
 
             if (gamepad1.a) {
-                testCorrection(inches, Drive.DIRECTION.BACK);
+                testDistance(inches, Drive.DIRECTION.BACK);
             }
 
             if (gamepad1.b) {
@@ -201,6 +210,7 @@ public class DriveTest extends LinearOpMode {
         boolean moving = false;
         double lastAngle = Double.NaN;
         double targetHeading = 0;
+        double heading = 0;
         double drift = 0;
         double totalDrift = 0;
         int lastPosition = 0;
@@ -257,10 +267,11 @@ public class DriveTest extends LinearOpMode {
                         int position = drive.leftFrontDrive.getCurrentPosition();
                         double traveled =  (double) (Math.abs(position - lastPosition)) / drive.encoderTicksPerInch();
                         lastPosition = position;
-                        drift = headingDrift(targetHeading, drive.getOrientation(), traveled);
+                        heading = drive.getOrientation();
+                        drift = headingDrift(heading, targetHeading, traveled);
                         totalDrift += drift;
                         correction = speed * Math.max(Math.min((totalDrift*PID_DRIVE_KP), PID_DRIVE_MAX_OUTPUT), -PID_DRIVE_MAX_OUTPUT);
-                        //turn += correction;
+                        turn += correction;
                     }
 
                 } else  if (turn != 0) {
@@ -290,7 +301,7 @@ public class DriveTest extends LinearOpMode {
                 Logger.message("%s",
                     String.format("x: %5.2f  y: %5.2f  turn: %5.2f  ", x, y, turn) +
                     String.format("angle: %5.2f (rad)  %4.0f (deg)  ", angle, Math.toDegrees(angle)) +
-                    String.format("heading: %6.2f  drift: %5.2f  total: %5.2f  ", targetHeading, drift, totalDrift) +
+                    String.format("heading: %6.2f  drift: %5.2f  total: %5.2f  ", heading, drift, totalDrift) +
                     String.format("correction: %6.3f  ", correction) +
                     String.format("power: %4.2f  sin: %5.2f  cos: %5.2f  ", power, sin, cos) +
                     String.format("power: %5.2f  %5.2f  %5.2f  %5.2f", leftFrontPower, rightFrontPower, leftRearPower, rightRearPower)
@@ -446,9 +457,6 @@ public class DriveTest extends LinearOpMode {
         Logger.message("robot drive thread stopped");
     }
 
-
-
-
     private void testCorrection(double inches, Drive.DIRECTION direction) {
 
         // Disable drift correction and test how straight the drivetrain drives.
@@ -466,11 +474,45 @@ public class DriveTest extends LinearOpMode {
         */
 
         drive.resetOrientation();
-        drive.moveDistanceWithPIDControl (direction, speed, inches, 0);
+        drive.resetEncoders();
+        drive.resetOdometers();
 
+        drive.moveDistanceWithPIDControl (direction, speed, inches, 0);
 
         telemetry.addData("Yaw:", "%6.2f", drive.getOrientation() );
         telemetry.update();
+    }
+
+    private void testDistance(double inches, Drive.DIRECTION direction) {
+
+
+        drive.moveDistance(direction, 0.25, inches, 0);
+        sleep(2000);
+        displayDistances(inches);
+    }
+
+    private void displayDistances (double inches) {
+
+        double COUNTS_PER_MOTOR_REV = 384.5;           // Gobilda Yellow Jacket Motor 5203-2402-0001
+        double WHEEL_DIAMETER_INCHES = (96 / 25.4);    // 96 mm wheels converted to inches
+        double COUNTS_PER_INCH = COUNTS_PER_MOTOR_REV / (WHEEL_DIAMETER_INCHES * Math.PI);
+
+        int leftFrontPos = Math.abs(drive.leftFrontDrive.getCurrentPosition());
+        int rightFrontPos = Math.abs(drive.rightFrontDrive.getCurrentPosition());
+        int leftBackPos = Math.abs(drive.leftBackDrive.getCurrentPosition());
+        int rightBackPos = Math.abs(drive.rightBackDrive.getCurrentPosition());
+        int maxPos = Math.max(Math.max(Math.max(leftFrontPos, rightFrontPos), leftBackPos), rightBackPos);
+
+        int odometerPos = Math.abs(drive.odometer.getCurrentPosition());
+        double odometerInches = odometerPos / (2000/((48/25.4)*Math.PI));
+
+        Logger.message("\n");
+        Logger.message("left front  %6d    %5.2f    %6.3f", leftFrontPos,  (leftFrontPos / COUNTS_PER_INCH),  (((double)leftFrontPos  / maxPos) - 1) * 100);
+        Logger.message("right front %6d    %5.2f    %6.3f", rightFrontPos, (rightFrontPos / COUNTS_PER_INCH), (((double)rightFrontPos / maxPos) - 1) * 100);
+        Logger.message("left rear   %6d    %5.2f    %6.3f", leftBackPos,   (leftBackPos / COUNTS_PER_INCH),   (((double)leftBackPos   / maxPos) - 1) * 100);
+        Logger.message("right rear  %6d    %5.2f    %6.3f", rightBackPos,  (rightBackPos / COUNTS_PER_INCH),  (((double)rightBackPos  / maxPos) - 1) * 100);
+        Logger.message("odometer    %6d    %5.2f",           odometerPos,   odometerInches);
+        Logger.message("error %6.2f", odometerInches - inches);
     }
 
     private void validateConfig () {
