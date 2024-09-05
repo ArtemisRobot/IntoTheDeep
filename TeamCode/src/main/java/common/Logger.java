@@ -22,12 +22,19 @@ public final class Logger {
     }
 
     public static void error (Exception e, String msg) {
+        Log.e(TAG, "\n");
         Log.println(Log.ERROR, TAG, msg);
         Log.e(TAG, e.getMessage());
 
+        /*
         for (StackTraceElement element :  e.getStackTrace()) {
             Log.e(TAG, element.toString());
         }
+        */
+
+        StackTraceElement[] stackTraceElements = e.getStackTrace();
+        for (int i=0; i<Math.min(stackTraceElements.length, 4); i++)
+            Log.e(TAG, stackTraceElements[i].toString());
     }
 
     public static void warning(String warning) {
