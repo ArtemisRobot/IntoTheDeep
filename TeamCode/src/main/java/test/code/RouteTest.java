@@ -10,8 +10,10 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
+import common.Config;
 import common.Drive;
 import common.Logger;
+import common.Odometer;
 import common.Settings;
 
 @TeleOp(name="Route Test", group="Test")
@@ -24,7 +26,7 @@ public class RouteTest extends LinearOpMode {
 
     private double factor;
 
-    private DcMotorEx sideOdometer;
+    private Odometer sideOdometer;
 
     private static final double ODOMETER_TICKS_PER_REV = 2000;
     private static final double ODOMETER_WHEEL_DIAMETER = 1.90278;  //  1.92913;       // 0.9863 in inches, 48mm diameter
@@ -41,8 +43,7 @@ public class RouteTest extends LinearOpMode {
     public void runOpMode() {
         drive = new Drive(this);
 
-        sideOdometer = hardwareMap.get(DcMotorEx.class, "odometer");
-        sideOdometer.setDirection(DcMotorSimple.Direction.REVERSE);
+        sideOdometer = new Odometer(hardwareMap, Config.LEFT_FRONT, Odometer.OdometerType.MOTOR);
 
         telemetry.addLine("push start");
         telemetry.update();

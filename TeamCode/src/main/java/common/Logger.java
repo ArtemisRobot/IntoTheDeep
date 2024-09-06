@@ -6,8 +6,6 @@ package common;
 
 import android.util.Log;
 
-import java.util.Arrays;
-
 public final class Logger {
     private static final String TAG = "DELMAR";
 

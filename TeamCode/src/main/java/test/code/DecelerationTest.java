@@ -8,11 +8,14 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.opencv.core.Mat;
 
+import common.Config;
 import common.Drive;
 import common.Logger;
 
@@ -35,17 +38,22 @@ public class DecelerationTest extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+        try {
+            drive = new Drive(this);
+            drive.start();
 
-        drive = new Drive(this);
-        drive.start();
+            telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+            telemetry.addLine("Press start");
+            telemetry.update();
 
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-        telemetry.addLine("Press start");
-        telemetry.update();
+            waitForStart();
 
-        waitForStart();
+            forwardTest();
 
-        forwardTest();
+        } catch (Exception e) {
+            Logger.error(e, "Error");
+        }
+
     }
 
     private void forwardTest() {

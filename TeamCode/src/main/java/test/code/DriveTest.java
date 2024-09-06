@@ -88,7 +88,7 @@ public class DriveTest extends LinearOpMode {
 
        //runTest();
 
-        newDrive();
+        //newDrive();
 
         drive.setBraking(true);
         drive.resetOdometers();

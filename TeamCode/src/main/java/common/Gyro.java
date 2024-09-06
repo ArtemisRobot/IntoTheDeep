@@ -15,9 +15,6 @@ public class Gyro {
 
     public enum GyroType {IMU, NAVX}
 
-    RevHubOrientationOnRobot.LogoFacingDirection defaultLogoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
-    RevHubOrientationOnRobot.UsbFacingDirection  defaultUsbDirection = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
-
     GyroType gyroType;
     HardwareDevice device;
     IMU imu = null;
@@ -35,13 +32,19 @@ public class Gyro {
 
         device = hardwareMap.get(deviceName);
 
-        if (device instanceof IMU) {
-            initIMU(defaultLogoDirection, defaultUsbDirection);
-
-        } else if (device instanceof NavxMicroNavigationSensor) {
+        if (device instanceof NavxMicroNavigationSensor) {
             initNavx();
 
-        } else {
+        } else if (device instanceof IMU) {
+            if (deviceName.equals(Config.IMU)) {
+                initIMU(RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                        RevHubOrientationOnRobot.UsbFacingDirection.FORWARD);
+            }
+            else if (deviceName.equals(Config.IMU_EXPANSION)) {
+                initIMU(RevHubOrientationOnRobot.LogoFacingDirection.DOWN,
+                        RevHubOrientationOnRobot.UsbFacingDirection.FORWARD);
+            }
+        } else  {
             throw new IllegalArgumentException(String.format("Unable to find a gyro with name \"%s\"", deviceName));
         }
 
