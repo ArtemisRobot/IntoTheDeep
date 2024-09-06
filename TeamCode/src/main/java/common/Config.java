@@ -13,20 +13,12 @@ public class Config {
 
     public static final String ODOMETER          = "odometer";
 
-    public static final String IMU              =  "imu";
+    public static final String IMU              = "imu";
+    public static final String IMU_EXPANSION    = "imuExpansion";
     public static final String COLOR_SENSOR     = "colorSensor";
     public static final String DISTANCE_SENSOR  = "distanceSensor";
 
-    public static final String LIFTING_WENCH    = "lifter";
     public static final String PIXEL_DROPPER    = "dropper";
-
-    public static final String HANGING_ELBOW    = "hangingElbow";
-    public static final String HANGING_WRIST    = "hangingWrist";
-    public static final String HANDING_THUMB    = "hangingThumb";
-
-    public static final String PIXEL_ARM        = "pixelArm";
-    public static final String PIXEL_ELBOW      = "pixelElbow";
-    public static final String PIXEL_WRIST      = "pixelWrist";
 
     public static final String DRONE_ANGLE      = "droneAngle";
     public static final String DRONE_FIRE       = "droneFire";

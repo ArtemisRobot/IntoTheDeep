@@ -65,6 +65,8 @@ public class DriveTest extends LinearOpMode {
     Drive drive  = null;
     VoltageSensor voltageSensor;
 
+    // This is qa test
+
     @Override
     public void runOpMode() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
@@ -86,7 +88,7 @@ public class DriveTest extends LinearOpMode {
 
        //runTest();
 
-        newDrive();
+        //newDrive();
 
         drive.setBraking(true);
         drive.resetOdometers();
