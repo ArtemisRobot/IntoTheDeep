@@ -18,13 +18,11 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainCon
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.PtzControl;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.stream.CameraStreamSource;
-import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibration;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.VisionProcessor;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
-import org.firstinspires.ftc.vision.tfod.TfodProcessor;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
@@ -80,12 +78,10 @@ public class Vision {
     public static final int RED_RIGHT_TAG   = 6;
 
 
-    private TfodProcessor tfod;              // TensorFlow Object Detection processor
     private AprilTagProcessor aprilTag;      // AprilTag Detection processor
     private CameraStreamProcessor dashboard; // FTC dashboard camera stream (for debugging)
     private VisionPortal visionPortal;       // Instance of the vision portal.
 
-    Recognition element = null;              // recognized team element
 
     private AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
 
@@ -102,26 +98,6 @@ public class Vision {
 
     private void init() {
 
-        // Create the TensorFlow processor by using a builder.
-        tfod = new TfodProcessor.Builder()
-
-                // With the following lines commented out, the default TfodProcessor Builder
-                // will load the default model for the season. To define a custom model to load,
-                // choose one of the following:
-                //   Use setModelAssetName() if the custom TF Model is built in as an asset (AS only).
-                //   Use setModelFileName() if you have downloaded a custom team model to the Robot Controller.
-                .setModelAssetName(TFOD_MODEL_ASSET)
-                //.setModelFileName(TFOD_MODEL_FILE)      // custom team model downloaded to the Robot Controller
-                .setModelLabels(LABELS)                 // set parameters for custom models.
-
-                // The following default settings are available to un-comment and edit as needed to
-                //.setIsModelTensorFlow2(true)
-                //.setIsModelQuantized(true)
-                //.setModelInputSize(300)
-                //.setModelAspectRatio(16.0 / 9.0)
-                .build();
-
-        //tfod.setZoom(1.5);
 
         aprilTag = new AprilTagProcessor.Builder()
                 .build();
@@ -153,15 +129,12 @@ public class Vision {
 
         // Set and enable the processor.
         if (dashboard != null)
-            builder.addProcessors(tfod, aprilTag, dashboard);
+            builder.addProcessors(aprilTag, dashboard);
         else
-            builder.addProcessors(tfod, aprilTag);
+            builder.addProcessors(aprilTag);
 
         // Build the Vision Portal, using the above settings.
         visionPortal = builder.build();
-
-        // Set confidence threshold for TFOD recognitions, at any time.
-        tfod.setMinResultConfidence(0.50f);
 
         // Disable or re-enable the TFOD processor at any time.
         //visionPortal.setProcessorEnabled(tfod, true);
@@ -171,31 +144,6 @@ public class Vision {
 
     }   // end method initTfod()
 
-    /**
-     * Add telemetry about TensorFlow Object Detection (TFOD) recognitions.
-     */
-    public void telemetryTfod() {
-
-        List<Recognition> currentRecognitions = tfod.getRecognitions();
-        opMode.telemetry.addData("# Objects Detected", currentRecognitions.size());
-        if (currentRecognitions.size() == 0) {
-            opMode.telemetry.addData("Status", "No objects detected");
-        }
-
-        // Step through the list of recognitions and display info for each one.
-        for (Recognition recognition : currentRecognitions) {
-            double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
-            double y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
-
-            opMode.telemetry.addData(""," ");
-            opMode.telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
-            opMode.telemetry.addData("- Position", "%.0f / %.0f", x, y);
-            opMode.telemetry.addData("- Size", "%.0f x %.0f", recognition.getWidth(), recognition.getHeight());
-            opMode.telemetry.addData("- Angle ", "%f  %f",
-                    recognition.estimateAngleToObject(AngleUnit.DEGREES),
-                    recognition.estimateAngleToObject(AngleUnit.RADIANS));
-        }
-    }   // end method telemetryTfod()
 
     public void telemetryAprilTag() {
         List<AprilTagDetection> currentDetections = aprilTag.getDetections();
@@ -216,16 +164,12 @@ public class Vision {
 
     }   // end method telemetryAprilTag()
 
-    public void enableTensorFlow(boolean enabled) {
-        visionPortal.setProcessorEnabled(tfod, enabled);
-    }
 
     public void enableAprilTag(boolean enabled) {
         visionPortal.setProcessorEnabled(aprilTag, enabled);
     }
 
     public void disableVision() {
-        visionPortal.setProcessorEnabled(tfod, false);
         visionPortal.setProcessorEnabled(aprilTag, false);
     }
 
@@ -320,75 +264,6 @@ public class Vision {
             return desiredTag.ftcPose.yaw;
         return 0;
     }
-    /**
-     * Find the object with the highest confidence.
-     *
-     * @return true if an object was detected
-     */
-    public boolean findTeamElement (double timeout) {
-        return findTeamElement(null, timeout);
-    }
-
-        /**
-         * Find the object with the highest confidence.
-         *
-         * @return true if an object was detected
-         */
-    public boolean findTeamElement (String name, double timeout) {
-
-        element = null;
-
-        List<Recognition> currentRecognitions;
-        searchTime.reset();
-        while (true) {
-            currentRecognitions = tfod.getRecognitions();
-            if (currentRecognitions.size() != 0)
-                break;
-            if (timeout == 0 || searchTime.milliseconds() >= timeout)
-                break;
-            opMode.sleep(100);
-        }
-        Logger.message("search time %6.0f", searchTime.milliseconds());
-
-        currentRecognitions = tfod.getRecognitions();
-        if (currentRecognitions.size() == 0)
-            return false;
-
-        for (Recognition recognition : currentRecognitions) {
-            Logger.message("%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
-            if (name == null || name.equals(recognition.getLabel())) {
-                if (element == null) {
-                    element = recognition;
-                } else {
-                    if (recognition.getConfidence() > element.getConfidence())
-                        element = recognition;
-                }
-            }
-        }
-        return (element != null);
-    }
-
-    public double findTeamElementAngle() {
-        if (element != null) {
-            return element.estimateAngleToObject(AngleUnit.DEGREES);
-        }
-        return 0;
-    }
-
-    /**
-     * Return the accuracy confidence of the recognized object.
-     */
-    public float getElementConfidence(){
-        if (element != null)
-            return element.getConfidence();
-        return 0;
-    }
-
-    public String getElementLabel() {
-        if (element != null)
-            return element.getLabel();
-        return "none";
-    }
 
     public boolean cameraReady() {
         VisionPortal.CameraState state;
@@ -420,6 +295,7 @@ public class Vision {
                 gainControl.setGain(gain);
                 opMode.sleep(500);
 
+                /*
                 if (findTeamElement(300)) {
                    Logger.message("found - exposure: %d gain: %d  Confidence: %.2f", exposure, gain, element.getConfidence());
                    if (element.getConfidence() > confidence) {
@@ -429,6 +305,8 @@ public class Vision {
                 } else {
                     Logger.message("not found - exposure: %d gain: %d", exposure, gain);
                  }
+
+                 */
             }
         }
         Logger.message("Best setting -  exposure: %d gain: %d", bestExposure, bestGain);
