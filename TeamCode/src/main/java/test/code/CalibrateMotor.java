@@ -68,7 +68,7 @@ public class CalibrateMotor extends LinearOpMode {
     private final double speed = 0.25;
     private DcMotor motor   = null;
 
-    private boolean holdPower = false;
+    private boolean holdPower = true;
 
     private static class MotorInfo implements Comparable<MotorInfo>{
         String      name;
