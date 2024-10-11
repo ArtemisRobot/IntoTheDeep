@@ -61,12 +61,14 @@ public class CalibrateMotor extends LinearOpMode {
 
     private final ElapsedTime runtime = new ElapsedTime();
 
-    private final double incrementSlow = 1;
-    private final double incrementMedium = 10;
-    private final double incrementFast = 100;
+    private final int incrementSlow = 1;
+    private final int incrementMedium = 10;
+    private final int incrementFast = 100;
 
     private final double speed = 0.25;
     private DcMotor motor   = null;
+
+    private boolean holdPower = true;
 
     private static class MotorInfo implements Comparable<MotorInfo>{
         String      name;
@@ -99,6 +101,7 @@ public class CalibrateMotor extends LinearOpMode {
 
         Telemetry.Item motorNameMsg =  telemetry.addData("Motor name", 0);
         Telemetry.Item directionMsg = telemetry.addData("Motor direction", 0);
+        Telemetry.Item brakingMsg = telemetry.addData("Motor braking", 0);
         Telemetry.Item positionMsg = telemetry.addData("Motor position", 0);
         Telemetry.Item homeMsg = telemetry.addData("Home position", 0);
         Telemetry.Item targetMsg = telemetry.addData("Target position", 0);
@@ -112,6 +115,8 @@ public class CalibrateMotor extends LinearOpMode {
         telemetry.addData("\nMotor Calibration Controls", "\n" +
                 "  dpad left - select previous motor\n" +
                 "  dpad right - select next motor\n" +
+                "  dpad up = change motor direction\n" +
+                "  dpad up = change motor breaking\n" +
                 "  left trigger - run motor backwards\n" +
                 "  right trigger - run the motor forward\n" +
                 "  left stick - increase/decrease target position\n" +
@@ -230,6 +235,17 @@ public class CalibrateMotor extends LinearOpMode {
                     sleep(10);
                 }
 
+            } else if (gamepad1.dpad_down) {
+                // change motor breaking
+                if (motor.getPowerFloat())
+                    motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                else
+                    motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+                setDisplayBraking(directionMsg);
+                while (gamepad1.dpad_up) {
+                    sleep(10);
+                }
+
             } else if (gamepad1.back) {
                 // exit opmode without saving calibration data
                 save = false;
@@ -268,13 +284,17 @@ public class CalibrateMotor extends LinearOpMode {
         item.setValue("%s", motors[currentMotor].motor.getDirection());
     }
 
+    private void setDisplayBraking (Telemetry.Item item) {
+        item.setValue("%s", motors[currentMotor].motor.getZeroPowerBehavior());
+    }
+
     /**
      * Based on the elapsed time return a value to increment by
      * @return value to increment by
      */
-    public double increment(double v1, double v2, double v3){
+    public int increment(int v1, int v2, int v3){
         int sleepTime;
-        double delta;
+        int delta;
         if (runtime.seconds() < 3) {
             delta = v1;
             sleepTime = 500;
@@ -303,6 +323,12 @@ public class CalibrateMotor extends LinearOpMode {
         while (opModeIsActive()) {
             if (! motor.isBusy())
                 break;
+        }
+        if (holdPower) {
+            runtime.reset();
+            while (runtime.seconds() > 5 && opModeIsActive())
+                sleep(100);
+
         }
         motor.setPower(0);
     }
