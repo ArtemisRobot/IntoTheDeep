@@ -18,16 +18,9 @@ public class Config {
     public static final String COLOR_SENSOR     = "colorSensor";
     public static final String DISTANCE_SENSOR  = "distanceSensor";
 
-    public static final String PIXEL_DROPPER    = "dropper";
-
-    public static final String DRONE_ANGLE      = "droneAngle";
-    public static final String DRONE_FIRE       = "droneFire";
-
-    public static final String PIXEL_INTAKE     = "intakePickup";
-    public static final String INTAKE_ROTATE    = "intakeRotate";
-    public static final String SPINNER_GRAY     = "spinnerGray";
-    public static final String SPINNER_BLACK    = "spinnerBlack";
-    public static final String SPINNER_BUCKET   = "spinnerBucket";
-
     public static final String CAMERA           = "Webcam 1";
+
+    public static final String ARM              = "extendingArm";
+    public static final String BOTTOM_GRABBER   = "bottomGrabber";
+
 }
