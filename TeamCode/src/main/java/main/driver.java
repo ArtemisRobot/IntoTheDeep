@@ -39,18 +39,26 @@ import common.Robot;
                  while (gamepad1.a)
                      sleep(10);
              }
-             if (gamepad1.x) {
-                 robot.bottomGrabberUp();
+             if (gamepad2.x) {
+                 robot.pickerDown();
                  while (gamepad1.x)
                      sleep(10);
              }
 
-             if (gamepad1.b) {
-                 robot.bottomGrabberDown();
+             if (gamepad2.b) {
+                 robot.pickerDown();
                     while (gamepad1.b)
                         sleep(10);
              }
-        }
+
+             if (gamepad2.a) {
+                robot.pickerOpen();
+             }
+
+             if (gamepad2.b) {
+                 robot.pickerClosed();
+             }
+         }
     }
 
 }

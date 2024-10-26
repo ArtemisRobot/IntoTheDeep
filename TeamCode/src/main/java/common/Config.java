@@ -21,6 +21,8 @@ public class Config {
     public static final String CAMERA           = "Webcam 1";
 
     public static final String ARM              = "extendingArm";
-    public static final String BOTTOM_GRABBER   = "bottomGrabber";
+    public static final String PICKER_WRIST   = "pickerWrist";
+
+    public static final String PICKER_FINGERS = "pickerFingers";
 
 }

@@ -29,15 +29,19 @@ public class Robot {
     private int LIFTER_UP_POSITION = 1000;
     private int LIFTER_DOWN_POSITION = 0;
 
-    private double ARM_SERVO_DOWN_POSITION = 0.880;
-    private double ARM_SERVO_UP_POSITION = .210;
+    private double PICKER_UP_POSITION = 0.5;
+    private double PICKER_DOWN_POSITION = .39;
+
+    private double PICKER_FINGER_CLOSED = 0.51;
+    private double PICKER_FINGER_OPEN = .189  ;
 
     private double LIFTER_SPEED = 0.25;
 
     // Define Motor and Servo objects
     private DcMotor extendingArm;
-    private Servo   bottomGrabber;
+    private Servo   pickerWrist;
     private DcMotorEx lifter;
+    private Servo pickerFingers;
 
     // drivetrain
     public Drive      drive = null;
@@ -64,7 +68,8 @@ public class Robot {
             lifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
             extendingArm = opMode.hardwareMap.get(DcMotor.class, Config.ARM);
-            bottomGrabber = opMode.hardwareMap.get(Servo.class, Config.BOTTOM_GRABBER);
+            pickerWrist = opMode.hardwareMap.get(Servo.class, Config.PICKER_WRIST);
+            pickerFingers = opMode.hardwareMap.get(Servo.class, Config.PICKER_FINGERS);
 
         } catch (Exception e) {
             Logger.error(e, "hardware not found");
@@ -94,14 +99,23 @@ public class Robot {
         lifter.setPower(0);
     }
 
-    public void bottomGrabberUp() {
-        bottomGrabber.setPosition(ARM_SERVO_DOWN_POSITION);
+
+
+    public void pickerUp() {
+        pickerWrist.setPosition(PICKER_DOWN_POSITION);
     }
 
-    public void bottomGrabberDown() {
-        bottomGrabber.setPosition(ARM_SERVO_UP_POSITION);
+    public void pickerDown() {
+        pickerWrist.setPosition(PICKER_UP_POSITION);
     }
 
+    public void pickerOpen(){
+        pickerFingers.setPosition(PICKER_FINGER_OPEN);
+    }
+
+    public void pickerClosed(){
+        pickerFingers.setPosition(PICKER_FINGER_CLOSED);
+    }
 
 
     public void turn(double degrees) {
@@ -111,7 +125,6 @@ public class Robot {
     public void forward (double distance) {
         drive.forward(distance);
     }
-
     public void back (double distance) {
         drive.back(distance);
     }
