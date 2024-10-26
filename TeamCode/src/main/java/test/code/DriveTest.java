@@ -26,7 +26,7 @@ import common.Drive;
 import common.Logger;
 import common.PIDController;
 
-@TeleOp(name="* Drive Test", group="Test")
+@TeleOp(name="Drive Test", group="Test")
 @SuppressWarnings("unused")
 @SuppressLint("DefaultLocale")
 //@com.acmerobotics.dashboard.config.Config
