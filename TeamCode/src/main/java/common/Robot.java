@@ -37,7 +37,9 @@ public class Robot {
 
     // Define a constructor that allows the OpMode to pass a reference to itself.
     public Robot(LinearOpMode opMode) {
+
         this.opMode = opMode;
+        init();
     }
 
     /**
