@@ -185,7 +185,7 @@ public class CalibrateServo extends LinearOpMode {
                         servos[currentServo].home = Math.min(1, servos[currentServo].home + incrementCoarse());
                     else if (gamepad1.right_stick_y > 0)
                         servos[currentServo].home = Math.max(0, servos[currentServo].home - incrementCoarse());
-                    setDisplayTarget(homeMsg);
+                    setDisplayHome(homeMsg);
                     telemetry.update();
                 }
 
