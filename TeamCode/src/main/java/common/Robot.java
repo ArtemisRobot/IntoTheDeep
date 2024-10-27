@@ -14,9 +14,17 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import test.code.CalibrateMotor;
+
 public class Robot {
+
+    // arm extender
+    public static int ARM_IN = 0;
+    public static int ARM_OUT = 10;
+    private double ARM_EXTENDER_SPEED = .25;
 
     // lifter
     public static double LIFTER_IN = 0;
@@ -38,10 +46,10 @@ public class Robot {
     private double LIFTER_SPEED = 0.25;
 
     // Define Motor and Servo objects
-    private DcMotor extendingArm;
-    private Servo   pickerWrist;
-    private DcMotorEx lifter;
-    private Servo pickerFingers;
+    private DcMotorEx   lifter;
+    public DcMotor      extendingArm;
+    private Servo       pickerWrist;
+    private Servo       pickerFingers;
 
     // drivetrain
     public Drive      drive = null;
@@ -64,6 +72,11 @@ public class Robot {
 
         try {
             extendingArm = opMode.hardwareMap.get(DcMotor.class, Config.ARM);
+            extendingArm.setDirection(DcMotorSimple.Direction.REVERSE);
+            extendingArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            extendingArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            extendingArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
             pickerWrist = opMode.hardwareMap.get(Servo.class, Config.PICKER_WRIST);
             pickerFingers = opMode.hardwareMap.get(Servo.class, Config.PICKER_FINGERS);
 
@@ -80,7 +93,30 @@ public class Robot {
         } catch (Exception e) {
             Logger.error(e, "hardware not found");
         }
+    }
 
+    public void retractArm() {
+        moveArm(ARM_IN);
+    }
+
+    // extend arm to the specified position
+    public void extendingArm() {
+        moveArm(ARM_OUT);
+    }
+
+    private void moveArm (int position) {
+        Logger.message("run from %d to %d", extendingArm.getCurrentPosition(), position);
+        extendingArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        extendingArm.setTargetPosition(position);
+        extendingArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        extendingArm.setPower(ARM_EXTENDER_SPEED);
+        while (opMode.opModeIsActive() && extendingArm.isBusy()) {
+            if (opMode.gamepad2.back) {
+                break;
+            }
+        }
+        extendingArm.setPower(0);
     }
 
     /**
@@ -108,8 +144,6 @@ public class Robot {
         }
         lifter.setPower(0);
     }
-
-
 
     public void pickerUp() {
         pickerWrist.setPosition(PICKER_DOWN_POSITION);

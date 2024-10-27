@@ -39,6 +39,17 @@ import common.Robot;
                  while (gamepad1.a)
                      sleep(10);
              }
+             if (gamepad2.left_bumper) {
+                 while (gamepad2.left_bumper)
+                     sleep(10);
+                 robot.retractArm();
+             }
+             if (gamepad2.right_bumper) {
+                 while (gamepad2.right_bumper)
+                     sleep(10);
+                 robot.extendingArm();
+             }
+
              if (gamepad2.a) {
                  robot.pickerDown();
                  while (gamepad1.x)
