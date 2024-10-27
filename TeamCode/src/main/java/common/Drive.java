@@ -157,7 +157,7 @@ public class Drive extends Thread {
         } catch (Exception e) {
             Logger.error(e, "Hardware not found");
         }
-
+        /*
         try {
             //odometer = opMode.hardwareMap.get(DcMotorEx.class, Config.ODOMETER);
             //odometer.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -178,6 +178,7 @@ public class Drive extends Thread {
         } catch (Exception e) {
             Logger.error(e, "Hardware not found");
         }
+         */
     }
 
     /**
