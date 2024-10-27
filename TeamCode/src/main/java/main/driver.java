@@ -12,7 +12,7 @@ import common.Robot;
 
  public class driver extends LinearOpMode {
 
-    Robot robot;
+    Robot   robot;
 
     @Override
     public void runOpMode() {
@@ -39,19 +39,19 @@ import common.Robot;
                  while (gamepad1.a)
                      sleep(10);
              }
-             if (gamepad2.x) {
+             if (gamepad2.a) {
                  robot.pickerDown();
                  while (gamepad1.x)
                      sleep(10);
              }
 
-             if (gamepad2.b) {
-                 robot.pickerDown();
+             if (gamepad2.y) {
+                 robot.pickerUp();
                     while (gamepad1.b)
                         sleep(10);
              }
 
-             if (gamepad2.a) {
+             if (gamepad2.x) {
                 robot.pickerOpen();
              }
 

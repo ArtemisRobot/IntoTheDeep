@@ -32,8 +32,8 @@ public class Robot {
     private double PICKER_UP_POSITION = 0.5;
     private double PICKER_DOWN_POSITION = .39;
 
-    private double PICKER_FINGER_CLOSED = 0.51;
-    private double PICKER_FINGER_OPEN = .189  ;
+    private final double PICKER_FINGER_CLOSED = 0.51;
+    private final double PICKER_FINGER_OPEN = .189  ;
 
     private double LIFTER_SPEED = 0.25;
 
@@ -51,7 +51,6 @@ public class Robot {
 
     // Define a constructor that allows the OpMode to pass a reference to itself.
     public Robot(LinearOpMode opMode) {
-
         this.opMode = opMode;
         init();
     }
@@ -64,11 +63,6 @@ public class Robot {
         drive = new Drive(opMode);
 
         try {
-            lifter = opMode.hardwareMap.get(DcMotorEx.class, "lifter");
-            lifter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            lifter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            lifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
             extendingArm = opMode.hardwareMap.get(DcMotor.class, Config.ARM);
             pickerWrist = opMode.hardwareMap.get(Servo.class, Config.PICKER_WRIST);
             pickerFingers = opMode.hardwareMap.get(Servo.class, Config.PICKER_FINGERS);
@@ -76,8 +70,22 @@ public class Robot {
         } catch (Exception e) {
             Logger.error(e, "hardware not found");
         }
+
+        try {
+            lifter = opMode.hardwareMap.get(DcMotorEx.class, Config.LIFTER);
+            lifter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            lifter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            lifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        } catch (Exception e) {
+            Logger.error(e, "hardware not found");
+        }
+
     }
 
+    /**
+     * Raise the lifter to the specified position
+     */
     public void lifterUp() {
 
         lifter.setTargetPosition(LIFTER_UP_POSITION);
