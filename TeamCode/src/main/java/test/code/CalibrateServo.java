@@ -92,7 +92,7 @@ public class CalibrateServo extends LinearOpMode {
         setDisplayName(servoNameMsg);
         setDisplayDirection(directionMsg);
 
-        telemetry.addData("Servo Calibration Controls", "\n" +
+        telemetry.addData("\nServo Calibration Controls", "\n" +
                 "  dpad left - select previous servo\n" +
                 "  dpad right - select next servo\n" +
                 "  left trigger - run servo backwards\n" +
@@ -159,39 +159,33 @@ public class CalibrateServo extends LinearOpMode {
                     sleep(100);
                 }
 
-            } else if (gamepad1.left_stick_y < 0) {
-                // increase target position
+            } else if (gamepad1.left_stick_x != 0 || gamepad1.left_stick_y != 0) {
                 runtime.reset();
-                while (gamepad1.left_stick_y < 0) {
-                    servos[currentServo].target = Math.min(1, servos[currentServo].target + increment());
+                while (gamepad1.left_stick_x != 0 || gamepad1.left_stick_y != 0 ) {
+                    if (gamepad1.left_stick_x > 0)
+                        servos[currentServo].target = Math.min(1, servos[currentServo].target + incrementFine());
+                    else if (gamepad1.left_stick_x < 0)
+                        servos[currentServo].target = Math.max(0, servos[currentServo].target - incrementFine());
+                    else if (gamepad1.left_stick_y < 0)
+                        servos[currentServo].target = Math.min(1, servos[currentServo].target + incrementCoarse());
+                    else if (gamepad1.left_stick_y > 0)
+                        servos[currentServo].target = Math.max(0, servos[currentServo].target - incrementCoarse());
                     setDisplayTarget(targetMsg);
                     telemetry.update();
                 }
 
-            } else if (gamepad1.left_stick_y > 0) {
-                // decrease the target position
+            } else if (gamepad1.right_stick_x != 0 || gamepad1.right_stick_y != 0) {
                 runtime.reset();
-                while (gamepad1.left_stick_y > 0) {
-                    servos[currentServo].target = Math.max(0, servos[currentServo].target - increment());
-                    setDisplayTarget(targetMsg);
-                    telemetry.update();
-                }
-
-            } else if (gamepad1.right_stick_y < 0) {
-                // increase home position
-                runtime.reset();
-                while (gamepad1.right_stick_y < 0) {
-                    servos[currentServo].home = Math.min(1, servos[currentServo].home + increment());
-                    setDisplayHome(homeMsg);
-                    telemetry.update();
-                }
-
-            } else if (gamepad1.right_stick_y > 0) {
-                // decrease the home position
-                runtime.reset();
-                while (gamepad1.right_stick_y > 0) {
-                    servos[currentServo].home = Math.max(0, servos[currentServo].home - increment());
-                    setDisplayHome(homeMsg);
+                while (gamepad1.right_stick_x != 0 || gamepad1.right_stick_y != 0 ) {
+                    if (gamepad1.right_stick_x > 0)
+                        servos[currentServo].home = Math.min(1, servos[currentServo].home + incrementFine());
+                    else if (gamepad1.right_stick_x < 0)
+                        servos[currentServo].home = Math.max(0, servos[currentServo].home - incrementFine());
+                    else if (gamepad1.right_stick_y < 0)
+                        servos[currentServo].home = Math.min(1, servos[currentServo].home + incrementCoarse());
+                    else if (gamepad1.right_stick_y > 0)
+                        servos[currentServo].home = Math.max(0, servos[currentServo].home - incrementCoarse());
+                    setDisplayTarget(homeMsg);
                     telemetry.update();
                 }
 
@@ -263,11 +257,34 @@ public class CalibrateServo extends LinearOpMode {
      * Based on the elapsed time return a value to increment by
      * @return value to increment by
      */
-    private double increment() {
+    private double incrementFine() {
+
+        double incrementSlow = 0.001;
+        double incrementMedium = 0.002;
+        double incrementFast = 0.004;
+
+        return increment (incrementSlow, incrementMedium, incrementFast);
+    }
+
+    /**
+     * Based on the elapsed time return a value to increment by
+     * @return value to increment by
+     */
+    private double incrementCoarse() {
 
         double incrementSlow = 0.01;
         double incrementMedium = 0.02;
         double incrementFast = 0.04;
+
+        return increment (incrementSlow, incrementMedium, incrementFast);
+    }
+
+    /**
+     * Based on the elapsed time return a value to increment by
+     * @return value to increment by
+     */
+    private double increment(double incrementSlow, double incrementMedium, double incrementFast) {
+
         int sleepTime;
         double delta;
 
