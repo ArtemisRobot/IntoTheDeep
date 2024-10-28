@@ -91,7 +91,7 @@ public class CalibrateMotor extends LinearOpMode {
     public void runOpMode() {
 
         getMotors();
-        readCalibration();
+        //readCalibration();
 
         telemetry.addLine("Press start");
         telemetry.update();
@@ -144,10 +144,12 @@ public class CalibrateMotor extends LinearOpMode {
             } else if (gamepad1.x) {
                 // run to home position
                 runToPosition(motors[currentMotor].home);
+                while (gamepad1.x) sleep(10);
 
             } else if (gamepad1.b) {
                 // run motor to an target position
                 runToPosition(motors[currentMotor].target);
+                while (gamepad1.b) sleep(10);
 
             } else if (gamepad1.left_trigger > 0) {
                 // manually run the motor backwards
@@ -315,12 +317,14 @@ public class CalibrateMotor extends LinearOpMode {
 
     private void runToPosition(int position) {
 
-        //DcMotor.RunMode mode = motor.getMode();
+        DcMotor.RunMode mode = motor.getMode();
+        Logger.message("run from %d to %d", motor.getCurrentPosition(), position);
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor.setTargetPosition(position);
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor.setPower(speed);
         while (opModeIsActive()) {
+            Logger.message("position %d", motor.getCurrentPosition());
             if (! motor.isBusy())
                 break;
         }
@@ -328,9 +332,9 @@ public class CalibrateMotor extends LinearOpMode {
             runtime.reset();
             while (runtime.seconds() > 5 && opModeIsActive())
                 sleep(100);
-
         }
         motor.setPower(0);
+        motor.setMode(mode);
     }
 
      // Build a list of motors sorted by port number
