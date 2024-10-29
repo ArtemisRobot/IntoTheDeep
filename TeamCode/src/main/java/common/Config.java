@@ -20,9 +20,10 @@ public class Config {
 
     public static final String CAMERA           = "Webcam 1";
 
+    public static final String LIFTER           = "lifter";
     public static final String ARM              = "extendingArm";
     public static final String PICKER_WRIST     = "pickerWrist";
     public static final String PICKER_FINGERS   = "pickerFingers";
-    public static final String LIFTER           = "lifter";
-
+    public static final String DROPPER_WRIST    = "dropperWrist";
+    public static final String DROPPER_FINGERS  = "dropperFingers";
 }
