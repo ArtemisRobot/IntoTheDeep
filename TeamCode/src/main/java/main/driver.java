@@ -14,7 +14,7 @@ import common.Robot;
  public class driver extends LinearOpMode {
 
     private enum GAMEPAD_MODE { ARM, LIFTER }
-    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.ARM;
+    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.LIFTER;
 
     Robot   robot;
 
@@ -35,6 +35,20 @@ import common.Robot;
         telemetry.update();
 
         while (opModeIsActive()) {
+
+            /*
+            if (gamepad2.x) {
+                robot.pickerOpen();
+                while (gamepad2.x)
+                    sleep(10);
+
+            } else if (gamepad2.b) {
+                robot.pickerClosed();
+                while (gamepad2.b)
+                    sleep(10);
+            }
+
+             */
 
              if (gamepadMode == GAMEPAD_MODE.ARM) {
                  if (gamepad2.left_bumper) {
@@ -62,24 +76,28 @@ import common.Robot;
 
                  } else if (gamepad2.a) {
                      robot.pickerDown();
-                     while (gamepad1.a)
+                     while (gamepad2.a)
                          sleep(10);
 
                  } else if (gamepad2.y) {
                     robot.pickerUp();
-                     while (gamepad1.y)
+                     while (gamepad2.y)
                          sleep(10);
 
-                 } else if (gamepad2.x) {
+                 }
+
+                 else if (gamepad2.x) {
                     robot.pickerOpen();
-                        while (gamepad1.x)
+                        while (gamepad2.x)
                             sleep(10);
 
                  } else if (gamepad2.b) {
                     robot.pickerClosed();
-                     while (gamepad1.b)
+                     while (gamepad2.b)
                          sleep(10);
                  }
+
+
 
 
         } else if (gamepadMode == GAMEPAD_MODE.LIFTER) {
@@ -109,20 +127,23 @@ import common.Robot;
 
                  } else if (gamepad2.a) {
                      robot.dropperDown();
-                     while (gamepad1.a)
+                     while (gamepad2.a)
                          sleep(10);
 
                  }else if (gamepad2.y) {
                      robot.dropperUp();
-                     while (gamepad1.y)
+                     while (gamepad2.y)
                          sleep(10);
                  } else if (gamepad2.x) {
                      robot.dropperOpen();
-                     while (gamepad1.x)
+                     while (gamepad2.x)
                          sleep(10);
 
                  } else if (gamepad2.b) {
                      robot.dropperClosed();
+                     while (gamepad2.b)
+                         sleep(10);
+
                  }
              }
 

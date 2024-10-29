@@ -40,7 +40,7 @@ public class Robot {
     private final double PICKER_FINGER_CLOSED = 0.51;
     private final double PICKER_FINGER_OPEN = 0.189 ;
 
-    private final double DROPPER_UP_POSITION = 0.563;
+    private final double DROPPER_UP_POSITION = 0.57;
     private final double DROPPER_DOWN_POSITION = 0.50;
 
     private final double DROPPER_FINGER_CLOSED = 0.48;
@@ -50,7 +50,7 @@ public class Robot {
     private DcMotorEx   lifter;
     public DcMotor      extendingArm;
     private Servo       pickerWrist;
-    private Servo       pickerFingers;
+    public Servo       pickerFingers;
     private Servo       dropperWrist;
     private Servo       dropperFingers;
 
@@ -74,8 +74,8 @@ public class Robot {
         drive = new Drive(opMode);
 
         try {
-            pickerWrist = opMode.hardwareMap.get(Servo.class, Config.DROPPER_WRIST);
-            pickerFingers = opMode.hardwareMap.get(Servo.class, Config.DROPPER_FINGERS);
+            pickerWrist = opMode.hardwareMap.get(Servo.class, Config.PICKER_WRIST);
+            pickerFingers = opMode.hardwareMap.get(Servo.class, Config.PICKER_FINGERS);
 
             dropperWrist = opMode.hardwareMap.get(Servo.class, Config.DROPPER_WRIST);
             dropperFingers = opMode.hardwareMap.get(Servo.class, Config.DROPPER_FINGERS);
@@ -250,10 +250,14 @@ public class Robot {
     }
 
     public void pickerOpen(){
+        Logger.message("picker open");
+
         pickerFingers.setPosition(PICKER_FINGER_OPEN);
     }
 
     public void pickerClosed(){
+        Logger.message("picker close");
+
         pickerFingers.setPosition(PICKER_FINGER_CLOSED);
     }
 
