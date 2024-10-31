@@ -2,9 +2,7 @@ package main;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.Gamepad;
 
 import common.Logger;
 import common.Robot;
@@ -13,10 +11,11 @@ import common.Robot;
 
  public class driver extends LinearOpMode {
 
-    private enum GAMEPAD_MODE { ARM, LIFTER }
-    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.LIFTER;
+    private enum GAMEPAD_MODE { ARM, LIFTER, COMPETITION }
+    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.COMPETITION;
 
     Robot   robot;
+    boolean dropperOpen = false;
 
     @Override
     public void runOpMode() {
@@ -36,127 +35,190 @@ import common.Robot;
 
         while (opModeIsActive()) {
 
-            /*
-            if (gamepad2.x) {
-                robot.pickerOpen();
-                while (gamepad2.x)
-                    sleep(10);
-
-            } else if (gamepad2.b) {
-                robot.pickerClosed();
-                while (gamepad2.b)
-                    sleep(10);
+            if (gamepadMode == GAMEPAD_MODE.ARM) {
+                dropperHandleGamepad();
+            } else if (gamepadMode == GAMEPAD_MODE.LIFTER) {
+                lifterHandleGamepad();
+            } else if (gamepadMode == GAMEPAD_MODE.COMPETITION) {
+                robotHandleGamepad();
             }
+        }
+    }
 
-             */
+    private void dropperHandleGamepad () {
 
-             if (gamepadMode == GAMEPAD_MODE.ARM) {
-                 if (gamepad2.left_bumper) {
-                     robot.moveArm(robot.ARM_IN);
-                     while (gamepad2.left_bumper)
-                         sleep(10);
+        if (gamepad2.left_bumper) {
+            robot.armMoveTo(robot.ARM_IN);
+            while (gamepad2.left_bumper)
+                sleep(10);
 
-                 } else if (gamepad2.right_bumper) {
-                     robot.moveArm(robot.ARM_OUT);
-                     while (gamepad2.right_bumper)
-                         sleep(10);
+        } else if (gamepad2.right_bumper) {
+            robot.armMoveTo(robot.ARM_OUT);
+            while (gamepad2.right_bumper)
+                sleep(10);
 
-                 } else if (gamepad2.left_trigger > 0) {
-                     robot.amrRetract();
-                     while (gamepad2.left_trigger > 0 && robot.armRetractable())
-                         sleep(10);
-                     robot.armStop();
+        } else if (gamepad2.left_trigger > 0) {
+            robot.amrRetract();
+            while (gamepad2.left_trigger > 0 && robot.armRetractable())
+                sleep(10);
+            robot.armStop();
 
-                 } else if (gamepad2.right_trigger > 0) {
-                     robot.armExtend();
-                     while (gamepad2.right_trigger > 0 && robot.armExtendable()) {
-                         sleep(10);
-                     }
-                     robot.armStop();
+        } else if (gamepad2.right_trigger > 0) {
+            robot.armExtend();
+            while (gamepad2.right_trigger > 0 && robot.armExtendable()) {
+                sleep(10);
+            }
+            robot.armStop();
 
-                 } else if (gamepad2.a) {
-                     robot.pickerDown();
-                     while (gamepad2.a)
-                         sleep(10);
+        } else if (gamepad2.a) {
+            robot.pickerDown();
+            while (gamepad2.a)
+                sleep(10);
 
-                 } else if (gamepad2.y) {
-                    robot.pickerUp();
-                     while (gamepad2.y)
-                         sleep(10);
+        } else if (gamepad2.y) {
+            robot.pickerUp();
+            while (gamepad2.y)
+                sleep(10);
 
-                 }
+        } else if (gamepad2.x) {
+            robot.pickerOpen();
+            while (gamepad2.x)
+                sleep(10);
 
-                 else if (gamepad2.x) {
-                    robot.pickerOpen();
-                        while (gamepad2.x)
-                            sleep(10);
+        } else if (gamepad2.b) {
+            robot.pickerClose();
+            while (gamepad2.b)
+                sleep(10);
+        }
+    }
 
-                 } else if (gamepad2.b) {
-                    robot.pickerClosed();
-                     while (gamepad2.b)
-                         sleep(10);
-                 }
+    private void lifterHandleGamepad () {
 
+        if (gamepad2.left_bumper) {
+            robot.lifterDown();
+            while (gamepad2.left_bumper)
+                sleep(10);
 
+        } else if (gamepad2.right_bumper) {
+            robot.lifterUp();
+            while (gamepad2.right_bumper)
+                sleep(10);
 
+        } else if (gamepad2.right_trigger > 0) {
+            robot.LifterExtend();
+            while (gamepad2.right_trigger > 0 && robot.lifterExtendable())
+                sleep(10);
+            robot.lifterStop();
 
-        } else if (gamepadMode == GAMEPAD_MODE.LIFTER) {
+        } else if (gamepad2.left_trigger > 0) {
+            robot.lifterRetract();
+            while (gamepad2.left_trigger > 0 && robot.lifterRetractable())
+                sleep(10);
+            robot.lifterStop();
 
-                 if (gamepad2.left_bumper) {
-                     robot.lifterDown();
-                     while (gamepad2.left_bumper)
-                         sleep(10);
+        } else if (gamepad2.a) {
+            robot.dropperDown();
+            while (gamepad2.a)
+                sleep(10);
 
-                 } else if (gamepad2.right_bumper) {
-                     robot.lifterUp();
-                     while (gamepad2.right_bumper)
-                         sleep(10);
+        } else if (gamepad2.y) {
+            robot.dropperUp();
+            while (gamepad2.y)
+                sleep(10);
 
-                 } else if (gamepad2.left_trigger > 0) {
-                     robot.lifterRetract();
-                     while (gamepad2.left_trigger > 0 && robot.armRetractable())
-                         sleep(10);
-                     robot.armStop();
+        } else if (gamepad2.x) {
+            robot.dropperOpen();
+            while (gamepad2.x)
+                sleep(10);
 
-                 } else if (gamepad2.right_trigger > 0) {
-                     robot.LifterExtend();
-                     while (gamepad2.right_trigger > 0 && robot.armExtendable()) {
-                         sleep(10);
-                     }
-                     robot.armStop();
+        } else if (gamepad2.b) {
+            robot.dropperClose();
+            while (gamepad2.b)
+                sleep(10);
+        }
+    }
 
-                 } else if (gamepad2.a) {
-                     robot.dropperDown();
-                     while (gamepad2.a)
-                         sleep(10);
+    private void robotHandleGamepad () {
 
-                 }else if (gamepad2.y) {
-                     robot.dropperUp();
-                     while (gamepad2.y)
-                         sleep(10);
-                 } else if (gamepad2.x) {
-                     robot.dropperOpen();
-                     while (gamepad2.x)
-                         sleep(10);
+        Gamepad gamepad = gamepad1;
 
-                 } else if (gamepad2.b) {
-                     robot.dropperClosed();
-                     while (gamepad2.b)
-                         sleep(10);
+        if (gamepad.start) {
+            robotStart();
+            while (gamepad.start) sleep(10);
 
-                 }
-             }
+        } else if (gamepad.x) {
+            // toggle the picker open or closed
+            if (robot.pickerIsOpen()) {
+                robot.pickerClose();
+            } else {
+                robot.pickerOpen();
+            }
+            while (gamepad.x) sleep(10);
 
-            else if (gamepad2.dpad_left) {
-                robot.pickerUp();
-                robot.moveArm(robot.ARM_EXCHANGE);
+        } else if (gamepad.b) {
+            // toggle the dropper open or closed
+            if (robot.dropperIsOpen()) {
+                robot.dropperClose();
+            } else {
                 robot.dropperOpen();
-                robot.dropperDown();
-                sleep(1000);
-                robot.pickerOpen();
-                sleep(1000);
-                robot.dropperUp();
             }
-         }
+            while (gamepad.b) sleep(10);
+
+        } else if (gamepad.y) {
+            // move the game piece to scoring position
+            robot.pickerUp();
+            robot.dropperDown();
+            sleep(1000);
+            robot.armMoveTo(robot.ARM_EXCHANGE);
+            robot.dropperClose();
+            sleep(400);
+            robot.pickerOpen();
+            sleep(400);
+            robot.pickerUp();
+            while (gamepad.y) sleep(10);
+
+        } else if (gamepad.a) {
+            robot.lifterDown();
+            robot.pickerOpen();
+            robot.pickerDown();
+            robot.dropperOpen();
+            robot.dropperDown();
+            robot.armMoveTo(robot.AMR_OUT_PART_WAY);
+            while (gamepad.a) sleep(10);
+
+        } else if (gamepad.dpad_up) {
+            // raise the lifter
+            robot.lifterUp();
+            while (gamepad.dpad_up) sleep(10);
+
+        } else if (gamepad.dpad_down) {
+            // lower the lifter
+            robot.lifterDown();
+            while (gamepad.dpad_down) sleep(10);
+
+        } else if (gamepad.left_trigger > 0) {
+            // retract the arm
+            robot.amrRetract();
+            while (gamepad.left_trigger > 0 && robot.armRetractable())
+                sleep(10);
+            robot.armStop();
+
+        } else if (gamepad.right_trigger > 0) {
+            // extend the arm
+            robot.armExtend();
+            while (gamepad.right_trigger > 0 && robot.armExtendable()) {
+                sleep(10);
+            }
+            robot.armStop();
+        }
+    }
+
+    private void robotStart() {
+
+        robot.dropperDown();
+        robot.dropperOpen();
+        robot.armMoveTo(robot.AMR_OUT_PART_WAY);
+        robot.pickerDown();
+        robot.pickerOpen();
     }
 }
