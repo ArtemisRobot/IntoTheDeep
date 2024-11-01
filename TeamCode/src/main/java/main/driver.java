@@ -30,7 +30,17 @@ import common.Robot;
 
         waitForStart();
 
-        telemetry.addData("Mode", gamepadMode);
+        telemetry.addData("\n Robot Controls", "\n" +
+                "  y - set robot to dropper position\n" +
+                "  a - set robot to picking position\n" +
+                "  x - dropper open / close\n" +
+                "  b - picker open / close\n" +
+                "  dpad up - lifter up\n" +
+                "  dpad down - lifer down\n" +
+                "  left stick - lifter manual control\n" +
+                "  right stick - arm manual control\n" +
+                "\n");
+
         telemetry.update();
 
         while (opModeIsActive()) {
@@ -168,22 +178,22 @@ import common.Robot;
             // move the game piece to scoring position
             robot.pickerUp();
             robot.dropperDown();
-            sleep(1000);
+            sleep(1000);         // wait for the dropper to get to the down position
             robot.armMoveTo(robot.ARM_EXCHANGE);
             robot.dropperClose();
-            sleep(400);
+            sleep(400);          // wait for the dropper to get to the closed position
             robot.pickerOpen();
             sleep(400);
             robot.pickerUp();
             while (gamepad.y) sleep(10);
 
         } else if (gamepad.a) {
-            robot.lifterDown();
-            robot.pickerOpen();
-            robot.pickerDown();
             robot.dropperOpen();
             robot.dropperDown();
             robot.armMoveTo(robot.AMR_OUT_PART_WAY);
+            robot.pickerOpen();
+            robot.pickerDown();
+            robot.lifterDown();
             while (gamepad.a) sleep(10);
 
         } else if (gamepad.dpad_up) {
@@ -196,20 +206,32 @@ import common.Robot;
             robot.lifterDown();
             while (gamepad.dpad_down) sleep(10);
 
-        } else if (gamepad.left_trigger > 0) {
+        } else if (gamepad.right_stick_y < 0) {
             // retract the arm
             robot.amrRetract();
-            while (gamepad.left_trigger > 0 && robot.armRetractable())
+            while (gamepad.right_stick_y < 0 && robot.armRetractable())
                 sleep(10);
             robot.armStop();
 
-        } else if (gamepad.right_trigger > 0) {
+        } else if (gamepad.right_stick_y > 0) {
             // extend the arm
             robot.armExtend();
-            while (gamepad.right_trigger > 0 && robot.armExtendable()) {
+            while (gamepad.right_stick_y > 0 && robot.armExtendable()) {
                 sleep(10);
             }
             robot.armStop();
+
+        } else if (gamepad.left_stick_y < 0) {
+            robot.LifterExtend();
+            while (gamepad2.left_stick_y < 0 && robot.lifterExtendable())
+                sleep(10);
+            robot.lifterStop();
+
+        } else if (gamepad.left_stick_y > 0) {
+            robot.lifterRetract();
+            while (gamepad2.left_stick_y > 0 && robot.lifterRetractable())
+                sleep(10);
+            robot.lifterStop();
         }
     }
 
