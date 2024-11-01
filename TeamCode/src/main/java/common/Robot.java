@@ -32,7 +32,7 @@ public class Robot {
     // lifter
     public static double LIFTER_SPEED = 0.50;
     public static double LIFTER_SPEED_LOW = 0.20;
-    public static int    LIFTER_STOP_TICKES = 200;
+    public static int    LIFTER_STOP_TICKS = 200;
     public static int    LIFTER_UP_POSITION = 1000;
     public static int    LIFTER_DOWN_POSITION = 0;
 
@@ -54,9 +54,9 @@ public class Robot {
 
     // Define Motor and Servo objects
     private DcMotorEx   lifter;
-    public DcMotor      extendingArm;
+    private DcMotor     extendingArm;
     private Servo       pickerWrist;
-    public Servo        pickerFingers;
+    private Servo       pickerFingers;
     private Servo       dropperWrist;
     private Servo       dropperFingers;
 
@@ -264,9 +264,9 @@ public class Robot {
             }
 
             int remaining = Math.abs(position-current);
-            if (remaining > LIFTER_STOP_TICKES && speed != lowSpeed) {
+            if (remaining > LIFTER_STOP_TICKS && speed != lowSpeed) {
                 motor.setPower(lowSpeed);
-                Logger.message("set to lower speedu");
+                Logger.message("set to lower speed");
             }
 
             //Logger.message("position %5d   remaining %5d  elapsed %6.2f ", current, remaining, elapsedTime.milliseconds());
@@ -333,20 +333,25 @@ public class Robot {
         return opMode.gamepad1.back;
     }
 
+    @SuppressWarnings("unused")
     public void turn(double degrees) {
         drive.turn(degrees);
     }
 
+    @SuppressWarnings("unused")
     public void forward (double distance) {
         drive.forward(distance);
     }
 
+    @SuppressWarnings("unused")
     public void back (double distance) {
         drive.back(distance);
     }
 
+    @SuppressWarnings("unused")
     public void strafeLeft (double distance) { drive.strafeLeft(distance); }
 
+    @SuppressWarnings("unused")
     public void strafeRight (double distance) {
         drive.strafeRight(distance);
     }
