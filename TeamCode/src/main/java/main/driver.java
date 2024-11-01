@@ -4,7 +4,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
-import common.Logger;
 import common.Robot;
 
 @TeleOp(name="Driver")
@@ -15,7 +14,6 @@ import common.Robot;
     GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.COMPETITION;
 
     Robot   robot;
-    boolean dropperOpen = false;
 
     @Override
     public void runOpMode() {
