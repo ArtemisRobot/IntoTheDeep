@@ -26,19 +26,19 @@ public class Robot {
     public final int    ARM_IN = 0;
     public final int    ARM_OUT = 2000;
     public final int    AMR_OUT_PART_WAY = 750;
-    public final int    ARM_EXCHANGE = 432;
-    public static double ARM_SPEED = 0.3;
+    public final int    ARM_EXCHANGE = 511;
+    public static double ARM_SPEED = 0.5;
 
     // lifter
     public static double LIFTER_SPEED = 0.50;
     public static double LIFTER_SPEED_LOW = 0.20;
-    public static int    LIFTER_STOP_TICKS = 200;
-    public static int    LIFTER_UP_POSITION = 1000;
+    public static int    LIFTER_STOP_TICKS = 1000;
+    public static int    LIFTER_UP_POSITION = 5780;
     public static int    LIFTER_DOWN_POSITION = 0;
 
     // Grabbers
-    private final double PICKER_UP_POSITION = 0.39;
-    private final double PICKER_DOWN_POSITION = 0.5;
+    private final double PICKER_UP_POSITION = 0.383;
+    private final double PICKER_DOWN_POSITION = 0.497;
 
     private final double PICKER_FINGER_CLOSED = 0.51;
     private final double PICKER_FINGER_OPEN = 0.189 ;
@@ -264,9 +264,9 @@ public class Robot {
             }
 
             int remaining = Math.abs(position-current);
-            if (remaining > LIFTER_STOP_TICKS && speed != lowSpeed) {
+            if (remaining < LIFTER_STOP_TICKS && speed != lowSpeed) {
                 motor.setPower(lowSpeed);
-                Logger.message("set to lower speed");
+                Logger.message("remaining %d set to lower speed");
             }
 
             //Logger.message("position %5d   remaining %5d  elapsed %6.2f ", current, remaining, elapsedTime.milliseconds());

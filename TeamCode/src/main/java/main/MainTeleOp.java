@@ -12,9 +12,6 @@ import common.Robot;
 
  public class MainTeleOp extends LinearOpMode {
 
-    private enum GAMEPAD_MODE { ARM, LIFTER, COMPETITION }
-    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.COMPETITION;
-
     Robot   robot;
 
     @Override
