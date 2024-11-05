@@ -157,17 +157,18 @@ public class Drive extends Thread {
         } catch (Exception e) {
             Logger.error(e, "Hardware not found");
         }
+
+        try {
+            distanceSensor = opMode.hardwareMap.get(DistanceSensor.class, Config.DISTANCE_SENSOR);
+        } catch (Exception e) {
+            Logger.error(e, "Distance sensor not found");
+        }
+
         /*
         try {
             //odometer = opMode.hardwareMap.get(DcMotorEx.class, Config.ODOMETER);
             //odometer.setDirection(DcMotorSimple.Direction.REVERSE);
             odometer = new Odometer(opMode.hardwareMap, Config.ODOMETER, Odometer.OdometerType.POD);
-        } catch (Exception e) {
-            Logger.error(e, "Hardware not found");
-        }
-
-        try {
-            distanceSensor = opMode.hardwareMap.get(DistanceSensor.class, Config.DISTANCE_SENSOR);
         } catch (Exception e) {
             Logger.error(e, "Hardware not found");
         }
