@@ -49,11 +49,15 @@ import java.util.Locale;
 import java.util.SortedSet;
 
 import common.Logger;
+import utils.Increment;
 
 @TeleOp(name="Calibrate Motor", group="Test")
 @SuppressWarnings("unused")
+@com.acmerobotics.dashboard.config.Config
 
 public class CalibrateMotor extends LinearOpMode {
+
+    public static double  speed = 0.25;
 
     private final String calibrationPath = "/temp/motorCalibration.txt";
 
@@ -65,16 +69,20 @@ public class CalibrateMotor extends LinearOpMode {
     private final int incrementMedium = 10;
     private final int incrementFast = 100;
 
-    private final double speed = 0.25;
+    private final double incrementSpeedSlow = 0.01;
+    private final double incrementSpeedMedium = 0.02;
+    private final double incrementSpeedFast = 0.05;
+
     private DcMotor motor   = null;
 
     private boolean holdPower = true;
 
     private static class MotorInfo implements Comparable<MotorInfo>{
         String      name;
-        DcMotor   motor;
+        DcMotor     motor;
         int         home;
         int         target;
+        double      speed;
 
         @Override
         public int compareTo(MotorInfo o) {
@@ -90,6 +98,8 @@ public class CalibrateMotor extends LinearOpMode {
     @Override
     public void runOpMode() {
 
+        Increment speedIncrement = new Increment(incrementSpeedSlow, incrementSpeedMedium, incrementSpeedFast);
+
         getMotors();
         //readCalibration();
 
@@ -102,12 +112,15 @@ public class CalibrateMotor extends LinearOpMode {
         Telemetry.Item motorNameMsg =  telemetry.addData("Motor name", 0);
         Telemetry.Item directionMsg = telemetry.addData("Motor direction", 0);
         Telemetry.Item brakingMsg = telemetry.addData("Motor braking", 0);
+        Telemetry.Item speedMsg = telemetry.addData("Motor speed", 0);
         Telemetry.Item positionMsg = telemetry.addData("Motor position", 0);
         Telemetry.Item homeMsg = telemetry.addData("Home position", 0);
         Telemetry.Item targetMsg = telemetry.addData("Target position", 0);
 
         setDisplayName (motorNameMsg);
         setDisplayDirection(directionMsg);
+        setDisplaySpeed(speedMsg);
+        setDisplayBraking(brakingMsg);
         setDisplayPosition(positionMsg);
         setDisplayHome(homeMsg);
         setDisplayTarget(targetMsg);
@@ -115,12 +128,14 @@ public class CalibrateMotor extends LinearOpMode {
         telemetry.addData("\nMotor Calibration Controls", "\n" +
                 "  dpad left - select previous motor\n" +
                 "  dpad right - select next motor\n" +
-                "  dpad up = change motor direction\n" +
-                "  dpad up = change motor breaking\n" +
+                "  dpad up - change motor direction\n" +
+                "  dpad down - change motor breaking\n" +
                 "  left trigger - run motor backwards\n" +
                 "  right trigger - run the motor forward\n" +
                 "  left stick - increase/decrease target position\n" +
                 "  right stick - increase/decrease home position\n" +
+                "  left bumper - decrease motor speed\n" +
+                "  right bumper - increase motor speed\n" +
                 "  y - set home position to current position\n" +
                 "  a - set target position to current position\n" +
                 "  x - run to home position\n" +
@@ -172,40 +187,47 @@ public class CalibrateMotor extends LinearOpMode {
                 }
                 motor.setPower(0);
 
-            } else if (gamepad1.left_stick_y > 0) {
-                // increase target position
-                runtime.reset();
-                while (gamepad1.left_stick_y > 0) {
-                    motors[currentMotor].target -= increment(incrementSlow, incrementMedium, incrementFast);
-                    setDisplayTarget(targetMsg);
-                    telemetry.update();
-                }
+            } else if (gamepad1.left_stick_y != 0) {
+               // increase / decrease target position
+               runtime.reset();
+               while (gamepad1.left_stick_y != 0)  {
+                   int inc = increment(incrementSlow, incrementMedium, incrementFast);
+                   if (gamepad1.left_stick_y > 0)
+                       motors[currentMotor].target -= inc;
+                   else if (gamepad1.left_stick_y < 0)
+                       motors[currentMotor].target += inc;
+                   setDisplayTarget(targetMsg);
+                   telemetry.update();
+               }
 
-            } else if (gamepad1.left_stick_y < 0) {
-                // decrease the target position
+            } else if (gamepad1.right_stick_y != 0) {
+                // increase / decrease home position
                 runtime.reset();
-                while (gamepad1.left_stick_y < 0) {
-                    motors[currentMotor].target += increment(incrementSlow, incrementMedium, incrementFast);
-                    setDisplayTarget(targetMsg);
-                    telemetry.update();
-                }
-                motor.setPower(0);
-
-            } else if (gamepad1.right_stick_y > 0) {
-                // increase home position
-                runtime.reset();
-                while (gamepad1.right_stick_y > 0) {
-                    motors[currentMotor].home -= increment(incrementSlow, incrementMedium, incrementFast);
+                while (gamepad1.right_stick_y != 0) {
+                    int inc = increment(incrementSlow, incrementMedium, incrementFast);
+                    if (gamepad1.right_stick_y > 0)
+                        motors[currentMotor].home -= inc;
+                    else if (gamepad1.right_stick_y < 0)
+                        motors[currentMotor].home += inc;
                     setDisplayHome(homeMsg);
                     telemetry.update();
                 }
 
-            } else if (gamepad1.right_stick_y < 0) {
+            } else if (gamepad1.left_bumper) {
+                // increase home position
+                speedIncrement.reset();
+                while (gamepad1.left_bumper) {
+                    speed = Math.max(speed - speedIncrement.get(), 0);
+                    setDisplaySpeed(speedMsg);
+                    telemetry.update();
+                }
+
+            } else if (gamepad1.right_bumper) {
                 // decrease the home position
                 runtime.reset();
-                while (gamepad1.right_stick_y < 0) {
-                    motors[currentMotor].home += increment(incrementSlow, incrementMedium, incrementFast);
-                    setDisplayHome(homeMsg);
+                while (gamepad1.right_bumper) {
+                    speed = Math.min(speed + speedIncrement.get(), 0.95);
+                    setDisplaySpeed(speedMsg);
                     telemetry.update();
                 }
                 motor.setPower(0);
@@ -288,6 +310,10 @@ public class CalibrateMotor extends LinearOpMode {
 
     private void setDisplayBraking (Telemetry.Item item) {
         item.setValue("%s", motors[currentMotor].motor.getZeroPowerBehavior());
+    }
+
+    private void setDisplaySpeed (Telemetry.Item item) {
+        item.setValue( "%5.3f", speed);
     }
 
     /**
