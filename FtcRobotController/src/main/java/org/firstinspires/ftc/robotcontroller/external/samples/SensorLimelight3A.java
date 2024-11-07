@@ -67,7 +67,7 @@ import java.util.List;
  *   below the name of the Limelight on the top level configuration screen.
  */
 @TeleOp(name = "Sensor: Limelight3A", group = "Sensor")
-
+@Disabled
 public class SensorLimelight3A extends LinearOpMode {
 
     private Limelight3A limelight;
@@ -108,7 +108,7 @@ public class SensorLimelight3A extends LinearOpMode {
                 double parseLatency = result.getParseLatency();
                 telemetry.addData("LL Latency", captureLatency + targetingLatency);
                 telemetry.addData("Parse Latency", parseLatency);
-                //telemetry.addData("PythonOutput", java.util.Arrays.toString(result.getPythonOutput()));
+                telemetry.addData("PythonOutput", java.util.Arrays.toString(result.getPythonOutput()));
                 
                 if (result.isValid()) {
                     telemetry.addData("tx", result.getTx());
@@ -119,13 +119,10 @@ public class SensorLimelight3A extends LinearOpMode {
                     telemetry.addData("Botpose", botpose.toString());
 
                     // Access barcode results
-                    /*
                     List<LLResultTypes.BarcodeResult> barcodeResults = result.getBarcodeResults();
                     for (LLResultTypes.BarcodeResult br : barcodeResults) {
                         telemetry.addData("Barcode", "Data: %s", br.getData());
                     }
-
-                     */
 
                     // Access classifier results
                     List<LLResultTypes.ClassifierResult> classifierResults = result.getClassifierResults();
@@ -150,14 +147,12 @@ public class SensorLimelight3A extends LinearOpMode {
                     for (LLResultTypes.ColorResult cr : colorResults) {
                         telemetry.addData("Color", "X: %.2f, Y: %.2f", cr.getTargetXDegrees(), cr.getTargetYDegrees());
                     }
-
                 }
             } else {
                 telemetry.addData("Limelight", "No data available");
             }
 
             telemetry.update();
-            sleep(2000);
         }
         limelight.stop();
     }
