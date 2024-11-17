@@ -362,7 +362,6 @@ public class Robot {
         dropperClose();
         dropperUp();
         lifterDown();
-
     }
 
     public void pickUpYellow() {
@@ -375,8 +374,6 @@ public class Robot {
         pickerUp();
         dropperClose();
         dropperUp();
-
-
     }
 
     public void pushSample() {

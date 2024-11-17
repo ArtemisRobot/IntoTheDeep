@@ -15,8 +15,30 @@ import common.Robot;
 
  public class BlueAuto extends LinearOpMode {
 
-    private enum PathState { START, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, YELLOW_LEFT, SCORE_NET_ZONE}
+    private static enum PathState {
+        START(0),
+        BUCKET1(1),
+        YELLOW_RIGHT(2),
+        BUCKET2(3),
+        YELLOW_MIDDLE(4),
+        BUCKET3(5),
+        YELLOW_LEFT(6),
+        SCORE_NET_ZONE(7);
+
+        private final int value;
+
+        PathState(int value) {
+            this.value = value;
+        }
+        public int getValue() {
+            return value;
+        }
+        public static PathState next(int id) {
+            return values()[id];
+        }
+    }
     PathState pathState = PathState.START;
+    Path[] paths = new Path[8];
 
     Robot   robot;
 
@@ -25,7 +47,6 @@ import common.Robot;
 
         robot = new Robot(this);
 
-        Path[] paths = new Path[5];
 
         buildPaths();
         waitForStart();
@@ -69,6 +90,9 @@ import common.Robot;
     }
 
     private void followPath() {
+        int index = pathState.value;
+
+        pathState  = PathState.next(index+1);
 
     }
 
