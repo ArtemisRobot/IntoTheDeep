@@ -356,5 +356,31 @@ public class Robot {
         drive.strafeRight(distance);
     }
 
+    public  void dropSampleInTopBucket() {
+        lifterUp();
+        dropperOpen();
+        dropperClose();
+        dropperUp();
+        lifterDown();
+
+    }
+
+    public void pickUpYellow() {
+        armMoveTo(AMR_OUT_PART_WAY);
+        pickerOpen();
+        pickerDown();
+        dropperOpen();
+        dropperDown();
+        pickerClose();
+        pickerUp();
+        dropperClose();
+        dropperUp();
+
+
+    }
+
+    public void pushSample() {
+
+    }
 } // end of class
 
