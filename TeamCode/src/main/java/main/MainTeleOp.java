@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 
 import common.Robot;
 
-@TeleOp(name="MainTeleOp")
+@TeleOp(name="MainTeleOp", group = "Main")
 
  public class MainTeleOp extends LinearOpMode {
 
