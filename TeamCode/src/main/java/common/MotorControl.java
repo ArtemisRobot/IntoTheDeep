@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-public class Motor extends Thread {
+public class MotorControl extends Thread {
 
     public enum MOTOR_STATE {IDLE, MOVING, MOVING_TO_POSITION }
     private MOTOR_STATE state = MOTOR_STATE.IDLE;
@@ -19,7 +19,7 @@ public class Motor extends Thread {
     private double speed = 0.5;
     private double lowSpeed = 0.2;
 
-    public Motor(LinearOpMode opMode, DcMotor motor) {
+    public MotorControl(LinearOpMode opMode, DcMotor motor) {
 
         this.opMode = opMode;
         this.motor = motor;
@@ -40,7 +40,7 @@ public class Motor extends Thread {
         while (opMode.opModeIsActive()) {
             switch (state) {
                 case IDLE:
-                    yield();
+                    Thread.yield();
                     continue;
                 case MOVING:
                     limitRange();
@@ -54,15 +54,19 @@ public class Motor extends Thread {
     }
 
     /**
-     * Turn the motor on.
+     * Turn the motor on, if the motor is already on change the speed of the motor
      *
      * @param speed  motor power (-1 to 1)
      */
-    public void runMotor(int speed) {
-        interruptAction();
-        synchronized (motor) {
-            motor.setPower(speed);
-            state = MOTOR_STATE.MOVING;
+    public void runMotor(double speed) {
+        if (state != MOTOR_STATE.MOVING) {
+            interruptAction();
+        }
+        if (inRange(speed)) {
+            synchronized (motor) {
+                motor.setPower(speed);
+                state = MOTOR_STATE.MOVING;
+            }
         }
     }
 
@@ -117,7 +121,7 @@ public class Motor extends Thread {
 
         int current = motor.getCurrentPosition();
         int last = current;
-        Logger.message("run from %d to %d", current, targetPosition);
+        Logger.message("run from %d to %d at %4.2f", current, targetPosition, speed);
         DcMotor.RunMode mode = motor.getMode();
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor.setTargetPosition(targetPosition);
@@ -126,6 +130,7 @@ public class Motor extends Thread {
 
         double lastMoveTime = 0;
         elapsedTime.reset();
+        boolean fullPower = true;
         while (opMode.opModeIsActive() && state == MOTOR_STATE.MOVING_TO_POSITION) {
             if (!motor.isBusy())
                 break;
@@ -144,11 +149,14 @@ public class Motor extends Thread {
 
             int remaining = Math.abs(targetPosition - current);
             if (remaining < lowSpeedThreshold && speed != lowSpeed) {
-                motor.setPower(lowSpeed);
-                Logger.message("remaining %d set to lower speed");
+                if (fullPower) {
+                    motor.setPower(lowSpeed);
+                    fullPower = false;
+                    Logger.message("remaining %d set to lower speed", remaining);
+                }
             }
 
-            //Logger.message("position %5d   remaining %5d  elapsed %6.2f ", current, remaining, elapsedTime.milliseconds());
+            //Logger.message("%s position %5d   remaining %5d  elapsed %6.2f ", state, current, remaining, elapsedTime.milliseconds());
         }
         motor.setPower(0);
         motor.setMode(mode);
@@ -156,15 +164,27 @@ public class Motor extends Thread {
 
     private void limitRange () {
 
-        if (minPosition != 0 || maxPosition != 0) {
+        if (minPosition != maxPosition) {
+            Logger.message("limiting motor range");
+            double power = motor.getPower();
             while (opMode.opModeIsActive() && state == MOTOR_STATE.MOVING) {
-                int position = motor.getCurrentPosition();
-                if (position < minPosition || position > maxPosition) {
+                if (!inRange(power)) {
                     interruptAction();
                     break;
                 }
             }
         }
+    }
+
+    private boolean inRange(double power) {
+        if (minPosition != maxPosition) {
+            int position = motor.getCurrentPosition();
+            if (power > 0 && position > maxPosition)
+                return false;
+            else if (power < 0 && position < minPosition)
+                return false;
+        }
+        return true;
     }
 
     private boolean emergencyStop() {
