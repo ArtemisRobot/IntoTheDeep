@@ -7,13 +7,26 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
+import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
+import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierCurve;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
+import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
+import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
 
 import common.Robot;
 
 @Autonomous(name="BlueBucketAuto", group = "Main")
 
  public class BlueAuto extends LinearOpMode {
+
+    public static double START_X = 0;
+    public static double START_Y = 0;
+    public static double START_HEADING = 0;
+
+    public static double BUCKET_X = 8;
+    public static double BUCKET_Y = 25;
+    public static double BUCKET_HEADING = 0;
 
     private static enum PathState {
         START(0),
@@ -37,67 +50,83 @@ import common.Robot;
             return values()[id];
         }
     }
-    PathState pathState = PathState.START;
-    Path[] paths = new Path[8];
+    private PathState pathState = PathState.START;
 
+    int pathCount = PathState.values().length;
+    private final PathChain[] paths = new PathChain[pathCount];
+
+    private Follower follower;
     Robot   robot;
 
     @Override
     public void runOpMode() {
 
-        robot = new Robot(this);
-
-
-        buildPaths();
+        initialize();
         waitForStart();
-
 
         while (opModeIsActive()) {
 
-            switch (pathState) {
-                case START:
-                    followPath();
-                    continue;
+            if ( ! isBusy()) {
+                switch (pathState) {
+                    case START:
+                        followPath();
+                        continue;
 
-                case BUCKET1:
-                case BUCKET3:
-                case BUCKET2:
-                    robot.dropSampleInTopBucket();
-                    followPath();
-                    continue;
+                    case BUCKET1:
+                    case BUCKET3:
+                    case BUCKET2:
+                        robot.dropSampleInTopBucket();
+                        followPath();
+                        continue;
 
-                case YELLOW_RIGHT:
-                case YELLOW_MIDDLE:
-                    robot.pickUpYellow();
-                    followPath();
-                    continue;
+                    case YELLOW_RIGHT:
+                    case YELLOW_MIDDLE:
+                        robot.pickUpYellow();
+                        followPath();
+                        continue;
 
-                case YELLOW_LEFT:
-                    robot.pushSample();
-                    followPath();
-                    continue;
+                    case YELLOW_LEFT:
+                        robot.pushSample();
+                        followPath();
+                        continue;
 
-                case SCORE_NET_ZONE:
-
+                    case SCORE_NET_ZONE:
+                }
             }
-
-            while (isBusy()) sleep(10);
+            follower.update();
         }
     }
 
-    private void buildPaths() {
+    private void initialize() {
 
+        robot = new Robot(this);
+        follower = new Follower(hardwareMap);
+        follower.setStartingPose(new Pose(START_X, START_Y, START_HEADING));
+        buildPaths();
+    }
+
+    private void buildPaths() {
+        paths[PathState.START.ordinal()] = createCurve(START_X, START_Y, START_X+20, START_Y, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
     }
 
     private void followPath() {
-        int index = pathState.value;
-
+        int index = pathState.ordinal();
+        follower.followPath(paths[index]);
         pathState  = PathState.next(index+1);
-
     }
 
     private boolean isBusy () {
-        return false;
+        if (follower.isBusy())
+            return true;
+         else
+            return robot.isBusy();
+    }
 
+    private PathChain createCurve (double startX, double startY, double pointX, double pointY, double endX, double endY, double heading) {
+        return follower.pathBuilder()
+                .addPath(new BezierCurve(new Point(startX, startX), new Point(pointX, pointY), new Point(endX, endY, Point.CARTESIAN)))
+                .setConstantHeadingInterpolation(Math.toRadians(heading))
+                .setPathEndTimeoutConstraint(3)
+                .build();
     }
 }
