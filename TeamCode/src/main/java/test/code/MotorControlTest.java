@@ -94,7 +94,7 @@ public class MotorControlTest extends LinearOpMode {
                 motorControl.stopMotor();
             }
 
-            telemetry.addData("Motor is idle", motorControl.motorIsIdle());
+            telemetry.addData("Motor is busy", motorControl.motorIsBusy());
             telemetry.update();
 
         }
