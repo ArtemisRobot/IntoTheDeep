@@ -22,13 +22,13 @@ import common.Robot;
 
  public class BlueAuto extends LinearOpMode {
 
-    public static double START_X = 0;
-    public static double START_Y = 0;
+    public static double START_X = 10;
+    public static double START_Y = 85;
     public static double START_HEADING = 0;
 
-    public static double BUCKET_X = 8;
-    public static double BUCKET_Y = 25;
-    public static double BUCKET_HEADING = 0;
+    public static double BUCKET_X = 20;
+    public static double BUCKET_Y = 120;
+    public static double BUCKET_HEADING = 135    ;
 
     public static double YELLOW_RIGHT_X = 0;
     public static double YELLOW_RIGHT_Y = 0;
@@ -41,6 +41,11 @@ import common.Robot;
     public static double YELLOW_LEFT_X = 0;
     public static double YELLOW_LEFT_Y = 0;
     public static double YELLOW_LEFT_HEADING = 0;
+
+    public static double SCORE_NET_ZONE_HEADING = 0;
+    public static double NET_ZONE_X = 0;
+    public static double NET_ZONE_Y = 0;
+
 
     private static enum PathState { START, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, YELLOW_LEFT, SCORE_NET_ZONE;
         public static PathState next(int id) {
@@ -105,6 +110,10 @@ import common.Robot;
         paths[PathState.START.ordinal()] = createCurve(START_X, START_Y, START_X+20, START_Y, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
         paths[PathState.BUCKET1.ordinal()] = createLine(BUCKET_X, BUCKET_Y, YELLOW_RIGHT_X, YELLOW_RIGHT_Y, YELLOW_RIGHT_HEADING);
         paths[PathState.YELLOW_RIGHT.ordinal()] = createLine(YELLOW_RIGHT_X, YELLOW_RIGHT_Y, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
+        paths[PathState.BUCKET2.ordinal()] = createLine(BUCKET_X, BUCKET_Y, YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, YELLOW_MIDDLE_HEADING);
+        paths[PathState.YELLOW_MIDDLE.ordinal()] = createLine(YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
+        paths[PathState.BUCKET3.ordinal()] = createLine(BUCKET_X, BUCKET_Y, YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING);
+        paths[PathState.YELLOW_LEFT.ordinal()] = createLine(YELLOW_LEFT_X, YELLOW_LEFT_Y, NET_ZONE_X, NET_ZONE_Y,SCORE_NET_ZONE_HEADING);
     }
 
     private void followPath() {
