@@ -104,8 +104,8 @@ public class MotorControl extends Thread {
         lowSpeedThreshold = threshold;
     }
 
-    public boolean motorIsIdle () {
-        return state == MOTOR_STATE.IDLE;
+    public boolean motorIsBusy () {
+        return state != MOTOR_STATE.IDLE;
     }
 
     private void interruptAction () {
