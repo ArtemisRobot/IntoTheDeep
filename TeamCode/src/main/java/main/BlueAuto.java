@@ -10,10 +10,12 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierCurve;
+import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierLine;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
 
+import common.Logger;
 import common.Robot;
 
 @Autonomous(name="BlueBucketAuto", group = "Main")
@@ -28,24 +30,19 @@ import common.Robot;
     public static double BUCKET_Y = 25;
     public static double BUCKET_HEADING = 0;
 
-    private static enum PathState {
-        START(0),
-        BUCKET1(1),
-        YELLOW_RIGHT(2),
-        BUCKET2(3),
-        YELLOW_MIDDLE(4),
-        BUCKET3(5),
-        YELLOW_LEFT(6),
-        SCORE_NET_ZONE(7);
+    public static double YELLOW_RIGHT_X = 0;
+    public static double YELLOW_RIGHT_Y = 0;
+    public static double YELLOW_RIGHT_HEADING = 0;
 
-        private final int value;
+    public static double YELLOW_MIDDLE_X = 0;
+    public static double YELLOW_MIDDLE_Y = 0;
+    public static double YELLOW_MIDDLE_HEADING = 0;
 
-        PathState(int value) {
-            this.value = value;
-        }
-        public int getValue() {
-            return value;
-        }
+    public static double YELLOW_LEFT_X = 0;
+    public static double YELLOW_LEFT_Y = 0;
+    public static double YELLOW_LEFT_HEADING = 0;
+
+    private static enum PathState { START, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, YELLOW_LEFT, SCORE_NET_ZONE;
         public static PathState next(int id) {
             return values()[id];
         }
@@ -98,7 +95,6 @@ import common.Robot;
     }
 
     private void initialize() {
-
         robot = new Robot(this);
         follower = new Follower(hardwareMap);
         follower.setStartingPose(new Pose(START_X, START_Y, START_HEADING));
@@ -107,6 +103,8 @@ import common.Robot;
 
     private void buildPaths() {
         paths[PathState.START.ordinal()] = createCurve(START_X, START_Y, START_X+20, START_Y, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
+        paths[PathState.BUCKET1.ordinal()] = createLine(BUCKET_X, BUCKET_Y, YELLOW_RIGHT_X, YELLOW_RIGHT_Y, YELLOW_RIGHT_HEADING);
+        paths[PathState.YELLOW_RIGHT.ordinal()] = createLine(YELLOW_RIGHT_X, YELLOW_RIGHT_Y, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
     }
 
     private void followPath() {
@@ -116,15 +114,20 @@ import common.Robot;
     }
 
     private boolean isBusy () {
-        if (follower.isBusy())
-            return true;
-         else
-            return robot.isBusy();
+        return follower.isBusy() ||  robot.isBusy();
     }
 
     private PathChain createCurve (double startX, double startY, double pointX, double pointY, double endX, double endY, double heading) {
         return follower.pathBuilder()
-                .addPath(new BezierCurve(new Point(startX, startX), new Point(pointX, pointY), new Point(endX, endY, Point.CARTESIAN)))
+                .addPath(new BezierCurve(new Point(startX, startY), new Point(pointX, pointY), new Point(endX, endY, Point.CARTESIAN)))
+                .setConstantHeadingInterpolation(Math.toRadians(heading))
+                .setPathEndTimeoutConstraint(3)
+                .build();
+    }
+
+    private PathChain createLine (double startX, double startY, double endX, double endY, double heading) {
+        return follower.pathBuilder()
+                .addPath(new BezierLine(new Point(startX, startY), new Point(endX, endY, Point.CARTESIAN)))
                 .setConstantHeadingInterpolation(Math.toRadians(heading))
                 .setPathEndTimeoutConstraint(3)
                 .build();
