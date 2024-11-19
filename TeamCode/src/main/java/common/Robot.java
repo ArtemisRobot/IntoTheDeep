@@ -53,12 +53,15 @@ public class Robot {
     private boolean dropperOpened = false;
 
     // Define Motor and Servo objects
-    private DcMotorEx   lifter;
-    private DcMotor     extendingArm;
-    private Servo       pickerWrist;
-    private Servo       pickerFingers;
-    private Servo       dropperWrist;
-    private Servo       dropperFingers;
+    private DcMotorEx       lifter;
+    private DcMotor         extendingArm;
+    private Servo           pickerWrist;
+    private Servo           pickerFingers;
+    private Servo           dropperWrist;
+    private Servo           dropperFingers;
+
+    private MotorControl    lifterControl;
+    private MotorControl    extendingArmControl;
 
     // drivetrain
     public Drive      drive = null;
@@ -95,7 +98,10 @@ public class Robot {
             extendingArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             extendingArm.setDirection(DcMotorSimple.Direction.REVERSE);
             extendingArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            extendingArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            extendingArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+            extendingArmControl = new MotorControl(opMode, extendingArm);
+            extendingArmControl.setRange(ARM_IN, ARM_OUT);
 
         } catch (Exception e) {
             Logger.error(e, "hardware not found");
@@ -106,7 +112,12 @@ public class Robot {
             lifter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             lifter.setDirection(DcMotorSimple.Direction.REVERSE);
             lifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            lifter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            lifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+            lifterControl = new MotorControl(opMode, lifter);
+            lifterControl.setRange(LIFTER_DOWN_POSITION, LIFTER_UP_POSITION);
+            lifterControl.setLowSpeedThreshold(LIFTER_STOP_TICKS);
+            lifterControl.start();
 
         } catch (Exception e) {
             Logger.error(e, "hardware not found");
@@ -164,7 +175,8 @@ public class Robot {
     public void lifterUp() {
         Logger.message("set lifter to position %d at %4.2f speed", LIFTER_UP_POSITION, LIFTER_SPEED);
 
-        runMotorToPosition(lifter, LIFTER_UP_POSITION, LIFTER_SPEED);
+        //runMotorToPosition(lifter, LIFTER_UP_POSITION, LIFTER_SPEED);
+        lifterControl.setPosition(LIFTER_UP_POSITION, LIFTER_SPEED, LIFTER_SPEED_LOW);
     }
 
     /**
@@ -200,23 +212,26 @@ public class Robot {
      * Extend arm to the specified position
      */
     public void armExtend() {
-        if (armExtendable())
-            extendingArm.setPower(ARM_SPEED);
+        extendingArmControl.runMotor(ARM_SPEED);
+        //if (armExtendable())
+        //    extendingArm.setPower(ARM_SPEED);
     }
 
     /**
      * Retract arm to the specified position
      */
     public void amrRetract() {
-        if (armRetractable())
-            extendingArm.setPower(-ARM_SPEED);
+        extendingArmControl.runMotor(-ARM_SPEED);
+        //if (armRetractable())
+        //    extendingArm.setPower(-ARM_SPEED);
     }
 
     /**
      * Stop the arm from moving
      */
     public void armStop () {
-        extendingArm.setPower(0);
+        extendingArmControl.stopMotor();
+        //extendingArm.setPower(0);
     }
 
     /**
@@ -224,7 +239,9 @@ public class Robot {
      * @param position target position
      */
     public void armMoveTo (int position) {
-        runMotorToPosition(extendingArm, position, ARM_SPEED);
+
+        //runMotorToPosition(extendingArm, position, ARM_SPEED);
+        extendingArmControl.setPosition(position, ARM_SPEED, ARM_SPEED);
     }
 
     private void runMotorToPosition(DcMotor motor, int position, double speed) {
@@ -379,5 +396,10 @@ public class Robot {
     public void pushSample() {
 
     }
+
+    public boolean isBusy () {
+        return lifterControl.motorIsBusy() || extendingArmControl.motorIsBusy();
+    }
+
 } // end of class
 
