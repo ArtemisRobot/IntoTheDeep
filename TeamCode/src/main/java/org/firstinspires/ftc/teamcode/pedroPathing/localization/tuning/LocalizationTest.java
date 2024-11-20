@@ -111,7 +111,7 @@ public class LocalizationTest extends OpMode {
 
         telemetryA.addData("x", poseUpdater.getPose().getX());
         telemetryA.addData("y", poseUpdater.getPose().getY());
-        telemetryA.addData("heading", poseUpdater.getPose().getHeading());
+        telemetryA.addData("heading", "%6.2f (radians)  %6.2f (degrees)", poseUpdater.getPose().getHeading(), Math.toDegrees(poseUpdater.getPose().getHeading()));
         telemetryA.addData("total heading", poseUpdater.getTotalHeading());
         telemetryA.update();
 
