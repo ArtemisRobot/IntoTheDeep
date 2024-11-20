@@ -30,8 +30,8 @@ public class FollowerConstants {
 
     // This section is for setting the actual drive vector for the front left wheel, if the robot
     // is facing a heading of 0 radians with the wheel centered at (0,0)
-    private static double xMovement = 73.7;
-    private static double yMovement = 54.75;
+    private static double xMovement = 74.7;                                                         // ToDo Art: For Forward Velocity Tuner
+    private static double yMovement = 58.00;                                                        // ToDo Art: For Strafe Velocity Tuner
     private static double[] convertToPolar = Point.cartesianToPolar(xMovement, -yMovement);
     public static Vector frontLeftVector = MathFunctions.normalizeVector(new Vector(convertToPolar[0], convertToPolar[1]));
 
@@ -91,11 +91,11 @@ public class FollowerConstants {
 
     // Acceleration of the drivetrain when power is cut in inches/second^2 (should be negative)
     // if not negative, then the robot thinks that its going to go faster under 0 power
-    public static double forwardZeroPowerAcceleration = -28.0;
+    public static double forwardZeroPowerAcceleration = -28.0;              // ToDo Art: For Forward Zero Power Acceleration Tuner
 
     // Acceleration of the drivetrain when power is cut in inches/second^2 (should be negative)
     // if not negative, then the robot thinks that its going to go faster under 0 power
-    public static double lateralZeroPowerAcceleration = -71.0;
+    public static double lateralZeroPowerAcceleration = -71.0;              // ToDo Art: For Lateral Zero Power Acceleration Tuner
 
     // A multiplier for the zero power acceleration to change the speed the robot decelerates at
     // the end of paths.

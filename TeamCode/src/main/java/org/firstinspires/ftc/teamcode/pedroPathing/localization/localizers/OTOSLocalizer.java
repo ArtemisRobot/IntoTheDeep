@@ -40,7 +40,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Vector;
  */
 @Config
 public class OTOSLocalizer extends Localizer {
-    public static double LINEAR_SCALAR = 1.05;
+    public static double LINEAR_SCALAR = 0.983;
     public static double ANGULAR_SCALAR = 0.9864;
 
     private HardwareMap hardwareMap;
@@ -87,7 +87,7 @@ public class OTOSLocalizer extends Localizer {
         // For the OTOS, left/right is the y axis and forward/backward is the x axis, with left being
         // positive y and forward being positive x. PI/2 radians is facing forward, and clockwise
         // rotation is negative rotation.
-        otos.setOffset(new SparkFunOTOS.Pose2D(0,-6.61417,Math.PI * 1.5));
+        otos.setOffset(new SparkFunOTOS.Pose2D(-6.14173, 0,Math.PI * 1.5));
 
         // TODO: replace these with your tuned multipliers
         otos.setLinearScalar(LINEAR_SCALAR);
