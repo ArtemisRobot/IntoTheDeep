@@ -33,7 +33,7 @@ public class MotorControl extends Thread {
      */
     public void run() {
 
-        Logger.message("robot motor thread started");
+        Logger.message("motor control thread started for %s", this.getName());
 
         while (!opMode.isStarted()) Thread.yield();
 
@@ -50,7 +50,7 @@ public class MotorControl extends Thread {
                     state = MOTOR_STATE.IDLE;
             }
         }
-        Logger.message("robot motor thread stopped");
+        Logger.message("motor control thread stopped");
     }
 
     /**
