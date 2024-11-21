@@ -38,9 +38,9 @@ public class DriveEncoderLocalizer extends Localizer {
     private Encoder leftRear;
     private Encoder rightRear;
     private double totalHeading;
-    public static double FORWARD_TICKS_TO_INCHES = 1;
-    public static double STRAFE_TICKS_TO_INCHES = 1;
-    public static double TURN_TICKS_TO_RADIANS = 1;
+    public static double FORWARD_TICKS_TO_INCHES = 0.0077;      // ToDo Art: For Forward Localizer Tuner
+    public static double STRAFE_TICKS_TO_INCHES = 0.008;        // ToDo Art: For Lateral Localizer Tuner
+    public static double TURN_TICKS_TO_RADIANS = 0.0011;        // ToDo Art: For Turn Localizer Tuner
     public static double ROBOT_WIDTH = 1;
     public static double ROBOT_LENGTH = 1;
 
@@ -71,8 +71,8 @@ public class DriveEncoderLocalizer extends Localizer {
 
         // TODO: reverse any encoders necessary
         leftFront.setDirection(Encoder.REVERSE);
-        rightRear.setDirection(Encoder.REVERSE);
-        leftRear.setDirection(Encoder.FORWARD);
+        rightRear.setDirection(Encoder.FORWARD);
+        leftRear.setDirection(Encoder.REVERSE);
         rightRear.setDirection(Encoder.FORWARD);
 
         setStartPose(setStartPose);
