@@ -17,10 +17,12 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import java.util.concurrent.Semaphore;
+
 @SuppressWarnings("FieldCanBeLocal")
 @com.acmerobotics.dashboard.config.Config           // allows public static to be changed in TFC Dashboard
 
-public class Robot {
+public class Robot extends Thread {
 
     // arm extender
     public final int    ARM_IN = 0;
@@ -43,10 +45,11 @@ public class Robot {
     private final double PICKER_FINGER_CLOSED = 0.51;
     private final double PICKER_FINGER_OPEN = 0.189 ;
 
-    private final double DROPPER_UP_POSITION = 0.57;
-    private final double DROPPER_DOWN_POSITION = 0.50;
+    private final double DROPPER_UP_POSITION = 0.616;
+    private final double DROPPER_DROP_POSITION = 0.572;
+    private final double DROPPER_DOWN_POSITION = 0.492;
 
-    private final double DROPPER_FINGER_CLOSED = 0.48;
+    private final double DROPPER_FINGER_CLOSED = 0.475;
     private final double DROPPER_FINGER_OPEN = 0.60;
 
     private boolean pickerOpened = true;
@@ -69,6 +72,11 @@ public class Robot {
     // Declare OpMode members.
     private final LinearOpMode opMode;
 
+    private enum ROBOT_STATE { IDLE, SET_TO_START_POSITION, PICKUP_SAMPLE, DROP_SAMPLE_INTO_TOP_BUCKET }
+    private ROBOT_STATE robotState = ROBOT_STATE.IDLE;
+
+    Semaphore okToMove;
+
     // Define a constructor that allows the OpMode to pass a reference to itself.
     public Robot(LinearOpMode opMode) {
         this.opMode = opMode;
@@ -79,8 +87,8 @@ public class Robot {
      * Initialize the Robot
      */
     public void init() {
-
         drive = new Drive(opMode);
+        okToMove = new Semaphore(1);
 
         try {
             pickerWrist = opMode.hardwareMap.get(Servo.class, Config.PICKER_WRIST);
@@ -102,6 +110,8 @@ public class Robot {
 
             extendingArmControl = new MotorControl(opMode, extendingArm);
             extendingArmControl.setRange(ARM_IN, ARM_OUT);
+            extendingArmControl.setName("extendingArm");
+            extendingArmControl.start();
 
         } catch (Exception e) {
             Logger.error(e, "hardware not found");
@@ -117,10 +127,87 @@ public class Robot {
             lifterControl = new MotorControl(opMode, lifter);
             lifterControl.setRange(LIFTER_DOWN_POSITION, LIFTER_UP_POSITION);
             lifterControl.setLowSpeedThreshold(LIFTER_STOP_TICKS);
+            lifterControl.setName("lifter");
             lifterControl.start();
 
         } catch (Exception e) {
             Logger.error(e, "hardware not found");
+        }
+
+        start();
+    }
+
+    public void run () {
+        Logger.message("robot thread started");
+
+        while (!opMode.isStarted()) Thread.yield();
+
+        while (opMode.opModeIsActive()) {
+            switch (robotState) {
+                case IDLE:
+                    Thread.yield();
+                    continue;
+
+                case SET_TO_START_POSITION:
+                    synchronized (this) {
+                        dropperDown();
+                        armMoveTo(ARM_EXCHANGE);
+                        delay(1000);
+                        pickerOpen();
+                        pickerDown();
+                        dropperOpen();
+                        robotState = ROBOT_STATE.IDLE;
+                    }
+                    continue;
+
+                case PICKUP_SAMPLE:
+                    synchronized (this) {
+                        dropperOpen();
+                        dropperDown();
+                        pickerClose();
+                        opMode.sleep(750);
+                        setOkToMove(true);
+                        pickerUp();
+                        opMode.sleep(1000);
+                        dropperClose();
+                        delay(400);          // wait for the dropper to get to the closed position
+                        pickerOpen();
+                        delay(400);
+                        dropperUp();
+                        dropperOpen();
+                        pickerOpen();
+                        pickerDown();
+                        robotState = ROBOT_STATE.IDLE;
+                    }
+                    continue;
+
+                case DROP_SAMPLE_INTO_TOP_BUCKET:
+                    synchronized (this) {
+                        lifterUp();
+                        while (lifterIsBusy() && opMode.opModeIsActive()) {
+                            delay(10);
+                        }
+                        dropperDropPosition();
+                        delay(300);
+                        dropperOpen();
+                        delay(200);
+                        dropperUp();
+                        setOkToMove(true);
+                        armMoveTo(ARM_EXCHANGE);
+                        lifterDown();
+                        robotState = ROBOT_STATE.IDLE;
+                    }
+            }
+        }
+
+        Logger.message("robot thread stopped");
+    }
+
+    private void delay (long milliseconds) {
+        try {
+            Thread.sleep(milliseconds);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -176,14 +263,23 @@ public class Robot {
         Logger.message("set lifter to position %d at %4.2f speed", LIFTER_UP_POSITION, LIFTER_SPEED);
 
         //runMotorToPosition(lifter, LIFTER_UP_POSITION, LIFTER_SPEED);
-        lifterControl.setPosition(LIFTER_UP_POSITION, LIFTER_SPEED, LIFTER_SPEED_LOW);
+        lifterControl.setPosition(LIFTER_UP_POSITION, LIFTER_SPEED, LIFTER_SPEED);
     }
 
     /**
      * Lower the lifter to its down position
      */
     public void lifterDown() {
-        runMotorToPosition(lifter, LIFTER_DOWN_POSITION, LIFTER_SPEED, LIFTER_SPEED_LOW);
+        //runMotorToPosition(lifter, LIFTER_DOWN_POSITION, LIFTER_SPEED, LIFTER_SPEED_LOW);
+        lifterControl.setPosition(LIFTER_DOWN_POSITION, LIFTER_SPEED, LIFTER_SPEED_LOW);
+    }
+
+    /**
+     * Check if the lifter is moving
+     * @return true if the lifter is moving
+     */
+    public boolean lifterIsBusy () {
+        return lifterControl.motorIsBusy();
     }
 
     /**
@@ -213,8 +309,6 @@ public class Robot {
      */
     public void armExtend() {
         extendingArmControl.runMotor(ARM_SPEED);
-        //if (armExtendable())
-        //    extendingArm.setPower(ARM_SPEED);
     }
 
     /**
@@ -222,8 +316,6 @@ public class Robot {
      */
     public void amrRetract() {
         extendingArmControl.runMotor(-ARM_SPEED);
-        //if (armRetractable())
-        //    extendingArm.setPower(-ARM_SPEED);
     }
 
     /**
@@ -231,7 +323,6 @@ public class Robot {
      */
     public void armStop () {
         extendingArmControl.stopMotor();
-        //extendingArm.setPower(0);
     }
 
     /**
@@ -239,15 +330,8 @@ public class Robot {
      * @param position target position
      */
     public void armMoveTo (int position) {
-
-        //runMotorToPosition(extendingArm, position, ARM_SPEED);
         extendingArmControl.setPosition(position, ARM_SPEED, ARM_SPEED);
     }
-
-    private void runMotorToPosition(DcMotor motor, int position, double speed) {
-        runMotorToPosition (motor, position, speed, speed);
-    }
-
 
     private void runMotorToPosition(DcMotor motor, int position, double speed, double lowSpeed) {
 
@@ -324,6 +408,11 @@ public class Robot {
         dropperWrist.setPosition(DROPPER_UP_POSITION);
     }
 
+    public void dropperDropPosition () {
+        Logger.message("set dropper to position %f", DROPPER_DOWN_POSITION);
+        dropperWrist.setPosition(DROPPER_DROP_POSITION);
+    }
+
     public void dropperDown() {
         Logger.message("set dropper to position %f", DROPPER_DOWN_POSITION);
         dropperWrist.setPosition(DROPPER_DOWN_POSITION);
@@ -373,32 +462,59 @@ public class Robot {
         drive.strafeRight(distance);
     }
 
-    public  void dropSampleInTopBucket() {
-        lifterUp();
-        dropperOpen();
-        dropperClose();
-        dropperUp();
-        lifterDown();
+    public boolean isBusy () {
+        return lifterControl.motorIsBusy() || extendingArmControl.motorIsBusy();
+    }
+
+    public void setToStartPosition() {
+        synchronized (this) {
+            robotState = ROBOT_STATE.SET_TO_START_POSITION;
+        }
     }
 
     public void pickUpYellow() {
-        armMoveTo(AMR_OUT_PART_WAY);
-        pickerOpen();
-        pickerDown();
-        dropperOpen();
-        dropperDown();
-        pickerClose();
-        pickerUp();
-        dropperClose();
-        dropperUp();
+        synchronized (this) {
+            robotState = ROBOT_STATE.PICKUP_SAMPLE;
+            setOkToMove(false);
+        }
+    }
+
+    public  void dropSampleInTopBucket() {
+        synchronized (this) {
+            robotState = ROBOT_STATE.DROP_SAMPLE_INTO_TOP_BUCKET;
+            setOkToMove(false);
+        }
     }
 
     public void pushSample() {
 
     }
 
-    public boolean isBusy () {
-        return lifterControl.motorIsBusy() || extendingArmControl.motorIsBusy();
+    public boolean okToMove () {
+        return okToMove.availablePermits() == 1;
+    }
+
+    private void setOkToMove(boolean ok)  {
+        try {
+            if (ok) {
+                Logger.message("ok to move");
+                okToMove.release();
+            } else {
+                Logger.message("not ok to move");
+                okToMove.acquire();
+            }
+        } catch (InterruptedException e) {
+            Logger.message("InterruptedException");
+        }
+    }
+
+    public void dropTest () {
+        // ToDo remove, for testing only
+        dropperDropPosition();
+        opMode.sleep(300);
+        dropperOpen();
+        opMode.sleep(200);
+        dropperUp();
     }
 
 } // end of class
