@@ -16,7 +16,7 @@ public final class Logger {
 
     private static void logString (String str) {
         String caller = Thread.currentThread().getStackTrace()[4].getMethodName();
-        Log.d(TAG, String.format("%-24s %s", caller, str));
+        Log.d(TAG, String.format("%-24s %-24s %s", Thread.currentThread().getName(), caller, str));
     }
 
     public static void error (Exception e, String msg) {
