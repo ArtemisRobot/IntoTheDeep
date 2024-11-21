@@ -4,8 +4,6 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
@@ -71,6 +69,7 @@ import common.Robot;
             if ( ! isBusy()) {
                 switch (pathState) {
                     case START:
+                        robot.setToStartPosition();
                         followPath();
                         continue;
 
@@ -119,6 +118,15 @@ import common.Robot;
     private void followPath() {
         int index = pathState.ordinal();
         follower.followPath(paths[index]);
+
+        Path path = paths[index].getPath(0);
+        Logger.message("path %d  (%.0f, %.0f)  to  (%.0f, %.0f)",
+                index,
+                path.getFirstControlPoint().getX(),
+                path.getFirstControlPoint().getY(),
+                path.getLastControlPoint().getX(),
+                path.getLastControlPoint().getY());
+
         pathState  = PathState.next(index+1);
     }
 
