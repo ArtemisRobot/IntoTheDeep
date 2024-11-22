@@ -15,6 +15,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierCurve;
+import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierLine;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
 
@@ -27,15 +28,15 @@ public class RouteBuilder extends LinearOpMode {
 
     public static long WAIT_TIME_BETWEEN_LINES = 2;
 
-    public static double BEGIN_X = 8.5;
-    public static double BEGIN_Y = 85;
+    public static double BEGIN_X = 0;
+    public static double BEGIN_Y = 0;
     public static double BEGIN_HEADING = 0;
 
-    public static double LINE_1_END_POINT_X = 15;
-    public static double LINE_1_END_POINT_Y = 85;
-    public static double LINE_1_HEADING = 0;
+    public static double LINE_1_END_POINT_X = 0;
+    public static double LINE_1_END_POINT_Y = 0;
+    public static double LINE_1_HEADING = -90;
 
-    public static boolean LINE_2_ENABLED = true;
+    public static boolean LINE_2_ENABLED = false;
     public static double LINE_2_END_POINT_X = 15;
     public static double LINE_2_END_POINT_Y = 128;
     public static double LINE_2_HEADING = 45;
@@ -80,7 +81,8 @@ public class RouteBuilder extends LinearOpMode {
                 while (gamepad1.x) sleep(10);
             }
 
-            //drive();
+            displayPose();
+            drive();
         }
 
     } catch (Exception e) {
@@ -116,7 +118,7 @@ public class RouteBuilder extends LinearOpMode {
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         follower.setStartingPose(startPose);
-        //follower.startTeleopDrive();
+        follower.startTeleopDrive();
     }
 
     /**
@@ -137,6 +139,7 @@ public class RouteBuilder extends LinearOpMode {
             while (timer.seconds() < WAIT_TIME_BETWEEN_LINES) {
                 Thread.yield();
                 follower.update();
+                displayPose();
                 follower.resetOffset();
             }
         }
@@ -150,7 +153,7 @@ public class RouteBuilder extends LinearOpMode {
         startPose = new Pose(BEGIN_X, BEGIN_Y, BEGIN_HEADING);
 
         pathCount = 0;
-        paths[pathCount] = new Path(new BezierCurve(new Point(BEGIN_X, BEGIN_Y), new Point(LINE_1_END_POINT_X, LINE_1_END_POINT_Y, Point.CARTESIAN)));
+        paths[pathCount] = new Path(new BezierLine(new Point(BEGIN_X, BEGIN_Y), new Point(LINE_1_END_POINT_X, LINE_1_END_POINT_Y, Point.CARTESIAN)));
         paths[pathCount].setConstantHeadingInterpolation(Math.toRadians(LINE_1_HEADING));
         paths[pathCount].setPathEndTimeoutConstraint(3);
         pathCount++;
@@ -176,4 +179,12 @@ public class RouteBuilder extends LinearOpMode {
             pathCount++;
         }
     }
+
+    private void displayPose () {
+        Pose pose = follower.getPose();
+        telemetry.addData("pose", "x %5.1f  y %5.1f  heading %5.1f", pose.getX(), pose.getY(), Math.toDegrees(pose.getHeading()));
+        telemetry.update();
+        //Logger.message("pose x %4.0f  y %4.0f  heading %4.0f", pose.getX(), pose.getY(), Math.toDegrees(pose.getHeading()));
+    }
+
 }
