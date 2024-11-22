@@ -50,11 +50,11 @@ public class Drive extends Thread {
     private final double RAMP_TIME = 1000;                       // ramp up time in milliseconds
     private final double RAMP_MIN_SPEED = 0.2;
 
-    private final double MIN_SPEED = 0.25;
+    private final double MIN_SPEED = 0.20;
     private final double MAX_SPEED = 0.9;
     public static double MIN_STRAFE_SPEED = 0.35;
     public static double MAX_STRAFE_SPEED = 0.95;
-    public static double MIN_ROTATE_SPEED = 0.25;
+    public static double MIN_ROTATE_SPEED = 0.20;
     public static double MAX_ROTATE_SPEED = 0.50;
 
     public enum DIRECTION { FORWARD, BACK, LEFT, RIGHT, TURN_LEFT, TURN_RIGHT, DRIVER, STOOPED }
