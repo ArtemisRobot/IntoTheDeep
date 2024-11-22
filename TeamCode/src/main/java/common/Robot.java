@@ -32,9 +32,9 @@ public class Robot extends Thread {
     public static double ARM_SPEED = 0.5;
 
     // lifter
-    public static double LIFTER_SPEED = 0.50;
+    public static double LIFTER_SPEED = 0.90;
     public static double LIFTER_SPEED_LOW = 0.20;
-    public static int    LIFTER_STOP_TICKS = 1000;
+    public static int    LIFTER_STOP_TICKS = 500;
     public static int    LIFTER_UP_POSITION = 5780;
     public static int    LIFTER_DOWN_POSITION = 0;
 
@@ -77,6 +77,8 @@ public class Robot extends Thread {
 
     Semaphore okToMove;
 
+    boolean testRobot = false;
+
     // Define a constructor that allows the OpMode to pass a reference to itself.
     public Robot(LinearOpMode opMode) {
         this.opMode = opMode;
@@ -87,6 +89,7 @@ public class Robot extends Thread {
      * Initialize the Robot
      */
     public void init() {
+        this.setName("robot");
         drive = new Drive(opMode);
         okToMove = new Semaphore(1);
 
@@ -131,10 +134,12 @@ public class Robot extends Thread {
             lifterControl.start();
 
         } catch (Exception e) {
+            testRobot = true;
             Logger.error(e, "hardware not found");
         }
 
-        start();
+        if (! testRobot)
+            start();
     }
 
     public void run () {
@@ -149,6 +154,7 @@ public class Robot extends Thread {
                     continue;
 
                 case SET_TO_START_POSITION:
+                    Logger.message("** Set start position");
                     synchronized (this) {
                         dropperDown();
                         armMoveTo(ARM_EXCHANGE);
@@ -161,6 +167,7 @@ public class Robot extends Thread {
                     continue;
 
                 case PICKUP_SAMPLE:
+                    Logger.message("** Pickup sample");
                     synchronized (this) {
                         dropperOpen();
                         dropperDown();
@@ -169,6 +176,9 @@ public class Robot extends Thread {
                         setOkToMove(true);
                         pickerUp();
                         opMode.sleep(1000);
+                        while (lifterIsBusy() && opMode.opModeIsActive()) {
+                            delay(10);
+                        }
                         dropperClose();
                         delay(400);          // wait for the dropper to get to the closed position
                         pickerOpen();
@@ -182,6 +192,7 @@ public class Robot extends Thread {
                     continue;
 
                 case DROP_SAMPLE_INTO_TOP_BUCKET:
+                    Logger.message("\n** Drop sample into top bucket");
                     synchronized (this) {
                         lifterUp();
                         while (lifterIsBusy() && opMode.opModeIsActive()) {
@@ -463,6 +474,8 @@ public class Robot extends Thread {
     }
 
     public boolean isBusy () {
+
+        if (testRobot) return false;
         return lifterControl.motorIsBusy() || extendingArmControl.motorIsBusy();
     }
 
@@ -494,7 +507,19 @@ public class Robot extends Thread {
         return okToMove.availablePermits() == 1;
     }
 
+    public void waitUntilOkToMove () {
+        if (okToMove.availablePermits() != 1) {
+            Logger.message("wait until ok to move");
+            while (okToMove.availablePermits() != 1)
+                delay(1);                       // ToDo this a better why
+            Logger.message("ok to move, continue");
+        }
+    }
+
     private void setOkToMove(boolean ok)  {
+
+        if (testRobot) return;
+
         try {
             if (ok) {
                 Logger.message("ok to move");
@@ -517,5 +542,8 @@ public class Robot extends Thread {
         dropperUp();
     }
 
+    public boolean isTestRobot () {
+        return testRobot;
+    }
 } // end of class
 
