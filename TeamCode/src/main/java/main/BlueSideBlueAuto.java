@@ -1,14 +1,11 @@
 package main;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
-import org.firstinspires.ftc.teamcode.pedroPathing.localization.PoseUpdater;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierCurve;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierLine;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
@@ -20,34 +17,34 @@ import common.Robot;
 
 @Autonomous(name="BlueBucketAuto", group = "Main")
 
- public class BlueAuto extends LinearOpMode {
+ public class BlueSideBlueAuto extends LinearOpMode {
 
-    public static double START_X = 10.5;
-    public static double START_Y = 107.6;
+    public static double START_X = 22.9;
+    public static double START_Y = 55.1;
     public static double START_HEADING = 0;
 
-    public static double BUCKET_X = 9.9;
-    public static double BUCKET_Y = 134.6;
-    public static double BUCKET_HEADING = 136;
+    public static double OBSERV_ZONE_X = 13.7;
+    public static double OBSERV_ZONE_Y = 23.3;
+    public static double OBSERV_HEADING = -180;
 
-    public static double YELLOW_RIGHT_X = 41.5;
-    public static double YELLOW_RIGHT_Y = 121.2;
-    public static double YELLOW_RIGHT_HEADING = 0;
+    public static double BLUE_RIGHT_X = 61.3;
+    public static double BLUE_RIGHT_Y = 5.5;
+    public static double BLUE_RIGHT_HEADING = -180;
 
-    public static double YELLOW_MIDDLE_X = 41.5;
-    public static double YELLOW_MIDDLE_Y = 131.3;
-    public static double YELLOW_MIDDLE_HEADING = 0;
+    public static double BLUE_MIDDLE_X = 61.3;
+    public static double BLUE_MIDDLE_Y = 9.6;
+    public static double BLUE_MIDDLE_HEADING = 180;
 
-    public static double YELLOW_LEFT_X = 58.4;
-    public static double YELLOW_LEFT_Y = 130.4;
-    public static double YELLOW_LEFT_HEADING = -90;
+    public static double BLUE_LEFT_X = 61.3;
+    public static double BLUE_LEFT_Y = 19.2;
+    public static double BLUE_LEFT_HEADING = 180;
 
-    public static double NET_ZONE_X = 18.9;
-    public static double NET_ZONE_Y = 129.1;
-    public static double SCORE_NET_ZONE_HEADING = -90;
+    public static double BLUE_BAR_ZONE_X = 46.6;
+    public static double BLUE_BAR_ZONE_Y = 68.3;
+    public static double BLUE_BAR_HEADING = 0;
 
 
-    private static enum PathState { START, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, YELLOW_LEFT, SCORE_NET_ZONE;
+    private static enum PathState { START, SAMPLE1, OBSERV_ZONE1, SAMPLE2, OBSERV_ZONE2, SAMPLE3, OBSERV_ZONE_PICKUP1, BLUE_BAR1, OBSERV_ZONE_PICKUP2, BLUE_BAR2, OBSERV_ZONE_PICKUP3, BLUE_BAR3;
         public static PathState next(int id) {
             return values()[id];
         }
@@ -80,27 +77,28 @@ import common.Robot;
                     followPath();
                     continue;
 
-                case BUCKET1:
-                case BUCKET3:
-                case BUCKET2:
+                case SAMPLE1:
+                case SAMPLE2:
+                case SAMPLE3:
                     waitUntilNotMoving();
                     //robot.dropSampleInTopBucket();
                     followPath();
                     continue;
 
-                case YELLOW_RIGHT:
-                case YELLOW_MIDDLE:
+                case OBSERV_ZONE1:
+                case OBSERV_ZONE2:
+                case OBSERV_ZONE_PICKUP1:
+                case OBSERV_ZONE_PICKUP2:
+                case OBSERV_ZONE_PICKUP3:
                     waitUntilNotMoving();
+                    robot.pushSample();
                     //robot.pickUpYellow();
                     followPath();
                     continue;
 
-                case YELLOW_LEFT:
-                    robot.pushSample();
-                    followPath();
-                    continue;
-
-                case SCORE_NET_ZONE:
+                case BLUE_BAR1:
+                case BLUE_BAR2:
+                case BLUE_BAR3:
                     waitUntilNotMoving();
                     running = false;
                     Logger.message("elapsed time %4.1f", elapsedTime.seconds());
@@ -117,13 +115,13 @@ import common.Robot;
     }
 
     private void buildPaths() {
-        paths[PathState.START.ordinal()] = createCurve(START_X, START_Y, START_X+36.5, START_Y-5, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
-        paths[PathState.BUCKET1.ordinal()] = createLine(BUCKET_X, BUCKET_Y, YELLOW_RIGHT_X, YELLOW_RIGHT_Y, YELLOW_RIGHT_HEADING);
-        paths[PathState.YELLOW_RIGHT.ordinal()] = createLine(YELLOW_RIGHT_X, YELLOW_RIGHT_Y, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
-        paths[PathState.BUCKET2.ordinal()] = createLine(BUCKET_X, BUCKET_Y, YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, YELLOW_MIDDLE_HEADING);
-        paths[PathState.YELLOW_MIDDLE.ordinal()] = createLine(YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
-        paths[PathState.BUCKET3.ordinal()] = createLine(BUCKET_X, BUCKET_Y, YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING);
-        paths[PathState.YELLOW_LEFT.ordinal()] = createLine(YELLOW_LEFT_X, YELLOW_LEFT_Y, NET_ZONE_X, NET_ZONE_Y,SCORE_NET_ZONE_HEADING);
+        paths[PathState.START.ordinal()] = createLine(START_X, START_Y, START_X+36.5, START_Y-5, START_HEADING);
+        paths[PathState.SAMPLE1.ordinal()] = createLine(BLUE_LEFT_X, BLUE_LEFT_Y, OBSERV_ZONE_X, OBSERV_ZONE_Y, BLUE_LEFT_HEADING);
+        paths[PathState.OBSERV_ZONE1.ordinal()] = createLine(OBSERV_ZONE_X, OBSERV_ZONE_Y, BLUE_MIDDLE_X, BLUE_MIDDLE_Y, BLUE_MIDDLE_HEADING);
+        paths[PathState.SAMPLE2.ordinal()] = createLine(BLUE_MIDDLE_X, BLUE_MIDDLE_Y, OBSERV_ZONE_X, OBSERV_ZONE_Y, OBSERV_HEADING);
+        paths[PathState.OBSERV_ZONE2.ordinal()] = createLine(YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, BUCKET_X, OBS_ZONE_Y, BUCKET_HEADING);
+        paths[PathState.SAMPLE3.ordinal()] = createLine(BUCKET_X, OBS_ZONE_Y, YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING);
+        paths[PathState.OBSERV_ZONE_PICKUP1.ordinal()] = createLine(YELLOW_LEFT_X, YELLOW_LEFT_Y, NET_ZONE_X, NET_ZONE_Y,SCORE_NET_ZONE_HEADING);
     }
 
     private void followPath() {
