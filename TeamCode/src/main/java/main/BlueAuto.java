@@ -22,29 +22,29 @@ import common.Robot;
 
  public class BlueAuto extends LinearOpMode {
 
-    public static double START_X = 8.8;
-    public static double START_Y = 85;
+    public static double START_X = 10.5;
+    public static double START_Y = 107.6;
     public static double START_HEADING = 0;
 
-    public static double BUCKET_X = 14;
-    public static double BUCKET_Y = 130;
-    public static double BUCKET_HEADING = 135;
+    public static double BUCKET_X = 9.9;
+    public static double BUCKET_Y = 134.6;
+    public static double BUCKET_HEADING = 136;
 
-    public static double YELLOW_RIGHT_X = 35;
-    public static double YELLOW_RIGHT_Y = 121;
+    public static double YELLOW_RIGHT_X = 41.5;
+    public static double YELLOW_RIGHT_Y = 121.2;
     public static double YELLOW_RIGHT_HEADING = 0;
 
-    public static double YELLOW_MIDDLE_X = 0;
-    public static double YELLOW_MIDDLE_Y = 0;
+    public static double YELLOW_MIDDLE_X = 41.5;
+    public static double YELLOW_MIDDLE_Y = 131.3;
     public static double YELLOW_MIDDLE_HEADING = 0;
 
-    public static double YELLOW_LEFT_X = 0;
-    public static double YELLOW_LEFT_Y = 0;
-    public static double YELLOW_LEFT_HEADING = 0;
+    public static double YELLOW_LEFT_X = 58.4;
+    public static double YELLOW_LEFT_Y = 130.4;
+    public static double YELLOW_LEFT_HEADING = -90;
 
-    public static double SCORE_NET_ZONE_HEADING = 0;
-    public static double NET_ZONE_X = 0;
-    public static double NET_ZONE_Y = 0;
+    public static double NET_ZONE_X = 18.9;
+    public static double NET_ZONE_Y = 129.1;
+    public static double SCORE_NET_ZONE_HEADING = -90;
 
 
     private static enum PathState { START, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, YELLOW_LEFT, SCORE_NET_ZONE;
