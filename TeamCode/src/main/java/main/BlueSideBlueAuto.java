@@ -15,7 +15,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
 import common.Logger;
 import common.Robot;
 
-@Autonomous(name="BlueBucketAuto", group = "Main")
+@Autonomous(name="BlueSideBlueAuto", group = "Main")
 
  public class BlueSideBlueAuto extends LinearOpMode {
 
@@ -119,9 +119,9 @@ import common.Robot;
         paths[PathState.SAMPLE1.ordinal()] = createLine(BLUE_LEFT_X, BLUE_LEFT_Y, OBSERV_ZONE_X, OBSERV_ZONE_Y, BLUE_LEFT_HEADING);
         paths[PathState.OBSERV_ZONE1.ordinal()] = createLine(OBSERV_ZONE_X, OBSERV_ZONE_Y, BLUE_MIDDLE_X, BLUE_MIDDLE_Y, BLUE_MIDDLE_HEADING);
         paths[PathState.SAMPLE2.ordinal()] = createLine(BLUE_MIDDLE_X, BLUE_MIDDLE_Y, OBSERV_ZONE_X, OBSERV_ZONE_Y, OBSERV_HEADING);
-        paths[PathState.OBSERV_ZONE2.ordinal()] = createLine(YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, BUCKET_X, OBS_ZONE_Y, BUCKET_HEADING);
-        paths[PathState.SAMPLE3.ordinal()] = createLine(BUCKET_X, OBS_ZONE_Y, YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING);
-        paths[PathState.OBSERV_ZONE_PICKUP1.ordinal()] = createLine(YELLOW_LEFT_X, YELLOW_LEFT_Y, NET_ZONE_X, NET_ZONE_Y,SCORE_NET_ZONE_HEADING);
+        //paths[PathState.OBSERV_ZONE2.ordinal()] = createLine(YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, BUCKET_X, OBS_ZONE_Y, BUCKET_HEADING);
+        //paths[PathState.SAMPLE3.ordinal()] = createLine(BUCKET_X, OBS_ZONE_Y, YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING);
+        ///paths[PathState.OBSERV_ZONE_PICKUP1.ordinal()] = createLine(YELLOW_LEFT_X, YELLOW_LEFT_Y, NET_ZONE_X, NET_ZONE_Y,SCORE_NET_ZONE_HEADING);
     }
 
     private void followPath() {
