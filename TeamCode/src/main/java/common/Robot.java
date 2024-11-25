@@ -35,7 +35,7 @@ public class Robot extends Thread {
     public static double LIFTER_SPEED = 0.90;
     public static double LIFTER_SPEED_LOW = 0.20;
     public static int    LIFTER_STOP_TICKS = 500;
-    public static int    LIFTER_UP_POSITION = 5780;
+    public static int    LIFTER_UP_POSITION = 3228;
     public static int    LIFTER_DOWN_POSITION = 0;
 
     // Grabbers
