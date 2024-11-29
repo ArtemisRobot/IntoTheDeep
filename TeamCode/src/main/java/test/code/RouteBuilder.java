@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.test;
+package test.code;
 
 import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants.leftFrontMotorName;
 import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants.leftRearMotorName;
@@ -32,9 +32,9 @@ public class RouteBuilder extends LinearOpMode {
     public static double BEGIN_Y = 0;
     public static double BEGIN_HEADING = 0;
 
-    public static double LINE_1_END_POINT_X = 0;
+    public static double LINE_1_END_POINT_X = 20;
     public static double LINE_1_END_POINT_Y = 0;
-    public static double LINE_1_HEADING = -90;
+    public static double LINE_1_HEADING = 0;
 
     public static boolean LINE_2_ENABLED = false;
     public static double LINE_2_END_POINT_X = 15;
@@ -161,7 +161,7 @@ public class RouteBuilder extends LinearOpMode {
         if (LINE_2_ENABLED) {
             paths[pathCount] = new Path(new BezierCurve(paths[pathCount-1].getLastControlPoint(), new Point(LINE_2_END_POINT_X, LINE_2_END_POINT_Y, Point.CARTESIAN)));
             paths[pathCount].setConstantHeadingInterpolation(Math.toRadians(LINE_2_HEADING));
-            paths[pathCount].setPathEndTimeoutConstraint(3);
+            paths[pathCount].setPathEndTimeoutConstraint(500);
             pathCount++;
         }
 
