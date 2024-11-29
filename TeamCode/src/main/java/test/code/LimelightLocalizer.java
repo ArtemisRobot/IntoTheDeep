@@ -41,12 +41,16 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.IMU;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.List;
 
+import common.Config;
 import common.Logger;
 
 /*
@@ -76,6 +80,7 @@ import common.Logger;
 public class LimelightLocalizer extends LinearOpMode {
 
     private Limelight3A limelight;
+    IMU imu;
 
     @Override
     public void runOpMode() throws InterruptedException
@@ -83,6 +88,7 @@ public class LimelightLocalizer extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        imu = hardwareMap.get(IMU.class, Config.IMU);
 
         telemetry.setMsTransmissionInterval(11);
 
@@ -97,21 +103,25 @@ public class LimelightLocalizer extends LinearOpMode {
         telemetry.update();
         waitForStart();
 
+        double[] stdDev = new double[6];
+
+
         while (opModeIsActive()) {
             limelight.pipelineSwitch(3);
             LLStatus status = limelight.getStatus();
-            telemetry.addData("Name", "%s",
-                    status.getName());
+            telemetry.addData("Name", "%s",  status.getName());
             telemetry.addData("Pipeline", "Index: %d, Type: %s",
                     status.getPipelineIndex(), status.getPipelineType());
 
+            YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+            telemetry.addData("Yaw (Z)", "%.2f Deg. (Heading)", orientation.getYaw(AngleUnit.DEGREES));
+
+            limelight.updateRobotOrientation(orientation.getYaw(AngleUnit.DEGREES));
             LLResult result = limelight.getLatestResult();
             if (result != null) {
-                // Access general information
-                //Pose3D botpose = result.getBotpose();
-                Pose3D botpose = result.getBotpose_MT2();
-
                 if (result.isValid()) {
+                    Pose3D botpose = result.getBotpose_MT2();
+
                     telemetry.addData("tx", result.getTx());
                     telemetry.addData("txnc", result.getTxNC());
                     telemetry.addData("ty", result.getTy());
@@ -119,15 +129,11 @@ public class LimelightLocalizer extends LinearOpMode {
 
                     telemetry.addData("Botpose", botpose.toString());
                     Position pos = botpose.getPosition();
-                    Logger.message("x: %f  y: %f  z: %f", toInches(pos.x), toInches(pos.y), toInches(pos.z));
+                    telemetry.addData("Botpose", "x: %6.1f  y: %6.1f  z: %6.1f", toInches(pos.x), toInches(pos.y), toInches(pos.z));
 
-                    /*
-                    // Access fiducial results
-                    List<LLResultTypes.FiducialResult> fiducialResults = result.getFiducialResults();
-                    for (LLResultTypes.FiducialResult fr : fiducialResults) {
-                        telemetry.addData("Fiducial", "ID: %d, Family: %s, X: %.2f, Y: %.2f", fr.getFiducialId(), fr.getFamily(),fr.getTargetXDegrees(), fr.getTargetYDegrees());
-                    }
-                     */
+                    stdDev = result.getStddevMt2();
+                    telemetry.addData("stdDev", stdDev);
+
                 }
             } else {
                 telemetry.addData("Limelight", "No data available");
