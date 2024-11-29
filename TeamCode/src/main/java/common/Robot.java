@@ -75,6 +75,8 @@ public class Robot extends Thread {
     private enum ROBOT_STATE { IDLE, SET_TO_START_POSITION, PICKUP_SAMPLE, DROP_SAMPLE_INTO_TOP_BUCKET }
     private ROBOT_STATE robotState = ROBOT_STATE.IDLE;
 
+    private int pickingPosition = AMR_OUT_PART_WAY;
+
     Semaphore okToMove;
 
     boolean testRobot = false;
@@ -157,7 +159,7 @@ public class Robot extends Thread {
                     Logger.message("** Set start position");
                     synchronized (this) {
                         dropperDown();
-                        armMoveTo(ARM_EXCHANGE);
+                        armMoveTo(pickingPosition);
                         delay(1000);
                         pickerOpen();
                         pickerDown();
@@ -481,6 +483,13 @@ public class Robot extends Thread {
 
     public void setToStartPosition() {
         synchronized (this) {
+            robotState = ROBOT_STATE.SET_TO_START_POSITION;
+        }
+    }
+
+    public void setToPickingPosition(int position) {
+        synchronized (this) {
+            pickingPosition = position;
             robotState = ROBOT_STATE.SET_TO_START_POSITION;
         }
     }
