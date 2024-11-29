@@ -30,13 +30,13 @@ public class FollowerConstants {
 
     // This section is for setting the actual drive vector for the front left wheel, if the robot
     // is facing a heading of 0 radians with the wheel centered at (0,0)
-    private static double xMovement = 74.7;                                                         // ToDo Art: For Forward Velocity Tuner
+    private static double xMovement = 70;                                                         // ToDo Art: For Forward Velocity Tuner
     private static double yMovement = 58.00;                                                        // ToDo Art: For Strafe Velocity Tuner
     private static double[] convertToPolar = Point.cartesianToPolar(xMovement, -yMovement);
     public static Vector frontLeftVector = MathFunctions.normalizeVector(new Vector(convertToPolar[0], convertToPolar[1]));
 
 
-    // Translational PIDF coefficients (don't use integral)
+    // Translational PIDF coefficients (don't use integral)                                         // ToDo Art: For StraightBackAndForth
     public static CustomPIDFCoefficients translationalPIDFCoefficients = new CustomPIDFCoefficients(
             0.1,
             0,
@@ -50,24 +50,24 @@ public class FollowerConstants {
             0,
             0);
 
-    // Feed forward constant added on to the translational PIDF
+    // Feed forward constant added on to the translational PIDF                                      // ToDo Art: Tune with StraightBackAndForth
     public static double translationalPIDFFeedForward = 0.015;
 
 
-    // Heading error PIDF coefficients
+    // Heading error PIDF coefficients                                                              // ToDo Art: Tune with StraightBackAndForth
     public static CustomPIDFCoefficients headingPIDFCoefficients = new CustomPIDFCoefficients(
-            1,
+            0.4,
             0,
             0,
             0);
 
-    // Feed forward constant added on to the heading PIDF
+    // Feed forward constant added on to the heading PIDF                                           // ToDo Art: Tune with StraightBackAndForth
     public static double headingPIDFFeedForward = 0.01;
 
 
     // Drive PIDF coefficients
     public static CustomFilteredPIDFCoefficients drivePIDFCoefficients = new CustomFilteredPIDFCoefficients(
-            0.025,
+            0.017,
             0,
             0.00001,
             0.6,
@@ -83,19 +83,19 @@ public class FollowerConstants {
 
 
     // Mass of robot in kilograms
-    public static double mass = 10.65942;
+    public static double mass = 12.42843;                                   // ToDo Art: Weight of the robot in kilos
 
     // Centripetal force to power scaling
-    public static double centripetalScaling = 0.0005;
+    public static double centripetalScaling = 0.0005;                       // ToDo Art: For CurvedBackAndForth
 
 
     // Acceleration of the drivetrain when power is cut in inches/second^2 (should be negative)
     // if not negative, then the robot thinks that its going to go faster under 0 power
-    public static double forwardZeroPowerAcceleration = -24.0;              // ToDo Art: For Forward Zero Power Acceleration Tuner
+    public static double forwardZeroPowerAcceleration = -7.0;              // ToDo Art: For Forward Zero Power Acceleration Tuner
 
     // Acceleration of the drivetrain when power is cut in inches/second^2 (should be negative)
     // if not negative, then the robot thinks that its going to go faster under 0 power
-    public static double lateralZeroPowerAcceleration = -71.0;              // ToDo Art: For Lateral Zero Power Acceleration Tuner
+    public static double lateralZeroPowerAcceleration = -10.0;              // ToDo Art: For Lateral Zero Power Acceleration Tuner
 
     // A multiplier for the zero power acceleration to change the speed the robot decelerates at
     // the end of paths.
@@ -104,7 +104,7 @@ public class FollowerConstants {
     // Decreasing this will cause the deceleration at the end of the Path to be slower, making the
     // robot slower but reducing risk of end-of-path overshoots or localization slippage.
     // This can be set individually for each Path, but this is the default.
-    public static double zeroPowerAccelerationMultiplier = 5;
+    public static double zeroPowerAccelerationMultiplier = 5;              // ToDo Art:
 
 
     // When the robot is at the end of its current Path or PathChain and the velocity goes below
