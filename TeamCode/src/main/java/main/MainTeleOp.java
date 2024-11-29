@@ -84,11 +84,7 @@ import common.Robot;
             while (gamepad.y) sleep(10);
 
         } else if (gamepad.a) {
-            robot.dropperOpen();
-            robot.dropperDown();
-            robot.armMoveTo(robot.AMR_OUT_PART_WAY);
-            robot.pickerOpen();
-            robot.pickerDown();
+            robot.setToPickingPosition(robot.AMR_OUT_PART_WAY);
             robot.lifterDown();
             while (gamepad.a) sleep(10);
 
