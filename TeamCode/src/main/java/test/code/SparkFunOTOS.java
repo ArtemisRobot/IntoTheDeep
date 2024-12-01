@@ -107,7 +107,7 @@ public class SparkFunOTOS extends LinearOpMode {
         // clockwise (negative rotation) from the robot's orientation, the offset
         // would be {-5, 10, -90}. These can be any value, even the angle can be
         // tweaked slightly to compensate for imperfect mounting (eg. 1.3 degrees).
-        com.qualcomm.hardware.sparkfun.SparkFunOTOS.Pose2D offset = new com.qualcomm.hardware.sparkfun.SparkFunOTOS.Pose2D(0, -6.14173, 270);
+        com.qualcomm.hardware.sparkfun.SparkFunOTOS.Pose2D offset = new com.qualcomm.hardware.sparkfun.SparkFunOTOS.Pose2D(-6.14173, 0, 270);
         myOtos.setOffset(offset);
 
         // Here we can set the linear and angular scalars, which can compensate for
