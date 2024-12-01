@@ -33,7 +33,7 @@ public class MotorControl extends Thread {
      */
     public void run() {
 
-        Logger.message("robot motor thread started");
+        Logger.message("motor control thread started for %s", this.getName());
 
         while (!opMode.isStarted()) Thread.yield();
 
@@ -50,7 +50,7 @@ public class MotorControl extends Thread {
                     state = MOTOR_STATE.IDLE;
             }
         }
-        Logger.message("robot motor thread stopped");
+        Logger.message("motor control thread stopped");
     }
 
     /**
@@ -132,21 +132,8 @@ public class MotorControl extends Thread {
         elapsedTime.reset();
         boolean fullPower = true;
         while (opMode.opModeIsActive() && state == MOTOR_STATE.MOVING_TO_POSITION) {
-            if (!motor.isBusy())
-                break;
-            if (emergencyStop())
-                break;
 
-            // if the motor has not moved for a while, kill the power
             current = motor.getCurrentPosition();
-            if (current != last) {
-                lastMoveTime = elapsedTime.milliseconds();
-                last = current;
-            } else if (elapsedTime.milliseconds() - lastMoveTime > 100) {
-                Logger.message("motor not moving");
-                break;
-            }
-
             int remaining = Math.abs(targetPosition - current);
             if (remaining < lowSpeedThreshold && speed != lowSpeed) {
                 if (fullPower) {
@@ -156,8 +143,25 @@ public class MotorControl extends Thread {
                 }
             }
 
+            // if the motor has not moved for a while, kill the power
+            if (current != last) {
+                lastMoveTime = elapsedTime.milliseconds();
+                last = current;
+            } else if (elapsedTime.milliseconds() - lastMoveTime > 100) {
+                Logger.message("motor not moving");
+                break;
+            }
+
+            if (emergencyStop())
+                break;
+            if (!motor.isBusy()) {
+                Logger.message("motor not busy");
+                break;
+            }
+
             //Logger.message("%s position %5d   remaining %5d  elapsed %6.2f ", state, current, remaining, elapsedTime.milliseconds());
         }
+        Logger.message("current: %d target: %d", current, targetPosition);
         motor.setPower(0);
         motor.setMode(mode);
     }

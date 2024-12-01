@@ -32,6 +32,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package test.code;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.LLStatus;
@@ -43,6 +45,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 
 import java.util.List;
+
+import common.Logger;
 
 /*
  * This OpMode illustrates how to use the Limelight3A Vision Sensor.
@@ -66,8 +70,8 @@ import java.util.List;
  *   and the ip address the Limelight device assigned the Control Hub and which is displayed in small text
  *   below the name of the Limelight on the top level configuration screen.
  */
-@TeleOp(name = "Sensor: Limelight3A", group = "Sensor")
-@Disabled
+@TeleOp(name = "Sensor: LimelightTest", group = "Sensor")
+
 public class LimelightTest extends LinearOpMode {
 
     private Limelight3A limelight;
@@ -75,6 +79,8 @@ public class LimelightTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException
     {
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
 
         telemetry.setMsTransmissionInterval(11);
@@ -102,50 +108,30 @@ public class LimelightTest extends LinearOpMode {
             LLResult result = limelight.getLatestResult();
             if (result != null) {
                 // Access general information
-                Pose3D botpose = result.getBotpose();
-                double captureLatency = result.getCaptureLatency();
-                double targetingLatency = result.getTargetingLatency();
-                double parseLatency = result.getParseLatency();
-                telemetry.addData("LL Latency", captureLatency + targetingLatency);
-                telemetry.addData("Parse Latency", parseLatency);
-                telemetry.addData("PythonOutput", java.util.Arrays.toString(result.getPythonOutput()));
-                
+
                 if (result.isValid()) {
                     telemetry.addData("tx", result.getTx());
                     telemetry.addData("txnc", result.getTxNC());
                     telemetry.addData("ty", result.getTy());
                     telemetry.addData("tync", result.getTyNC());
 
-                    telemetry.addData("Botpose", botpose.toString());
-
-                    // Access barcode results
-                    List<LLResultTypes.BarcodeResult> barcodeResults = result.getBarcodeResults();
-                    for (LLResultTypes.BarcodeResult br : barcodeResults) {
-                        telemetry.addData("Barcode", "Data: %s", br.getData());
-                    }
-
-                    // Access classifier results
-                    List<LLResultTypes.ClassifierResult> classifierResults = result.getClassifierResults();
-                    for (LLResultTypes.ClassifierResult cr : classifierResults) {
-                        telemetry.addData("Classifier", "Class: %s, Confidence: %.2f", cr.getClassName(), cr.getConfidence());
-                    }
-
-                    // Access detector results
-                    List<LLResultTypes.DetectorResult> detectorResults = result.getDetectorResults();
-                    for (LLResultTypes.DetectorResult dr : detectorResults) {
-                        telemetry.addData("Detector", "Class: %s, Area: %.2f", dr.getClassName(), dr.getTargetArea());
-                    }
-
-                    // Access fiducial results
-                    List<LLResultTypes.FiducialResult> fiducialResults = result.getFiducialResults();
-                    for (LLResultTypes.FiducialResult fr : fiducialResults) {
-                        telemetry.addData("Fiducial", "ID: %d, Family: %s, X: %.2f, Y: %.2f", fr.getFiducialId(), fr.getFamily(),fr.getTargetXDegrees(), fr.getTargetYDegrees());
-                    }
+                    //Logger.message("tx: %5.2f  txnc: %5.2f  ty: %5.2f  tync : %5.2f", result.getTx(), result.getTxNC(), result.getTy(), result.getTyNC());
 
                     // Access color results
                     List<LLResultTypes.ColorResult> colorResults = result.getColorResults();
                     for (LLResultTypes.ColorResult cr : colorResults) {
-                        telemetry.addData("Color", "X: %.2f, Y: %.2f", cr.getTargetXDegrees(), cr.getTargetYDegrees());
+
+                        List<List<Double>> corners = cr.getTargetCorners();
+                        if (corners.size() == 4){
+                            Logger.message("x: %5.1f, y: %5.1f  (%.0f,%.0f) (%.0f,%.0f) (%.0f,%.0f) (%.0f,%.0f)",
+                                    cr.getTargetXDegrees(), cr.getTargetYDegrees(),
+                                    corners.get(0).get(0), corners.get(0).get(1),
+                                    corners.get(1).get(0), corners.get(1).get(1),
+                                    corners.get(2).get(0), corners.get(2).get(1),
+                                    corners.get(3).get(0), corners.get(3).get(1));
+                        }
+
+                        sleep(500);
                     }
                 }
             } else {
@@ -155,5 +141,10 @@ public class LimelightTest extends LinearOpMode {
             telemetry.update();
         }
         limelight.stop();
+    }
+
+    private void distanceToSample (LLResult result) {
+
+
     }
 }
