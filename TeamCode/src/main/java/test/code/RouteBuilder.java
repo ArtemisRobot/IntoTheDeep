@@ -5,20 +5,26 @@ import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstan
 import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants.rightFrontMotorName;
 import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants.rightRearMotorName;
 
+import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierCurve;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierLine;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
+import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
 
+import common.Config;
+import common.Drive;
 import common.Logger;
 
 @com.acmerobotics.dashboard.config.Config
@@ -32,9 +38,9 @@ public class RouteBuilder extends LinearOpMode {
     public static double BEGIN_Y = 0;
     public static double BEGIN_HEADING = 0;
 
-    public static double LINE_1_END_POINT_X = 20;
-    public static double LINE_1_END_POINT_Y = 0;
-    public static double LINE_1_HEADING = 0;
+    public static double LINE_1_END_POINT_X = 23.5;
+    public static double LINE_1_END_POINT_Y = 23.5;
+    public static double LINE_1_HEADING = 45;
 
     public static boolean LINE_2_ENABLED = false;
     public static double LINE_2_END_POINT_X = 15;
@@ -51,7 +57,11 @@ public class RouteBuilder extends LinearOpMode {
     public static double LINE_4_END_POINT_Y = 0;
     public static double LINE_4_HEADING = 0;
 
+    public static double distanceFromObject = 4;
+
     ElapsedTime timer = new ElapsedTime();
+
+    private DistanceSensor distanceSensor;
 
     Pose startPose;
     private final Path[] paths = new Path[5];
@@ -64,12 +74,20 @@ public class RouteBuilder extends LinearOpMode {
     private DcMotorEx rightFront;
     private DcMotorEx rightRear;
 
+    Drive drive;
+    private SparkFunOTOS otos;
+
+
     /**
      * This initializes the drive motors as well as the Follower and motion Vectors.
      */
     @Override
     public void runOpMode() {
     try {
+
+        drive = new Drive(this);
+        otos = hardwareMap.get(SparkFunOTOS.class, "sensor_otos");
+
         buildPaths();
         initialize();
         waitForStart();
@@ -81,8 +99,13 @@ public class RouteBuilder extends LinearOpMode {
                 while (gamepad1.x) sleep(10);
             }
 
+            if (gamepad1.b) {
+                driveToObject2(distanceFromObject);
+                while (gamepad1.b) sleep(10);
+            }
+
             displayPose();
-            drive();
+            driveWithStick();
         }
 
     } catch (Exception e) {
@@ -90,7 +113,7 @@ public class RouteBuilder extends LinearOpMode {
         }
     }
 
-    private void drive() {
+    private void driveWithStick() {
         Pose position = follower.getClosestPose();
         telemetry.addData("Position ", position);
         follower.setTeleOpMovementVectors(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x);
@@ -116,6 +139,13 @@ public class RouteBuilder extends LinearOpMode {
         leftRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        try {
+            distanceSensor = hardwareMap.get(DistanceSensor.class, Config.DISTANCE_SENSOR);
+        } catch (Exception e) {
+            Logger.error(e, "Distance sensor not found");
+        }
+
 
         follower.setStartingPose(startPose);
         follower.startTeleopDrive();
@@ -182,9 +212,39 @@ public class RouteBuilder extends LinearOpMode {
 
     private void displayPose () {
         Pose pose = follower.getPose();
-        telemetry.addData("pose", "x %5.1f  y %5.1f  heading %5.1f", pose.getX(), pose.getY(), Math.toDegrees(pose.getHeading()));
+        SparkFunOTOS.Pose2D rawPose = otos.getPosition();
+
+        telemetry.addData("pose", "x %5.1f  y %5.1f  heading %5.1f",
+                pose.getX(), pose.getY(), Math.toDegrees(pose.getHeading()));
+        telemetry.addData("rawPose", "x %5.1f  y %5.1f  heading %5.1f", rawPose.x, rawPose.y, rawPose.h);
+        telemetry.addData("distance", "%5.1f", distanceSensor.getDistance(DistanceUnit.INCH));
+        telemetry.addData("follower is busy", follower.isBusy());
         telemetry.update();
         //Logger.message("pose x %4.0f  y %4.0f  heading %4.0f", pose.getX(), pose.getY(), Math.toDegrees(pose.getHeading()));
     }
 
+    private void driveToObject(double distanceFromObject) {
+        Pose pose = follower.getPose();
+        double  gap = distanceSensor.getDistance(DistanceUnit.INCH);
+        double travel = gap - distanceFromObject;
+        double x = pose.getX();
+        double y =  pose.getX();
+
+        PathChain path = follower.pathBuilder()
+                .addPath(new BezierLine(new Point(x, y, Point.CARTESIAN), new Point(x + travel, y, Point.CARTESIAN)))
+                .setPathEndHeadingConstraint(pose.getHeading())
+                .setPathEndTimeoutConstraint(500)
+                .build();
+
+
+        follower.followPath(path);
+        while (follower.isBusy() && opModeIsActive()) {
+            displayPose();
+            follower.update();
+        }
+    }
+    private void driveToObject2(double distanceFromObject) {
+        drive.moveToObject(0.25, distanceFromObject, 2000);
+        follower.update();
+    }
 }
