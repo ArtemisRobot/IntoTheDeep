@@ -70,7 +70,7 @@ import common.Logger;
  *   and the ip address the Limelight device assigned the Control Hub and which is displayed in small text
  *   below the name of the Limelight on the top level configuration screen.
  */
-@TeleOp(name = "Sensor: LimelightTest", group = "Sensor")
+@TeleOp(name = "LimelightTest", group = "Test")
 
 public class LimelightTest extends LinearOpMode {
 
