@@ -75,7 +75,7 @@ public class Robot extends Thread {
     // Declare OpMode members.
     private final LinearOpMode opMode;
 
-    private enum ROBOT_STATE { IDLE, SET_TO_START_POSITION, SET_TO_STOP_POSITION, PICKUP_SAMPLE, DROP_SAMPLE_INTO_TOP_BUCKET }
+    private enum ROBOT_STATE { IDLE, SET_TO_START_POSITION, SET_TO_STOP_POSITION, PICKUP_SAMPLE, DROP_SAMPLE_INTO_TOP_BUCKET, SCORE_SPECIMEN }
     private ROBOT_STATE robotState = ROBOT_STATE.IDLE;
 
     private int pickingPosition = AMR_OUT_PART_WAY;
@@ -230,6 +230,19 @@ public class Robot extends Thread {
                         lifterDown();
                         robotState = ROBOT_STATE.IDLE;
                     }
+                    continue;
+
+                case SCORE_SPECIMEN:
+                    Logger.message("** Score specimen");
+                    synchronized (this) {
+                        lifterToTopBar();
+                        while (lifterIsBusy() && opMode.opModeIsActive()) {
+                            delay(10);
+                        }
+
+                        setOkToMove(true);
+
+                    }
             }
         }
 
@@ -305,6 +318,13 @@ public class Robot extends Thread {
     public void lifterDown() {
         //runMotorToPosition(lifter, LIFTER_DOWN_POSITION, LIFTER_SPEED, LIFTER_SPEED_LOW);
         lifterControl.setPosition(LIFTER_DOWN_POSITION, LIFTER_SPEED, LIFTER_SPEED_LOW);
+    }
+
+    /**
+     * Raise the lifter to the specimen top bar scoring position
+     */
+    public void lifterToTopBar () {
+        lifterControl.setPosition(LIFTER_TOP_BAR_POSITION, LIFTER_SPEED, LIFTER_SPEED);
     }
 
     /**
@@ -539,6 +559,13 @@ public class Robot extends Thread {
         }
     }
 
+    public void scoreSpecimen() {
+        synchronized (this) {
+            robotState = ROBOT_STATE.SCORE_SPECIMEN;
+            setOkToMove(false);
+        }
+    }
+
     public void pushSample() {
 
     }
@@ -584,14 +611,6 @@ public class Robot extends Thread {
 
     public boolean isTestRobot () {
         return testRobot;
-    }
-
-    public void scoreSpecimen() {
-        lifterControl.setPosition(LIFTER_TOP_BAR_POSITION, LIFTER_SPEED, LIFTER_TOP_BAR_POSITION);
-        while (lifterIsBusy() && opMode.opModeIsActive()) {
-            delay(10);
-        }
-
     }
 
 
