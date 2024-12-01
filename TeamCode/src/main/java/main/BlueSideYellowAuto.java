@@ -1,5 +1,6 @@
 package main;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -15,24 +16,25 @@ import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
 import common.Logger;
 import common.Robot;
 
-@Autonomous(name="BlueBucketAuto", group = "Main")
+@Autonomous(name="BlueSideYellowAuto", group = "Main")
+@Config
 
  public class BlueSideYellowAuto extends LinearOpMode {
 
-    public static double START_X = 10.5;
-    public static double START_Y = 107.6;
+    public static double START_X = 8.5;
+    public static double START_Y = 102.5;
     public static double START_HEADING = 0;
 
-    public static double BUCKET_X = 9.9;
-    public static double BUCKET_Y = 134.6;
-    public static double BUCKET_HEADING = 136;
+    public static double BUCKET_X = 13;
+    public static double BUCKET_Y = 127;
+    public static double BUCKET_HEADING = 135;
 
-    public static double YELLOW_RIGHT_X = 41.5;
-    public static double YELLOW_RIGHT_Y = 121.2;
+    public static double YELLOW_RIGHT_X = 33;
+    public static double YELLOW_RIGHT_Y = 117;
     public static double YELLOW_RIGHT_HEADING = 0;
 
-    public static double YELLOW_MIDDLE_X = 41.5;
-    public static double YELLOW_MIDDLE_Y = 131.3;
+    public static double YELLOW_MIDDLE_X = 33;
+    public static double YELLOW_MIDDLE_Y = 127;
     public static double YELLOW_MIDDLE_HEADING = 0;
 
     public static double YELLOW_LEFT_X = 58.4;
@@ -43,8 +45,11 @@ import common.Robot;
     public static double NET_ZONE_Y = 129.1;
     public static double SCORE_NET_ZONE_HEADING = -90;
 
+    public static double PARK_X = 12;
+    public static double PARK_Y = 135;
+    public static double PARK_HEADING = 90;
 
-    private static enum PathState { START, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, YELLOW_LEFT, SCORE_NET_ZONE;
+    private static enum PathState { START, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, PARK, YELLOW_LEFT, SCORE_NET_ZONE;
         public static PathState next(int id) {
             return values()[id];
         }
@@ -55,6 +60,7 @@ import common.Robot;
     private final PathChain[] paths = new PathChain[pathCount];
 
     private ElapsedTime elapsedTime = new ElapsedTime();
+    private ElapsedTime timer = new ElapsedTime();
     boolean running;
 
     private Follower follower;
@@ -73,7 +79,7 @@ import common.Robot;
             displayPose();
             switch (pathState) {
                 case START:
-                    //robot.setToStartPosition();
+                    robot.setToStartPosition();
                     followPath();
                     continue;
 
@@ -81,23 +87,29 @@ import common.Robot;
                 case BUCKET3:
                 case BUCKET2:
                     waitUntilNotMoving();
-                    //robot.dropSampleInTopBucket();
+                    //waitForButtonPress();
+                    Logger.addLine("dropSampleInTopBucket");
+                    robot.dropSampleInTopBucket();
                     followPath();
                     continue;
 
                 case YELLOW_RIGHT:
                 case YELLOW_MIDDLE:
                     waitUntilNotMoving();
-                    //robot.pickUpYellow();
+                    //waitForButtonPress();
+                    robot.pickUpYellow();
                     followPath();
                     continue;
 
                 case YELLOW_LEFT:
                     robot.pushSample();
                     followPath();
+                    //waitForButtonPress();
                     continue;
 
                 case SCORE_NET_ZONE:
+
+                case PARK:
                     waitUntilNotMoving();
                     running = false;
                     Logger.message("elapsed time %4.1f", elapsedTime.seconds());
@@ -114,11 +126,13 @@ import common.Robot;
     }
 
     private void buildPaths() {
-        paths[PathState.START.ordinal()] = createCurve(START_X, START_Y, START_X+36.5, START_Y-5, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
+        paths[PathState.START.ordinal()] = createLines(START_X, START_Y, START_X+10 , START_Y, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
         paths[PathState.BUCKET1.ordinal()] = createLine(BUCKET_X, BUCKET_Y, YELLOW_RIGHT_X, YELLOW_RIGHT_Y, YELLOW_RIGHT_HEADING);
         paths[PathState.YELLOW_RIGHT.ordinal()] = createLine(YELLOW_RIGHT_X, YELLOW_RIGHT_Y, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
         paths[PathState.BUCKET2.ordinal()] = createLine(BUCKET_X, BUCKET_Y, YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, YELLOW_MIDDLE_HEADING);
         paths[PathState.YELLOW_MIDDLE.ordinal()] = createLine(YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
+        paths[PathState.PARK.ordinal()] = createLine(BUCKET_X, BUCKET_Y, PARK_X, PARK_Y, PARK_HEADING);
+
         paths[PathState.BUCKET3.ordinal()] = createLine(BUCKET_X, BUCKET_Y, YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING);
         paths[PathState.YELLOW_LEFT.ordinal()] = createLine(YELLOW_LEFT_X, YELLOW_LEFT_Y, NET_ZONE_X, NET_ZONE_Y,SCORE_NET_ZONE_HEADING);
     }
@@ -138,8 +152,6 @@ import common.Robot;
 
         follower.followPath(paths[index]);
         pathState  = PathState.next(index+1);
-
-        ifTestingWait();
     }
 
     private boolean isBusy () {
@@ -147,26 +159,41 @@ import common.Robot;
     }
 
     private void waitUntilNotMoving () {
-        while (follower.isBusy() ) {
-            if (! opModeIsActive())
+        Logger.message("waiting until not moving");
+        timer.reset();
+        while (follower.isBusy() && opModeIsActive()) {
+            follower.update();
+            if (timer.milliseconds() > 3000) {
+                Logger.warning("follower timed out");
                 break;
-            sleep(10);
+            }
         }
+        Logger.message("done waiting until not moving");
     }
 
     private PathChain createCurve (double startX, double startY, double pointX, double pointY, double endX, double endY, double heading) {
         return follower.pathBuilder()
                 .addPath(new BezierCurve(new Point(startX, startY), new Point(pointX, pointY), new Point(endX, endY, Point.CARTESIAN)))
-                .setPathEndHeadingConstraint(Math.toRadians(heading))
-                .setPathEndTimeoutConstraint(500)
+                .setConstantHeadingInterpolation(Math.toRadians(heading))
+                .setPathEndTimeoutConstraint(3)
+                .build();
+    }
+
+    private PathChain createLines (double startX, double startY, double pointX, double pointY, double endX, double endY, double heading) {
+        return follower.pathBuilder()
+                .addPath(new BezierLine(new Point(startX, startY), new Point(pointX, pointY, Point.CARTESIAN)))
+                .setConstantHeadingInterpolation(Math.toRadians(START_HEADING))
+                .addPath(new BezierLine(new Point(pointX, pointY), new Point(endX, endY, Point.CARTESIAN)))
+                .setConstantHeadingInterpolation(Math.toRadians(heading))
+                .setPathEndTimeoutConstraint(3)
                 .build();
     }
 
     private PathChain createLine (double startX, double startY, double endX, double endY, double heading) {
         return follower.pathBuilder()
                 .addPath(new BezierLine(new Point(startX, startY), new Point(endX, endY, Point.CARTESIAN)))
-                .setPathEndHeadingConstraint(Math.toRadians(heading))
-                .setPathEndTimeoutConstraint(500)
+                .setConstantHeadingInterpolation(Math.toRadians(heading))
+                .setPathEndTimeoutConstraint(3)
                 .build();
     }
 
@@ -176,8 +203,6 @@ import common.Robot;
             while (! gamepad1.x && opModeIsActive()) {
                 follower.update();
                 displayPose();
-                //telemetry.addLine("press x to continue");
-                //telemetry.update();
 
                 if (gamepad1.x) {
                     while (gamepad1.x) sleep(10);
@@ -189,8 +214,32 @@ import common.Robot;
 
     private void displayPose () {
         Pose pose = follower.getPose();
-        telemetry.addData("pose", "x %4.0f  y %4.0f  heading %4.0f", pose.getX(), pose.getY(), Math.toDegrees(pose.getHeading()));
+        telemetry.addData("Path", pathState);
+        telemetry.addData("pose", "x %5.1f  y %5.1f  heading %5.1f  is busy %b",
+                pose.getX(),
+                pose.getY(),
+                Math.toDegrees(pose.getHeading()),
+                follower.isBusy());
         telemetry.update();
-        Logger.message("pose x %4.0f  y %4.0f  heading %4.0f", pose.getX(), pose.getY(), Math.toDegrees(pose.getHeading()));
+        //Logger.message("pose x %4.0f  y %4.0f  heading %4.0f", pose.getX(), pose.getY(), Math.toDegrees(pose.getHeading()));
+    }
+
+    private void waitForButtonPress() {
+        Logger.message("waiting for button press");
+
+        boolean pressed = false;
+        while (opModeIsActive()) {
+            follower.update();
+            displayPose();
+
+            if (pressed) {
+                if (! gamepad1.x) {
+                    break;
+                }
+            } else if (gamepad1.x) {
+                pressed = true;
+            }
+        }
+        Logger.message("done waiting for button press");
     }
 }
