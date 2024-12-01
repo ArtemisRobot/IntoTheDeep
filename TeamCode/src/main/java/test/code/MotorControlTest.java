@@ -32,6 +32,7 @@ package test.code;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -42,6 +43,7 @@ import common.MotorControl;
 
 @TeleOp(name=" Motor Control Test", group="Test")
 @com.acmerobotics.dashboard.config.Config
+@Disabled
 
 public class MotorControlTest extends LinearOpMode {
 
