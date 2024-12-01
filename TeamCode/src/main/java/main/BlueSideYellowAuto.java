@@ -46,10 +46,10 @@ import common.Robot;
     public static double SCORE_NET_ZONE_HEADING = -90;
 
     public static double PARK_X = 12;
-    public static double PARK_Y = 135;
+    public static double PARK_Y = 100;
     public static double PARK_HEADING = 90;
 
-    private static enum PathState { START, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, PARK, YELLOW_LEFT, SCORE_NET_ZONE;
+    private enum PathState { START, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, PARK, YELLOW_LEFT, SCORE_NET_ZONE;
         public static PathState next(int id) {
             return values()[id];
         }
@@ -59,8 +59,8 @@ import common.Robot;
     int pathCount = PathState.values().length;
     private final PathChain[] paths = new PathChain[pathCount];
 
-    private ElapsedTime elapsedTime = new ElapsedTime();
-    private ElapsedTime timer = new ElapsedTime();
+    private final ElapsedTime elapsedTime = new ElapsedTime();
+    private final ElapsedTime timer = new ElapsedTime();
     boolean running;
 
     private Follower follower;
@@ -102,14 +102,15 @@ import common.Robot;
                     continue;
 
                 case YELLOW_LEFT:
+                    //waitForButtonPress();
                     robot.pushSample();
                     followPath();
-                    //waitForButtonPress();
                     continue;
 
                 case SCORE_NET_ZONE:
 
                 case PARK:
+                    robot.setToStopPosition();
                     waitUntilNotMoving();
                     running = false;
                     Logger.message("elapsed time %4.1f", elapsedTime.seconds());
@@ -131,9 +132,8 @@ import common.Robot;
         paths[PathState.YELLOW_RIGHT.ordinal()] = createLine(YELLOW_RIGHT_X, YELLOW_RIGHT_Y, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
         paths[PathState.BUCKET2.ordinal()] = createLine(BUCKET_X, BUCKET_Y, YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, YELLOW_MIDDLE_HEADING);
         paths[PathState.YELLOW_MIDDLE.ordinal()] = createLine(YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
-        paths[PathState.PARK.ordinal()] = createLine(BUCKET_X, BUCKET_Y, PARK_X, PARK_Y, PARK_HEADING);
-
-        paths[PathState.BUCKET3.ordinal()] = createLine(BUCKET_X, BUCKET_Y, YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING);
+        paths[PathState.BUCKET3.ordinal()] = createLine(BUCKET_X, BUCKET_Y, PARK_X, PARK_Y, PARK_HEADING);
+        //       paths[PathState.BUCKET3.ordinal()] = createLine(BUCKET_X, BUCKET_Y, YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING);
         paths[PathState.YELLOW_LEFT.ordinal()] = createLine(YELLOW_LEFT_X, YELLOW_LEFT_Y, NET_ZONE_X, NET_ZONE_Y,SCORE_NET_ZONE_HEADING);
     }
 
@@ -195,21 +195,6 @@ import common.Robot;
                 .setConstantHeadingInterpolation(Math.toRadians(heading))
                 .setPathEndTimeoutConstraint(3)
                 .build();
-    }
-
-    private void ifTestingWait () {
-
-        if (true || robot.isTestRobot()) {
-            while (! gamepad1.x && opModeIsActive()) {
-                follower.update();
-                displayPose();
-
-                if (gamepad1.x) {
-                    while (gamepad1.x) sleep(10);
-                    break;
-                }
-            }
-        }
     }
 
     private void displayPose () {
