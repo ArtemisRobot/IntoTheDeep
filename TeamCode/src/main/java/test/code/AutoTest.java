@@ -2,11 +2,9 @@ package test.code;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import common.Logger;
 import common.Robot;
 
 @TeleOp(name=" AutoTest", group = "Test")
@@ -28,7 +26,7 @@ public class AutoTest extends LinearOpMode {
         while (opModeIsActive()) {
 
             if (gamepad1.a) {
-                robot.dropTest();
+                robot.setToStopPosition();
                 while (gamepad1.a) sleep(10);
             } else if (gamepad1.x) {
                 robot.dropperOpen();
@@ -37,7 +35,7 @@ public class AutoTest extends LinearOpMode {
                 robot.dropperClose();
                 while (gamepad1.b) sleep(10);
             } else if (gamepad1.y) {
-                robot.dropSampleInTopBucket();
+                robot.setToStartPosition();
                 while (gamepad1.y) sleep(10);
             }
 
