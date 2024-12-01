@@ -37,9 +37,11 @@ public class Robot extends Thread {
     public static int    LIFTER_STOP_TICKS = 500;
     public static int    LIFTER_UP_POSITION = 3228;
     public static int    LIFTER_DOWN_POSITION = 0;
+    public static int    LIFTER_TOP_BAR_POSITION = 0;
 
     // Grabbers
     private final double PICKER_UP_POSITION = 0.383;
+    private final double PICKER_STORE_POSITION = 0.342;
     private final double PICKER_DOWN_POSITION = 0.497;
 
     private final double PICKER_FINGER_CLOSED = 0.51;
@@ -72,7 +74,7 @@ public class Robot extends Thread {
     // Declare OpMode members.
     private final LinearOpMode opMode;
 
-    private enum ROBOT_STATE { IDLE, SET_TO_START_POSITION, PICKUP_SAMPLE, DROP_SAMPLE_INTO_TOP_BUCKET }
+    private enum ROBOT_STATE { IDLE, SET_TO_START_POSITION, SET_TO_STOP_POSITION, PICKUP_SAMPLE, DROP_SAMPLE_INTO_TOP_BUCKET }
     private ROBOT_STATE robotState = ROBOT_STATE.IDLE;
 
     private int pickingPosition = AMR_OUT_PART_WAY;
@@ -158,6 +160,7 @@ public class Robot extends Thread {
                 case SET_TO_START_POSITION:
                     Logger.message("** Set start position");
                     synchronized (this) {
+                        dropperClose();
                         dropperDown();
                         armMoveTo(pickingPosition);
                         delay(1000);
@@ -167,6 +170,20 @@ public class Robot extends Thread {
                         robotState = ROBOT_STATE.IDLE;
                     }
                     continue;
+
+                case SET_TO_STOP_POSITION:
+                    Logger.message("** Set stop position");
+                    synchronized (this) {
+                        pickerClose();
+                        pickerStore();
+                        dropperOpen();
+                        dropperDown();
+                        delay(1000);
+                        armMoveTo(ARM_IN);
+                        robotState = ROBOT_STATE.IDLE;
+                    }
+                    continue;
+
 
                 case PICKUP_SAMPLE:
                     Logger.message("** Pickup sample");
@@ -393,6 +410,10 @@ public class Robot extends Thread {
         Logger.message("set picker to position %f", PICKER_UP_POSITION);
         pickerWrist.setPosition(PICKER_UP_POSITION);
     }
+    public void pickerStore() {
+        Logger.message("set picker to position %f", PICKER_STORE_POSITION);
+        pickerWrist.setPosition(PICKER_STORE_POSITION);
+    }
 
     public void pickerDown() {
         Logger.message("set picker to position %f", PICKER_DOWN_POSITION);
@@ -487,6 +508,12 @@ public class Robot extends Thread {
         }
     }
 
+    public void setToStopPosition() {
+        synchronized (this) {
+            robotState = ROBOT_STATE.SET_TO_STOP_POSITION;
+        }
+    }
+
     public void setToPickingPosition(int position) {
         synchronized (this) {
             pickingPosition = position;
@@ -501,7 +528,7 @@ public class Robot extends Thread {
         }
     }
 
-    public  void dropSampleInTopBucket() {
+    public void dropSampleInTopBucket() {
         synchronized (this) {
             robotState = ROBOT_STATE.DROP_SAMPLE_INTO_TOP_BUCKET;
             setOkToMove(false);
@@ -554,5 +581,16 @@ public class Robot extends Thread {
     public boolean isTestRobot () {
         return testRobot;
     }
+
+    public void scoreSpecimen() {
+        lifterControl.setPosition(LIFTER_TOP_BAR_POSITION, LIFTER_SPEED, LIFTER_TOP_BAR_POSITION);
+        while (lifterIsBusy() && opMode.opModeIsActive()) {
+            delay(10);
+        }
+
+    }
+
+
+
 } // end of class
 
