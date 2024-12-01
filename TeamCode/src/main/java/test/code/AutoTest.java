@@ -29,7 +29,7 @@ public class AutoTest extends LinearOpMode {
                 robot.setToStopPosition();
                 while (gamepad1.a) sleep(10);
             } else if (gamepad1.x) {
-                robot.dropperOpen();
+                robot.pickUpYellow();
                 while (gamepad1.x) sleep(10);
             } else if (gamepad1.b) {
                 robot.dropperClose();

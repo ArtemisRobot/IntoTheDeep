@@ -29,11 +29,11 @@ import common.Robot;
     public static double BUCKET_Y = 127;
     public static double BUCKET_HEADING = 135;
 
-    public static double YELLOW_RIGHT_X = 33;
+    public static double YELLOW_RIGHT_X = 32;
     public static double YELLOW_RIGHT_Y = 117;
     public static double YELLOW_RIGHT_HEADING = 0;
 
-    public static double YELLOW_MIDDLE_X = 33;
+    public static double YELLOW_MIDDLE_X = 32;
     public static double YELLOW_MIDDLE_Y = 127;
     public static double YELLOW_MIDDLE_HEADING = 0;
 

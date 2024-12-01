@@ -28,7 +28,8 @@ public class Robot extends Thread {
     public final int    ARM_IN = 0;
     public final int    ARM_OUT = 2000;
     public final int    AMR_OUT_PART_WAY = 750;
-    public final int    ARM_EXCHANGE = 511;
+    public final int    ARM_OUT_START = 610;
+    public final int    ARM_EXCHANGE = 400;
     public static double ARM_SPEED = 0.5;
 
     // lifter
@@ -51,7 +52,7 @@ public class Robot extends Thread {
     private final double DROPPER_DROP_POSITION = 0.572;
     private final double DROPPER_DOWN_POSITION = 0.492;
 
-    private final double DROPPER_FINGER_CLOSED = 0.475;
+    private final double DROPPER_FINGER_CLOSED = 0.470;
     private final double DROPPER_FINGER_OPEN = 0.60;
 
     private boolean pickerOpened = true;
@@ -161,12 +162,13 @@ public class Robot extends Thread {
                     Logger.message("** Set start position");
                     synchronized (this) {
                         dropperClose();
-                        dropperDown();
-                        armMoveTo(pickingPosition);
+                        dropperUp();
+                        armMoveTo(ARM_OUT_START);
                         delay(1000);
                         pickerOpen();
                         pickerDown();
-                        dropperOpen();
+                        delay(1000);
+                        armMoveTo(pickingPosition);
                         robotState = ROBOT_STATE.IDLE;
                     }
                     continue;
@@ -174,6 +176,8 @@ public class Robot extends Thread {
                 case SET_TO_STOP_POSITION:
                     Logger.message("** Set stop position");
                     synchronized (this) {
+                        armMoveTo(ARM_OUT_START);
+                        delay(1000);
                         pickerClose();
                         pickerStore();
                         dropperOpen();
@@ -203,7 +207,6 @@ public class Robot extends Thread {
                         pickerOpen();
                         delay(400);
                         dropperUp();
-                        dropperOpen();
                         pickerOpen();
                         pickerDown();
                         robotState = ROBOT_STATE.IDLE;
@@ -504,6 +507,7 @@ public class Robot extends Thread {
 
     public void setToStartPosition() {
         synchronized (this) {
+            pickingPosition = ARM_EXCHANGE;
             robotState = ROBOT_STATE.SET_TO_START_POSITION;
         }
     }
