@@ -949,7 +949,8 @@ public class Drive extends Thread {
 
             if (LOG_VERBOSE) {
                 double velocity = odometer.getVelocity();
-                Logger.message("power: %4.2f %4.2f %4.2f %4.2f   %5.2f %5.2f %5.2f    remaining: %5.2f    adjust: %4.2f %4.2f %4.2f %4.2f     position: %6d %6d %6d %6d %6d     velocity: %4.0f %4.0f %4.0f %4.0f %5.0f  %6.2f(in)    heading %6.1f ",
+                //Logger.message("power: %4.2f %4.2f %4.2f %4.2f   %5.2f %5.2f %5.2f    remaining: %5.2f    adjust: %4.2f %4.2f %4.2f %4.2f     position: %6d %6d %6d %6d %6d     velocity: %4.0f %4.0f %4.0f %4.0f %5.0f  %6.2f(in)    heading %6.1f ",
+                Logger.message("power: %4.2f %4.2f %4.2f %4.2f   %5.2f %5.2f %5.2f    remaining: %5.2f    adjust: %4.2f %4.2f %4.2f %4.2f     position: %6d %6d %6d %6d     velocity: %4.0f %4.0f %4.0f %4.0f    heading %6.1f ",
                         leftFrontDrive.getPower(),
                         rightFrontDrive.getPower(),
                         leftBackDrive.getPower(),
@@ -964,13 +965,13 @@ public class Drive extends Thread {
                         rightFrontDrive.getCurrentPosition(),
                         leftBackDrive.getCurrentPosition(),
                         rightBackDrive.getCurrentPosition(),
-                        odometer.getCurrentPosition(),
+                        //odometer.getCurrentPosition(),
                         leftFrontDrive.getVelocity(),
                         rightFrontDrive.getVelocity(),
                         leftBackDrive.getVelocity(),
                         rightBackDrive.getVelocity(),
-                        velocity,
-                        velocity / ODOMETER_COUNTS_PER_INCH,
+                        //velocity,
+                        //velocity / ODOMETER_COUNTS_PER_INCH,
                         getOrientation());
             }
         }
@@ -1367,30 +1368,22 @@ public class Drive extends Thread {
         if (driving) return false;
 
         ElapsedTime elapsedTime = new ElapsedTime();
-        int count = 0;
-        double startDistance = 0;
-        double average;
         boolean found = false;
 
         resetEncoders();
         moveRobot(DIRECTION.FORWARD, speed);
         elapsedTime.reset();
 
+
         while (! found && opMode.opModeIsActive()) {
             double distance = distanceSensor.getDistance(DistanceUnit.INCH);
+            double velocity = leftFrontDrive.getVelocity();
 
-            if (count == 0) {
-                average = 0;
-                startDistance = distance;
-            } else {
-                average = (startDistance - distance) / count;
-                //Logger.message("distance %6.2f  %6.2f", distance, average);
-            }
-            count++;
+            Logger.message("distance %6.2f  %6.2f", distance, velocity);
 
-            if (distance - inches <= average / 2) {
+            if (distance - inches <= velocity / (COUNTS_PER_INCH * 8) ) {
                 stopRobot();
-                //Logger.message("object found, distance %6.2f ", distance);
+                Logger.message("object found, distance %6.2f inches %6.2f", distance, inches);
                 found = true;
  //           } else if ( distance - inches < 2) {
  //               moveRobot(1, 0, 0, 0.1);
