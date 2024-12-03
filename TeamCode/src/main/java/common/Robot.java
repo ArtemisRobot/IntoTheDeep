@@ -80,7 +80,7 @@ public class Robot extends Thread {
 
     private int pickingPosition = AMR_OUT_PART_WAY;
 
-    Semaphore okToMove;
+    private Semaphore okToMove;
 
     boolean testRobot = false;
 
@@ -159,7 +159,7 @@ public class Robot extends Thread {
                     continue;
 
                 case SET_TO_START_POSITION:
-                    Logger.message("** Set start position");
+                    Logger.message("\n** Set to start position");
                     synchronized (this) {
                         dropperClose();
                         dropperUp();
@@ -174,7 +174,7 @@ public class Robot extends Thread {
                     continue;
 
                 case SET_TO_STOP_POSITION:
-                    Logger.message("** Set stop position");
+                    Logger.message("\n** Set to stop position");
                     synchronized (this) {
                         armMoveTo(ARM_OUT_START);
                         delay(1000);
@@ -190,7 +190,7 @@ public class Robot extends Thread {
 
 
                 case PICKUP_SAMPLE:
-                    Logger.message("** Pickup sample");
+                    Logger.message("\n** Pickup sample");
                     synchronized (this) {
                         dropperOpen();
                         dropperDown();
@@ -216,7 +216,7 @@ public class Robot extends Thread {
                 case DROP_SAMPLE_INTO_TOP_BUCKET:
                     Logger.message("\n** Drop sample into top bucket");
                     synchronized (this) {
-                        lifterUp();
+                        //ToDo lifterUp();
                         while (lifterIsBusy() && opMode.opModeIsActive()) {
                             delay(10);
                         }
@@ -226,8 +226,8 @@ public class Robot extends Thread {
                         delay(200);
                         dropperUp();
                         setOkToMove(true);
-                        armMoveTo(ARM_EXCHANGE);
-                        lifterDown();
+                        //ToDo armMoveTo(ARM_EXCHANGE);
+                        //ToDo lifterDown();
                         robotState = ROBOT_STATE.IDLE;
                     }
                     continue;
@@ -308,8 +308,7 @@ public class Robot extends Thread {
     public void lifterUp() {
         Logger.message("set lifter to position %d at %4.2f speed", LIFTER_UP_POSITION, LIFTER_SPEED);
 
-        //runMotorToPosition(lifter, LIFTER_UP_POSITION, LIFTER_SPEED);
-        lifterControl.setPosition(LIFTER_UP_POSITION, LIFTER_SPEED, LIFTER_SPEED);
+        //ToDo lifterControl.setPosition(LIFTER_UP_POSITION, LIFTER_SPEED, LIFTER_SPEED);
     }
 
     /**
@@ -520,9 +519,7 @@ public class Robot extends Thread {
     }
 
     public boolean isBusy () {
-
-        if (testRobot) return false;
-        return lifterControl.motorIsBusy() || extendingArmControl.motorIsBusy();
+        return lifterControl.motorIsBusy() || extendingArmControl.motorIsBusy() || robotState != ROBOT_STATE.IDLE;
     }
 
     public void setToStartPosition() {
