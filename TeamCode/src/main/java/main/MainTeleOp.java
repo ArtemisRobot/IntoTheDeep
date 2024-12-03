@@ -42,6 +42,8 @@ import common.Robot;
 
         telemetry.update();
 
+        robot.setToStartPosition();
+
         while (opModeIsActive()) {
 
             robotHandleGamepad();
@@ -71,6 +73,11 @@ import common.Robot;
             while (gamepad.b) sleep(10);
 
         } else if (gamepad.y) {
+
+            robot.armMoveTo(robot.ARM_EXCHANGE);
+            while (robot.isBusy() && opModeIsActive()) sleep(10);
+            robot.pickUpYellow();
+            /*
             // move the game piece to scoring position
             robot.pickerUp();
             robot.dropperDown();
@@ -81,7 +88,9 @@ import common.Robot;
             robot.pickerOpen();
             sleep(400);
             robot.dropperUp();
+            */
             while (gamepad.y) sleep(10);
+
 
         } else if (gamepad.a) {
             robot.setToPickingPosition(robot.AMR_OUT_PART_WAY);
@@ -124,6 +133,14 @@ import common.Robot;
             while (gamepad2.right_stick_y > 0 && robot.lifterRetractable())
                 sleep(10);
             robot.lifterStop();
+
+        } else if (gamepad.right_bumper) {
+            if (robot.pickerIsUp()) {
+                robot.pickerDown();
+            } else {
+                robot.pickerUp();
+            }
+            while (gamepad.right_bumper) sleep(10);
         }
     }
 }

@@ -57,6 +57,7 @@ public class Robot extends Thread {
 
     private boolean pickerOpened = true;
     private boolean dropperOpened = false;
+    private boolean pickerUp = false;
 
     // Define Motor and Servo objects
     private DcMotorEx       lifter;
@@ -431,15 +432,18 @@ public class Robot extends Thread {
     public void pickerUp() {
         Logger.message("set picker to position %f", PICKER_UP_POSITION);
         pickerWrist.setPosition(PICKER_UP_POSITION);
+        pickerUp = true;
     }
     public void pickerStore() {
         Logger.message("set picker to position %f", PICKER_STORE_POSITION);
         pickerWrist.setPosition(PICKER_STORE_POSITION);
+        pickerUp = false;
     }
 
     public void pickerDown() {
         Logger.message("set picker to position %f", PICKER_DOWN_POSITION);
         pickerWrist.setPosition(PICKER_DOWN_POSITION);
+        pickerUp = false;
     }
 
     public void pickerOpen(){
@@ -457,6 +461,10 @@ public class Robot extends Thread {
     public boolean pickerIsOpen() {
         Logger.message("picker is open: %b", pickerOpened);
         return pickerOpened;
+    }
+
+    public boolean pickerIsUp() {
+        return pickerUp;
     }
 
     public void dropperUp() {
