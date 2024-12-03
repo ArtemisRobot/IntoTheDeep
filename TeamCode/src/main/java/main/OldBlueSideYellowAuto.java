@@ -19,7 +19,7 @@ import common.Robot;
 @Autonomous(name="BlueSideYellowAuto", group = "Main")
 @Config
 
- public class BlueSideYellowAuto extends LinearOpMode {
+ public class OldBlueSideYellowAuto extends LinearOpMode {
 
     public static double START_X = 8.5;
     public static double START_Y = 102.5;
