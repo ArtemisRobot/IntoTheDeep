@@ -3,50 +3,39 @@ package main;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.util.ElapsedTime;
-
-import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
-import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierCurve;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierLine;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
 
 import common.Auto;
-import common.Logger;
-import common.Robot;
 
 @Autonomous(name="RedSideYellowAuto", group = "Main")
 @Config
 
  public class RedSideYellowAuto extends LinearOpMode {
 
-    public static double START_X = 8.5;
-    public static double START_Y = 102.5;
-    public static double START_HEADING = 0;
+    public static double START_X = 133.5;
+    public static double START_Y = 39.5;
+    public static double START_HEADING = 180;
 
-    public static double BUCKET_X = 24;
-    public static double BUCKET_Y = 120;
-    public static double BUCKET_HEADING = 135;
+   public static double NET_ZONE_X = 125;
+   public static double NET_ZONE_Y = 15;
+   public static double NET_ZONE_HEADING = -45;
 
-    public static double YELLOW_RIGHT_X = 33.5;
-    public static double YELLOW_RIGHT_Y = 117;
-    public static double YELLOW_RIGHT_HEADING = 0;
+   public static double BUCKET_X = 126;
+    public static double BUCKET_Y = 14;
+    public static double BUCKET_HEADING = -45;
 
-    public static double YELLOW_MIDDLE_X = 33.5;
-    public static double YELLOW_MIDDLE_Y = 127;
-    public static double YELLOW_MIDDLE_HEADING = 0;
+    public static double YELLOW_RIGHT_X = 109;
+    public static double YELLOW_RIGHT_Y = 24;
+    public static double YELLOW_RIGHT_HEADING = 180;
 
-    public static double YELLOW_LEFT_X = 33.5;
-    public static double YELLOW_LEFT_Y = 137;
-    public static double YELLOW_LEFT_HEADING = 0;
+    public static double YELLOW_MIDDLE_X = 109;
+    public static double YELLOW_MIDDLE_Y = 14;
+    public static double YELLOW_MIDDLE_HEADING = 180;
 
-    public static double NET_ZONE_X = 18.9;
-    public static double NET_ZONE_Y = 129.1;
-    public static double NET_ZONE_HEADING = -90;
+    public static double YELLOW_LEFT_X = 109;
+    public static double YELLOW_LEFT_Y = 10;
+    public static double YELLOW_LEFT_HEADING = 180;
 
-    public static double PARK_X = START_X;
+    public static double PARK_X = START_X - 4;
     public static double PARK_Y = START_Y;
     public static double PARK_HEADING = START_HEADING;
 
@@ -63,6 +52,9 @@ import common.Robot;
             START_X,
             START_Y,
             START_HEADING,
+            NET_ZONE_X,
+            NET_ZONE_Y,
+            NET_ZONE_HEADING,
             BUCKET_X,
             BUCKET_Y,
             BUCKET_HEADING,
@@ -75,15 +67,11 @@ import common.Robot;
             YELLOW_LEFT_X,
             YELLOW_LEFT_Y,
             YELLOW_LEFT_HEADING,
-            NET_ZONE_X,
-            NET_ZONE_Y,
-            NET_ZONE_HEADING,
             PARK_X,
             PARK_Y,
             PARK_HEADING);
 
             waitForStart();
             auto.runYellowAuto();
-            //auto.test();
     }
 }

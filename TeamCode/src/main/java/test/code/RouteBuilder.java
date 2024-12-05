@@ -34,13 +34,13 @@ public class RouteBuilder extends LinearOpMode {
 
     public static long WAIT_TIME_BETWEEN_LINES = 2;
 
-    public static double BEGIN_X = 0;
-    public static double BEGIN_Y = 0;
-    public static double BEGIN_HEADING = 0;
+    public static double BEGIN_X = 133.5;
+    public static double BEGIN_Y = 39.5;
+    public static double BEGIN_HEADING = 180;
 
-    public static double LINE_1_END_POINT_X = 23.5;
-    public static double LINE_1_END_POINT_Y = 23.5;
-    public static double LINE_1_HEADING = 45;
+    public static double LINE_1_END_POINT_X = 125;
+    public static double LINE_1_END_POINT_Y = 15;
+    public static double LINE_1_HEADING = 180;
 
     public static boolean LINE_2_ENABLED = false;
     public static double LINE_2_END_POINT_X = 15;
@@ -88,8 +88,15 @@ public class RouteBuilder extends LinearOpMode {
         drive = new Drive(this);
         otos = hardwareMap.get(SparkFunOTOS.class, "sensor_otos");
 
-        buildPaths();
         initialize();
+
+        startPose = new Pose(BEGIN_X, BEGIN_Y, Math.toRadians(BEGIN_HEADING));
+        follower.setStartingPose(startPose);
+        follower.setMaxPower(0.4);
+        follower.startTeleopDrive();
+
+        buildPaths();
+
         waitForStart();
 
         while (opModeIsActive()) {
@@ -145,10 +152,6 @@ public class RouteBuilder extends LinearOpMode {
         } catch (Exception e) {
             Logger.error(e, "Distance sensor not found");
         }
-
-
-        follower.setStartingPose(startPose);
-        follower.startTeleopDrive();
     }
 
     /**
@@ -179,8 +182,6 @@ public class RouteBuilder extends LinearOpMode {
      * Build a path from the values specified in the FTC Dashboard.
      */
     private void buildPaths() {
-
-        startPose = new Pose(BEGIN_X, BEGIN_Y, BEGIN_HEADING);
 
         pathCount = 0;
         paths[pathCount] = new Path(new BezierLine(new Point(BEGIN_X, BEGIN_Y), new Point(LINE_1_END_POINT_X, LINE_1_END_POINT_Y, Point.CARTESIAN)));
@@ -247,4 +248,7 @@ public class RouteBuilder extends LinearOpMode {
         drive.moveToObject(0.25, distanceFromObject, 2000);
         follower.update();
     }
+
+
+
 }

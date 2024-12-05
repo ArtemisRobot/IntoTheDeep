@@ -208,6 +208,7 @@ public class Robot extends Thread {
                         pickerOpen();
                         delay(400);
                         dropperUp();
+                        delay(500);
                         pickerOpen();
                         pickerDown();
                         robotState = ROBOT_STATE.IDLE;
@@ -240,7 +241,6 @@ public class Robot extends Thread {
                         while (lifterIsBusy() && opMode.opModeIsActive()) {
                             delay(10);
                         }
-
                         setOkToMove(true);
 
                     }
@@ -550,7 +550,7 @@ public class Robot extends Thread {
         }
     }
 
-    public void pickUpYellow() {
+    public void pickUpSample() {
         synchronized (this) {
             robotState = ROBOT_STATE.PICKUP_SAMPLE;
             setOkToMove(false);

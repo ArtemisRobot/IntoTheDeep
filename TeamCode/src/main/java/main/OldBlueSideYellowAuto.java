@@ -2,6 +2,7 @@ package main;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -16,7 +17,8 @@ import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
 import common.Logger;
 import common.Robot;
 
-@Autonomous(name="BlueSideYellowAuto", group = "Main")
+@Disabled
+@Autonomous(name="OldBlueSideYellowAuto", group = "Main")
 @Config
 
  public class OldBlueSideYellowAuto extends LinearOpMode {
@@ -97,7 +99,7 @@ import common.Robot;
                 case YELLOW_MIDDLE:
                     waitUntilNotMoving();
                     //waitForButtonPress();
-                    robot.pickUpYellow();
+                    robot.pickUpSample();
                     followPath();
                     continue;
 

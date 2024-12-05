@@ -76,7 +76,7 @@ import common.Robot;
 
             robot.armMoveTo(robot.ARM_EXCHANGE);
             while (robot.isBusy() && opModeIsActive()) sleep(10);
-            robot.pickUpYellow();
+            robot.pickUpSample();
             /*
             // move the game piece to scoring position
             robot.pickerUp();

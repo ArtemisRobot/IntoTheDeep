@@ -28,15 +28,31 @@ public class AutoTest extends LinearOpMode {
             if (gamepad1.a) {
                 robot.setToStopPosition();
                 while (gamepad1.a) sleep(10);
+
             } else if (gamepad1.x) {
-                robot.pickUpYellow();
+                robot.pickUpSample();
                 while (gamepad1.x) sleep(10);
+
             } else if (gamepad1.b) {
-                robot.dropperClose();
+                // toggle the dropper open or closed
+                if (robot.dropperIsOpen()) {
+                    robot.dropperClose();
+                } else {
+                    robot.dropperOpen();
+                }
                 while (gamepad1.b) sleep(10);
+
             } else if (gamepad1.y) {
                 robot.setToStartPosition();
                 while (gamepad1.y) sleep(10);
+
+            } else if (gamepad1.right_bumper) {
+                if (robot.pickerIsUp()) {
+                    robot.pickerDown();
+                } else {
+                    robot.pickerUp();
+                }
+                while (gamepad1.right_bumper) sleep(10);
             }
 
             telemetry.addData("Robot is busy", robot.isBusy());
