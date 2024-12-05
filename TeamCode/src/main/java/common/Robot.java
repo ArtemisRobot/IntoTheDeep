@@ -49,7 +49,7 @@ public class Robot extends Thread {
     private final double PICKER_FINGER_OPEN = 0.189 ;
 
     private final double DROPPER_UP_POSITION = 0.616;
-    private final double DROPPER_DROP_POSITION = 0.572;
+    private final double DROPPER_DROP_POSITION = 0.552;
     private final double DROPPER_DOWN_POSITION = 0.492;
 
     private final double DROPPER_FINGER_CLOSED = 0.470;
@@ -208,7 +208,7 @@ public class Robot extends Thread {
                         pickerOpen();
                         delay(400);
                         dropperUp();
-                        delay(500);
+                        delay(1000);
                         pickerOpen();
                         pickerDown();
                         robotState = ROBOT_STATE.IDLE;
@@ -309,7 +309,7 @@ public class Robot extends Thread {
     public void lifterUp() {
         Logger.message("set lifter to position %d at %4.2f speed", LIFTER_UP_POSITION, LIFTER_SPEED);
 
-        //ToDo lifterControl.setPosition(LIFTER_UP_POSITION, LIFTER_SPEED, LIFTER_SPEED);
+         lifterControl.setPosition(LIFTER_UP_POSITION, LIFTER_SPEED, LIFTER_SPEED);
     }
 
     /**

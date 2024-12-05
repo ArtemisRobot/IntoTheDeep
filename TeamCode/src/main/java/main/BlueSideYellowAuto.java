@@ -15,23 +15,23 @@ import common.Auto;
     public static double START_Y = 102.5;
     public static double START_HEADING = 0;
 
-   public static double NET_ZONE_X = 17;
-   public static double NET_ZONE_Y = 127;
+   public static double NET_ZONE_X = 15;
+   public static double NET_ZONE_Y = 120;
    public static double NET_ZONE_HEADING = 135;
 
-   public static double BUCKET_X = 16;
-    public static double BUCKET_Y = 128;
+   public static double BUCKET_X = 15;
+    public static double BUCKET_Y = 124 ;
     public static double BUCKET_HEADING = 135;
 
-    public static double YELLOW_RIGHT_X = 33;
+    public static double YELLOW_RIGHT_X = 31;
     public static double YELLOW_RIGHT_Y = 118;
     public static double YELLOW_RIGHT_HEADING = 0;
 
-    public static double YELLOW_MIDDLE_X = 33;
+    public static double YELLOW_MIDDLE_X = 31;
     public static double YELLOW_MIDDLE_Y = 128;
     public static double YELLOW_MIDDLE_HEADING = 0;
 
-    public static double YELLOW_LEFT_X = 33;
+    public static double YELLOW_LEFT_X = 31;
     public static double YELLOW_LEFT_Y = 134;
     public static double YELLOW_LEFT_HEADING = 0;
 

@@ -79,8 +79,8 @@ public class Auto {
                 case NET_ZONE_IN3:
                     waitUntilNotMoving();
                     waitUntilRobotIdIdle();         // ToDo necessary?
+                    //waitForButtonPress();
                     robot.lifterUp();
-                    //opMode.sleep(2000);
                     waitUntilRobotIdIdle();
                     followPath();
                     break;
@@ -89,8 +89,9 @@ public class Auto {
                 case BUCKET3:
                 case BUCKET2:
                     waitUntilNotMoving();
-                    waitForButtonPress();
+                    //waitForButtonPress();
                     robot.dropSampleInTopBucket();
+                    //waitForButtonPress();
                     followPath();
                     break;
 
