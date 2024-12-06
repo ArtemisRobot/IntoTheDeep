@@ -7,6 +7,7 @@ import android.annotation.SuppressLint;
 
 //import com.acmerobotics.dashboard.FtcDashboard;
 //import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -26,6 +27,7 @@ import common.Drive;
 import common.Logger;
 import common.PIDController;
 
+@Disabled
 @TeleOp(name="Drive Test", group="Test")
 @SuppressWarnings("unused")
 @SuppressLint("DefaultLocale")

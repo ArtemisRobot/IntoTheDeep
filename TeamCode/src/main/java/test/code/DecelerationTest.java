@@ -19,6 +19,7 @@ import common.Config;
 import common.Drive;
 import common.Logger;
 
+@Disabled
 @TeleOp(name="DecelerationTest", group="Test")
 @SuppressLint("DefaultLocale")
 
