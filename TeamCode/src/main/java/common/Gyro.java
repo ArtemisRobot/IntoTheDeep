@@ -38,7 +38,7 @@ public class Gyro {
         } else if (device instanceof IMU) {
             if (deviceName.equals(Config.IMU)) {
                 initIMU(RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                        RevHubOrientationOnRobot.UsbFacingDirection.FORWARD);
+                        RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD);
             }
             else if (deviceName.equals(Config.IMU_EXPANSION)) {
                 initIMU(RevHubOrientationOnRobot.LogoFacingDirection.DOWN,
