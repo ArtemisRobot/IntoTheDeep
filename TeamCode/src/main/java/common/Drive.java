@@ -54,7 +54,7 @@ public class Drive extends Thread {
     private final double MAX_SPEED = 0.9;
     public static double MIN_STRAFE_SPEED = 0.35;
     public static double MAX_STRAFE_SPEED = 0.95;
-    public static double MIN_ROTATE_SPEED = 0.20;
+    public static double MIN_ROTATE_SPEED = 0.15;
     public static double MAX_ROTATE_SPEED = 0.50;
 
     public enum DIRECTION { FORWARD, BACK, LEFT, RIGHT, TURN_LEFT, TURN_RIGHT, DRIVER, STOOPED }
@@ -317,7 +317,8 @@ public class Drive extends Thread {
             double y = -gamepad.left_stick_y;
             double x2 = gamepad.right_stick_x;
             double noise = 0.01;
-
+            if (x2 > 0)
+                Logger.message("%f", x2);
             // Is either stick being used?
             if (Math.abs(x) > noise || Math.abs(y) > noise || Math.abs(x2) > noise ) {
 
