@@ -57,6 +57,13 @@ public class Drive extends Thread {
     public static double MIN_ROTATE_SPEED = 0.15;
     public static double MAX_ROTATE_SPEED = 0.50;
 
+    final double TURN_MIN_SPEED         = 0.2;
+
+    final double TURN_RAMP_UP_TIME      = 1000;                       // turn ramp up time in milliseconds
+    final double TURN_RAMP_DOWN_DEGREES = 5;
+
+
+
     public enum DIRECTION { FORWARD, BACK, LEFT, RIGHT, TURN_LEFT, TURN_RIGHT, DRIVER, STOOPED }
 
     // Color sensor
@@ -1532,6 +1539,91 @@ public class Drive extends Thread {
                     break;
             }
         }
+        stopRobot();
+    }
+
+    private double getRampedPower (double startTime, double speed, double degreesToGo) {
+
+        double speedRange = Math.max(Math.abs(speed) - TURN_MIN_SPEED, 0);
+        double ramUp = (startTime / TURN_RAMP_UP_TIME) * speedRange + TURN_MIN_SPEED;
+        double ramDown = (Math.pow(degreesToGo, 2) / Math.pow(TURN_RAMP_DOWN_DEGREES, 2)) * speedRange + TURN_MIN_SPEED;
+        return Math.min(Math.min(ramUp, ramDown), speed);
+    }
+
+    public void turnTo(double toDegrees) {
+
+        double target;
+        if (toDegrees <= 180)
+            target = toDegrees;
+        else
+            target = -(360 - toDegrees);
+
+        double start = getOrientation();
+        double degrees = target - start;
+
+        // Determine the shortest direction to turn
+        Drive.DIRECTION direction;
+        if (degrees > 0) {
+            if (degrees <= 180)
+                direction = Drive.DIRECTION.TURN_RIGHT;
+            else
+                direction = Drive.DIRECTION.TURN_LEFT;
+        } else if (degrees < 0) {
+            if (degrees <= -180)
+                direction = Drive.DIRECTION.TURN_RIGHT;
+            else
+                direction = Drive.DIRECTION.TURN_LEFT;
+        } else {
+            return;
+        }
+
+        double lastPos = start;
+        double current;
+        double lastTime = 0;
+        double velocity = 0;
+        double degreesTurned = 0;
+        double degreesEstimated;
+        double degreesToTurn = Math.abs(degrees);
+        degreesToTurn = Math.min(degreesToTurn, 360 - degreesToTurn);
+
+        ElapsedTime elapsedTime = new ElapsedTime();
+        elapsedTime.reset();
+
+        while (opMode.opModeIsActive()) {
+            double rampSpeed = getRampedPower(elapsedTime.milliseconds(), 0.5, degreesToTurn - degreesTurned);
+            moveRobot(direction, rampSpeed);
+            current = getOrientation();
+            if (current != lastPos) {
+                double currentTime = elapsedTime.milliseconds();
+                double diff = Math.abs(current - lastPos);
+                diff = Math.min(diff, 360 - diff);
+                velocity = diff / (currentTime - lastTime);
+                lastTime = currentTime;
+                lastPos = current;
+                degreesTurned += diff;
+                degreesEstimated = 0;
+            } else {
+                degreesEstimated = velocity * (elapsedTime.milliseconds() - lastTime);
+            }
+
+            Logger.message(
+                    //String.format("%s", direction) +
+                    String.format("  to: %-6.1f", target) +
+                            String.format("  from: %-6.1f", current) +
+                            String.format("  to turn: %-6.2f", degreesToTurn) +
+                            String.format("  turned: %-6.2f", degreesTurned) +
+                            String.format("  estimated: %-6.4f", degreesEstimated) +
+                            String.format("  velocity: %-6.4f", velocity) +
+                            String.format("  curr: %-6.4f", current) +
+                            String.format("  last: %-6.4f", lastPos));
+
+            if (degreesTurned + degreesEstimated >= degreesToTurn)
+                break;
+
+            if (elapsedTime.seconds() > 5)
+                break;
+        }
+
         stopRobot();
     }
 
