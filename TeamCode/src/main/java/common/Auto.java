@@ -79,7 +79,6 @@ public class Auto {
                 case NET_ZONE_IN3:
                     waitUntilNotMoving();
                     waitUntilRobotIdIdle();         // ToDo necessary?
-                    //waitForButtonPress();
                     robot.lifterUp();
                     waitUntilRobotIdIdle();
                     followPath();
@@ -89,17 +88,15 @@ public class Auto {
                 case BUCKET3:
                 case BUCKET2:
                     waitUntilNotMoving();
-                    //waitForButtonPress();
                     robot.dropSampleInTopBucket();
-                    //waitForButtonPress();
                     followPath();
                     break;
 
                 case NET_ZONE_OUT1:
                 case NET_ZONE_OUT2:
                 case NET_ZONE_OUT3:
-                    robot.lifterDown();                 // ToDo wait for lifter to start to come dowm?
-                    opMode.sleep(500);
+                    robot.lifterDown();
+                    opMode.sleep(500);     // ToDo necessary, wait for lifter to start to come down?
                     followPath();
                     break;
 
@@ -198,19 +195,19 @@ public class Auto {
             x = -x;
             y = -y;
         }
-        paths[PathState.START_YELLOW.ordinal()] =  createLines(startX, startY, startX+x, startY, startHeading, netZoneX, netZoneY, netZoneHeading);
-        paths[PathState.NET_ZONE_IN1.ordinal()] =  createLine(netZoneX, netZoneY, bucketX, bucketY, bucketHeading);
-        paths[PathState.BUCKET1.ordinal()] =       createLine(bucketX, bucketY, netZoneX, netZoneY, netZoneHeading);
-        paths[PathState.NET_ZONE_OUT1.ordinal()] = createLine(netZoneX, netZoneY, yellowRightX, yellowRightY, yellowRightHeading);
-        paths[PathState.YELLOW_RIGHT.ordinal()] =  createLine(yellowRightX, yellowRightY, netZoneX, netZoneY, netZoneHeading);
-        paths[PathState.NET_ZONE_IN2.ordinal()] =  createLine(netZoneX, netZoneY, bucketX, bucketY, bucketHeading);
-        paths[PathState.BUCKET2.ordinal()] =       createLine(bucketX, bucketY, netZoneX, netZoneY, netZoneHeading);
-        paths[PathState.NET_ZONE_OUT2.ordinal()] = createLine(netZoneX, netZoneY, yellowMiddleX, yellowMiddleY, yellowMiddleHeading);
-        paths[PathState.YELLOW_MIDDLE.ordinal()] = createLines(yellowMiddleX, yellowMiddleY, yellowMiddleX, yellowMiddleY+y, yellowMiddleHeading, netZoneX, netZoneY, netZoneHeading);
-        paths[PathState.NET_ZONE_IN3.ordinal()] =  createLine(netZoneX, netZoneY, bucketX, bucketY, bucketHeading);
-        paths[PathState.BUCKET3.ordinal()] =       createLine(bucketX, bucketY, netZoneX, netZoneY, netZoneHeading);
-        paths[PathState.NET_ZONE_OUT3.ordinal()] = createLine(netZoneX, netZoneY, parkX, parkY, parkHeading);
-        paths[PathState.PARK.ordinal()] =          createLine(parkX, parkY, parkX, parkY, parkHeading);
+        paths[PathState.START_YELLOW.ordinal()] =  createLines(startX, startY, startX+x, startY, startHeading, netZoneX, netZoneY, netZoneHeading, 3);
+        paths[PathState.NET_ZONE_IN1.ordinal()] =  createLine(netZoneX, netZoneY, bucketX, bucketY, bucketHeading, 3);
+        paths[PathState.BUCKET1.ordinal()] =       createLine(bucketX, bucketY, netZoneX, netZoneY, netZoneHeading, 3);
+        paths[PathState.NET_ZONE_OUT1.ordinal()] = createLine(netZoneX, netZoneY, yellowRightX, yellowRightY, yellowRightHeading, 500);
+        paths[PathState.YELLOW_RIGHT.ordinal()] =  createLine(yellowRightX, yellowRightY, netZoneX, netZoneY, netZoneHeading, 3);
+        paths[PathState.NET_ZONE_IN2.ordinal()] =  createLine(netZoneX, netZoneY, bucketX, bucketY, bucketHeading, 3);
+        paths[PathState.BUCKET2.ordinal()] =       createLine(bucketX, bucketY, netZoneX, netZoneY, netZoneHeading, 3);
+        paths[PathState.NET_ZONE_OUT2.ordinal()] = createLine(netZoneX, netZoneY, yellowMiddleX, yellowMiddleY, yellowMiddleHeading, 3);
+        paths[PathState.YELLOW_MIDDLE.ordinal()] = createLines(yellowMiddleX, yellowMiddleY, yellowMiddleX, yellowMiddleY+y, yellowMiddleHeading, netZoneX, netZoneY, netZoneHeading, 3);
+        paths[PathState.NET_ZONE_IN3.ordinal()] =  createLine(netZoneX, netZoneY, bucketX, bucketY, bucketHeading, 3);
+        paths[PathState.BUCKET3.ordinal()] =       createLine(bucketX, bucketY, netZoneX, netZoneY, netZoneHeading, 3);
+        paths[PathState.NET_ZONE_OUT3.ordinal()] = createLine(netZoneX, netZoneY, parkX, parkY, parkHeading, 500);
+        paths[PathState.PARK.ordinal()] =          createLine(parkX, parkY, parkX, parkY, parkHeading, 3);
 
         //paths[PathState.BUCKET3.ordinal()] = createLine(bucketX, bucketY, yellowLeftX, yellowLeftY, yellowLeftHeading);
         //paths[PathState.YELLOW_LEFT.ordinal()] = createLine(yellowLeftX, yellowLeftY, netZoneX, netZoneY, netZoneHeading);
@@ -248,13 +245,13 @@ public class Auto {
             double barHeading2) {
 
 
-        paths[PathState.START_BLUE_RED.ordinal()] =  createLine(startX, startY, barX1, barY1, barHeading1);
-        paths[PathState.BAR1.ordinal()] =            createLine(barX1, barY1, specimenRightX, specimenRightY, specimenRightHeading);
-        paths[PathState.SPECIMEN_RIGHT.ordinal()] =  createLine(specimenRightX, specimenRightY, observeZoneX1, observeZoneY1, observeHeading1);
-        paths[PathState.OBSERVE_ZONE1.ordinal()] =   createLines(observeZoneX1, observeZoneY1, specimenRightX, specimenRightY, specimenRightHeading, specimenMiddleX, specimenMiddleY, specimenMiddleHeading);
-        paths[PathState.SPECIMEN_MIDDLE.ordinal()] = createLine(specimenMiddleX, specimenMiddleY, observeZoneX2, observeZoneY2, observeHeading2);
-        paths[PathState.OBSERVE_ZONE2.ordinal()] =   createLines(observeZoneX2, observeZoneY2, specimenMiddleX, specimenMiddleY, specimenMiddleHeading, specimenLeftX, specimenLeftY, specimenLeftHeading);
-        paths[PathState.SPECIMEN_LEFT.ordinal()] =   createLine(specimenLeftX, specimenLeftY, observeZoneX3, observeZoneY3, observeHeading3);
+        paths[PathState.START_BLUE_RED.ordinal()] =  createLine(startX, startY, barX1, barY1, barHeading1, 3);
+        paths[PathState.BAR1.ordinal()] =            createLine(barX1, barY1, specimenRightX, specimenRightY, specimenRightHeading, 3);
+        paths[PathState.SPECIMEN_RIGHT.ordinal()] =  createLine(specimenRightX, specimenRightY, observeZoneX1, observeZoneY1, observeHeading1, 3);
+        paths[PathState.OBSERVE_ZONE1.ordinal()] =   createLines(observeZoneX1, observeZoneY1, specimenRightX, specimenRightY, specimenRightHeading, specimenMiddleX, specimenMiddleY, specimenMiddleHeading, 3);
+        paths[PathState.SPECIMEN_MIDDLE.ordinal()] = createLine(specimenMiddleX, specimenMiddleY, observeZoneX2, observeZoneY2, observeHeading2, 3);
+        paths[PathState.OBSERVE_ZONE2.ordinal()] =   createLines(observeZoneX2, observeZoneY2, specimenMiddleX, specimenMiddleY, specimenMiddleHeading, specimenLeftX, specimenLeftY, specimenLeftHeading, 3);
+        paths[PathState.SPECIMEN_LEFT.ordinal()] =   createLine(specimenLeftX, specimenLeftY, observeZoneX3, observeZoneY3, observeHeading3, 3);
 
         /*
         paths[PathState.OBSERVE_ZONE3.ordinal()] = createLine();
@@ -369,7 +366,7 @@ public class Auto {
 
         Logger.message("%f %f %f %f %f", x1, y1, x2, y2, heading);
         follower.setMaxPower(MAX_POWER_ADJUST);
-        path = createLine(x1, y1, x2, y2, heading);
+        path = createLine(x1, y1, x2, y2, heading, 3);
         follower.resetOffset();
         follower.followPath(path, true);
         waitUntilNotMoving();
@@ -377,7 +374,7 @@ public class Auto {
         robot.dropSampleInTopBucket();
         waitUntilOkToMove();
 
-        path = createLine(x2, y2, x1, y1, heading);
+        path = createLine(x2, y2, x1, y1, heading, 3);
         follower.followPath(path, true);
         waitUntilNotMoving();
         follower.setMaxPower(MAX_POWER);
@@ -404,7 +401,7 @@ public class Auto {
 
         Logger.message("%f %f %f %f %f", x1, y1, x2, y2, heading);
         follower.setMaxPower(.4);
-        path = createLine(x1, y1, x2, y2, heading);
+        path = createLine(x1, y1, x2, y2, heading, 3);
         follower.followPath(path, true);
         waitUntilNotMoving();
 
@@ -429,25 +426,25 @@ public class Auto {
         return follower.pathBuilder()
                 .addPath(new BezierCurve(new Point(startX, startY), new Point(pointX, pointY), new Point(endX, endY, Point.CARTESIAN)))
                 .setConstantHeadingInterpolation(Math.toRadians(heading))
-                .setPathEndTimeoutConstraint(3)
+                .setPathEndTimeoutConstraint(2000)
                 .build();
     }
 
-    private PathChain createLines (double startX, double startY, double pointX, double pointY, double heading, double endX, double endY, double endHeading) {
+    private PathChain createLines (double startX, double startY, double pointX, double pointY, double heading, double endX, double endY, double endHeading, double timeout) {
         return follower.pathBuilder()
                 .addPath(new BezierLine(new Point(startX, startY, Point.CARTESIAN), new Point(pointX, pointY, Point.CARTESIAN)))
                 .setPathEndHeadingConstraint(Math.toRadians(heading))
                 .addPath(new BezierLine(new Point(pointX, pointY, Point.CARTESIAN), new Point(endX, endY, Point.CARTESIAN)))
                 .setConstantHeadingInterpolation(Math.toRadians(endHeading))
-                .setPathEndTimeoutConstraint(3)
+                .setPathEndTimeoutConstraint(timeout)
                 .build();
     }
 
-    private PathChain createLine (double startX, double startY, double endX, double endY, double heading) {
+    private PathChain createLine (double startX, double startY, double endX, double endY, double heading, double timeout) {
         return follower.pathBuilder()
                 .addPath(new BezierLine(new Point(startX, startY, Point.CARTESIAN), new Point(endX, endY, Point.CARTESIAN)))
                 .setConstantHeadingInterpolation(Math.toRadians(heading))
-                .setPathEndTimeoutConstraint(3)
+                .setPathEndTimeoutConstraint(timeout)
                 .build();
     }
 
