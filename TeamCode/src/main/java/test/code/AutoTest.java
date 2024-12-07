@@ -26,7 +26,7 @@ public class AutoTest extends LinearOpMode {
         while (opModeIsActive()) {
 
             if (gamepad1.a) {
-                robot.setToStopPosition();
+                robot.dropSampleInTopBucket();
                 while (gamepad1.a) sleep(10);
 
             } else if (gamepad1.x) {
@@ -52,7 +52,13 @@ public class AutoTest extends LinearOpMode {
                 } else {
                     robot.pickerUp();
                 }
-                while (gamepad1.right_bumper) sleep(10);
+            } else if (gamepad1.left_bumper) {
+                if (robot.dropperIsUp()) {
+                    robot.dropperDown();
+                } else {
+                    robot.dropperUp();
+                }
+                while (gamepad1.left_bumper) sleep(10);
             }
 
             telemetry.addData("Robot is busy", robot.isBusy());
