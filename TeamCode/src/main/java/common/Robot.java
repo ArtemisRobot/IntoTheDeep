@@ -45,19 +45,20 @@ public class Robot extends Thread {
     private final double PICKER_STORE_POSITION = 0.342;
     private final double PICKER_DOWN_POSITION = 0.497;
 
-    private final double PICKER_FINGER_CLOSED = 0.51;
-    private final double PICKER_FINGER_OPEN = 0.189 ;
+    private final double PICKER_FINGER_CLOSED = 0.460;
+    private final double PICKER_FINGER_OPEN = 0.121 ;
 
     private final double DROPPER_UP_POSITION = 0.616;
     private final double DROPPER_DROP_POSITION = 0.552;
-    private final double DROPPER_DOWN_POSITION = 0.492;
+    private final double DROPPER_DOWN_POSITION = 0.496;
 
-    private final double DROPPER_FINGER_CLOSED = 0.470;
+    private final double DROPPER_FINGER_CLOSED = 0.463;
     private final double DROPPER_FINGER_OPEN = 0.60;
 
     private boolean pickerOpened = true;
     private boolean dropperOpened = false;
     private boolean pickerUp = false;
+    private boolean dropperUp = false;
 
     // Define Motor and Servo objects
     private DcMotorEx       lifter;
@@ -470,16 +471,23 @@ public class Robot extends Thread {
     public void dropperUp() {
         Logger.message("set dropper to position %f", DROPPER_UP_POSITION);
         dropperWrist.setPosition(DROPPER_UP_POSITION);
+        dropperUp = true;
+    }
+
+    public boolean dropperIsUp () {
+        return dropperUp;
     }
 
     public void dropperDropPosition () {
         Logger.message("set dropper to position %f", DROPPER_DOWN_POSITION);
         dropperWrist.setPosition(DROPPER_DROP_POSITION);
+        dropperUp = false;
     }
 
     public void dropperDown() {
         Logger.message("set dropper to position %f", DROPPER_DOWN_POSITION);
         dropperWrist.setPosition(DROPPER_DOWN_POSITION);
+        dropperUp = false;
     }
 
     public void dropperOpen(){
