@@ -35,8 +35,8 @@ import common.Auto;
     public static double YELLOW_LEFT_Y = 134;
     public static double YELLOW_LEFT_HEADING = 0;
 
-    public static double PARK_X = START_X;
-    public static double PARK_Y = START_Y;
+    public static double PARK_X = BUCKET_X;
+    public static double PARK_Y = BUCKET_Y;
     public static double PARK_HEADING = START_HEADING;
 
     Auto auto;
