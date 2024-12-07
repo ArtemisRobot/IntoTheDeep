@@ -1,6 +1,7 @@
 package main;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -16,6 +17,7 @@ import common.Auto;
 import common.Logger;
 import common.Robot;
 
+@Disabled
 @Autonomous(name="BlueSideBlueAuto", group = "Main")
 
  public class BlueSideBlueAuto extends LinearOpMode {
