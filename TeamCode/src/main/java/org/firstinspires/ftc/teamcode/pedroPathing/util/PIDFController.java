@@ -20,7 +20,7 @@ public class PIDFController {
     private double position;
     private double targetPosition;
     private double errorIntegral;
-    private double errorDerivative;
+    public double errorDerivative;
     private double feedForwardInput;
 
     private long previousUpdateTimeNano;
