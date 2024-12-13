@@ -30,7 +30,7 @@ import java.util.List;
 
 public class Drive extends Thread {
 
-    final boolean LOG_VERBOSE = true;
+    final boolean LOG_VERBOSE = false;
 
     public static double PID_DRIVE_KP = 0.02;
     public static double PID_DRIVE_KI = 0;
@@ -324,8 +324,7 @@ public class Drive extends Thread {
             double y = -gamepad.left_stick_y;
             double x2 = gamepad.right_stick_x;
             double noise = 0.01;
-            if (x2 > 0)
-                Logger.message("%f", x2);
+            //if (x2 != 0) Logger.message("%f", x2);
             // Is either stick being used?
             if (Math.abs(x) > noise || Math.abs(y) > noise || Math.abs(x2) > noise ) {
 
