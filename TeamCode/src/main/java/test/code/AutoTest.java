@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import common.Robot;
 
-@TeleOp(name=" AutoTest", group = "Test")
+@TeleOp(name="AutoTest", group = "Test")
 
 public class AutoTest extends LinearOpMode {
 
