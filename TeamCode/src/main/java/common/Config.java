@@ -24,6 +24,7 @@ public class Config {
     public static final String ARM              = "extendingArm";
     public static final String PICKER_WRIST     = "pickerWrist";
     public static final String PICKER_FINGERS   = "pickerFingers";
+    public static final String PICKER_YAW       = "pickerYaw";
     public static final String DROPPER_WRIST    = "dropperWrist";
     public static final String DROPPER_FINGERS  = "dropperFingers";
 }

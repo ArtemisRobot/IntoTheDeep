@@ -8,11 +8,11 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import common.Robot;
 
 @TeleOp(name="RobotTest", group="Test")
-@Disabled
+//@Disabled
  public class RobotTest extends LinearOpMode {
 
     private enum GAMEPAD_MODE { ARM, LIFTER, COMPETITION }
-    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.COMPETITION;
+    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.ARM;
 
     Robot   robot;
 

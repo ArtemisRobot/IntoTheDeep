@@ -132,6 +132,10 @@ import common.Robot;
                 robot.pickerUp();
             }
             while (gamepad.right_bumper) sleep(10);
+
+        } else if (gamepad.left_bumper) {
+            robot.pickerRotate();
+            while (gamepad.left_bumper) sleep(10);
         }
     }
 }

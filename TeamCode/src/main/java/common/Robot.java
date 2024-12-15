@@ -41,12 +41,16 @@ public class Robot extends Thread {
     public static int    LIFTER_TOP_BAR_POSITION = 0;
 
     // Grabbers
-    private final double PICKER_UP_POSITION = 0.383;
+    private final double PICKER_UP_POSITION    = 0.383;
     private final double PICKER_STORE_POSITION = 0.342;
-    private final double PICKER_DOWN_POSITION = 0.497;
+    private final double PICKER_DOWN_POSITION  = 0.497;
+
+    private final double PICKER_YAW_0_DEGREES  = 0.155;
+    private final double PICKER_YAW_45_DEGREES = 0.318;
+    private final double PICKER_YAW_90_DEGREES = 0.482;
 
     private final double PICKER_FINGER_CLOSED = 0.460;
-    private final double PICKER_FINGER_OPEN = 0.121 ;
+    private final double PICKER_FINGER_OPEN   = 0.121 ;
 
     private final double DROPPER_UP_POSITION = 0.616;
     private final double DROPPER_DROP_POSITION = 0.552;
@@ -59,12 +63,14 @@ public class Robot extends Thread {
     private boolean dropperOpened = false;
     private boolean pickerUp = false;
     private boolean dropperUp = false;
+    private double pickerYawPosition = PICKER_YAW_0_DEGREES;
 
     // Define Motor and Servo objects
     private DcMotorEx       lifter;
     private DcMotor         extendingArm;
     private Servo           pickerWrist;
     private Servo           pickerFingers;
+    private Servo           pickerYaw;
     private Servo           dropperWrist;
     private Servo           dropperFingers;
 
@@ -103,6 +109,7 @@ public class Robot extends Thread {
         try {
             pickerWrist = opMode.hardwareMap.get(Servo.class, Config.PICKER_WRIST);
             pickerFingers = opMode.hardwareMap.get(Servo.class, Config.PICKER_FINGERS);
+            pickerYaw = opMode.hardwareMap.get(Servo.class, Config.PICKER_YAW);
 
             dropperWrist = opMode.hardwareMap.get(Servo.class, Config.DROPPER_WRIST);
             dropperFingers = opMode.hardwareMap.get(Servo.class, Config.DROPPER_FINGERS);
@@ -466,6 +473,23 @@ public class Robot extends Thread {
 
     public boolean pickerIsUp() {
         return pickerUp;
+    }
+
+    public void pickerRotate() {
+
+        if (pickerYawPosition == PICKER_YAW_0_DEGREES) {
+            pickerYawPosition = PICKER_YAW_45_DEGREES;
+        } else if (pickerYawPosition == PICKER_YAW_45_DEGREES) {
+            pickerYawPosition = PICKER_YAW_90_DEGREES;
+        } else {
+            pickerYawPosition = PICKER_YAW_0_DEGREES;
+        }
+        pickerYaw.setPosition(pickerYawPosition);
+    }
+
+    public void pickerRotateTo(double position) {
+        pickerYaw.setPosition(position);
+        pickerYawPosition = position;
     }
 
     public void dropperUp() {
