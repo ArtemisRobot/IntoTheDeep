@@ -65,7 +65,7 @@ public class PathTest extends LinearOpMode {
 
     final static double MAX_SPEED = 0.5;
     final static double TURN_SPEED = 0.25;
-    final double TURN_MIN_SPEED = 0.15;
+    final double TURN_MIN_SPEED = 0.20;
     final double TURN_MAX_SPEED = 0.95;
 
     final double TURN_RAMP_UP_TIME = 1000;                       // turn ramp up time in milliseconds
@@ -122,8 +122,8 @@ public class PathTest extends LinearOpMode {
         try {
             initialize();
             waitForStart();
-            runDriveToCoordinateTest();
-            //runTurnTest();
+            //runDriveToCoordinateTest();
+            runTurnTest();
         } catch (Exception e) {
             Logger.error(e, "Exception");
             throw e;
@@ -298,7 +298,7 @@ public class PathTest extends LinearOpMode {
         double lastHeading = startHeading;
         double currentHeading;
         double toTurn;
-        double velocity;
+        //double velocity;
 
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
@@ -306,6 +306,8 @@ public class PathTest extends LinearOpMode {
         double currentTime = 0;
 
         double targetHeading = Math.toRadians(heading);
+        double maxVelocity = drive.getMaxVelocity();
+
         turnPID.reset();
 
         while (opModeIsActive()) {
@@ -314,36 +316,44 @@ public class PathTest extends LinearOpMode {
 
             // calculate turn velocity in degrees per second
             currentTime = timer.milliseconds();
-            velocity = angleWrap(currentHeading - lastHeading) / (currentTime - lastTime) * 1000;
+            double velocityInDegrees = Math.toDegrees(angleWrap(currentHeading - lastHeading) / (currentTime - lastTime) * 1000);
 
             toTurn = angleWrap(targetHeading - currentHeading);
             turnPID.updateError(toTurn);
             double error = turnPID.runPIDF();
 
+            double sign = MathFunctions.getSign(error);
+            double power = MathFunctions.clamp(Math.abs(error), TURN_MIN_SPEED, TURN_MAX_SPEED);
+            double velocity = power * maxVelocity;
+
+            drive.leftFrontDrive.setVelocity(-velocity * sign);
+            drive.rightFrontDrive.setVelocity(velocity * sign);
+            drive.leftBackDrive.setVelocity(-velocity * sign);
+            drive.rightBackDrive.setVelocity(velocity * sign);
+
+            /*
             Drive.DIRECTION direction;
             if (toTurn > 0) {
                 direction = Drive.DIRECTION.TURN_LEFT;
             } else if (toTurn < 0) {
                 direction = Drive.DIRECTION.TURN_RIGHT;
             } else {
-                return;
+                break;
             }
-
             double power = MathFunctions.clamp(Math.abs(error), TURN_MIN_SPEED, TURN_MAX_SPEED);
-            drive.moveRobot(direction, power);
-
             //double rampSpeed = getRampedPower(currentTime, power, Math.abs(toTurn));
+            drive.moveRobot(direction, power);
+             */
 
             double degreesTurned = angleWrap(currentHeading - startHeading);
             Logger.message(
-                            String.format("%-10s", direction) +
                             String.format("  target: %-6.1f", Math.toDegrees(targetHeading)) +
                             String.format("  start: %-6.1f", Math.toDegrees(startHeading)) +
                             String.format("  curr: %-6.1f", Math.toDegrees(currentHeading)) +
                             String.format("  to turn: %-6.1f", Math.toDegrees(toTurn)) +
                             String.format("  turned: %-6.1f", Math.toDegrees(degreesTurned)) +
                             String.format("  last: %-6.1f", Math.toDegrees(lastHeading)) +
-                            String.format("  velocity: %-6.1f", Math.toDegrees(velocity)) +
+                            String.format("  velocity: %-6.1f", velocityInDegrees) +
                             String.format("  time: %6.2f", currentTime-lastTime) +
                             String.format("  power: %4.2f", power) +
                             String.format("  error: %5.2f", error) +
