@@ -66,7 +66,7 @@ public class PathTest extends LinearOpMode {
     final static double MAX_SPEED = 0.5;
     final static double TURN_SPEED = 0.25;
     final double TURN_MIN_SPEED = 0.15;
-    final double TURN_MAX_SPEED = 0.5;
+    final double TURN_MAX_SPEED = 0.95;
 
     final double TURN_RAMP_UP_TIME = 1000;                       // turn ramp up time in milliseconds
     final double TURN_RAMP_DOWN_DEGREES = 5;
@@ -83,11 +83,11 @@ public class PathTest extends LinearOpMode {
 
 
     // PID control fields
-    public static double kP = 0.04;
-    public static double kI = 0;
-    public static double kD = 0;
-    public static double minOutput = -1;
-    public static double maxOutput = 1;
+    public double kP = 0.04;
+    public double kI = 0;
+    public double kD = 0;
+    public double minOutput = -1;
+    public double maxOutput = 1;
 
     private double lastError = 0;
     private double integral = 0;
@@ -95,7 +95,7 @@ public class PathTest extends LinearOpMode {
 
     // Heading error PIDF coefficients
     public static CustomPIDFCoefficients headingPIDFCoefficients = new CustomPIDFCoefficients(
-            0,
+            1.3,
             0,
             0,
             0);
@@ -107,7 +107,7 @@ public class PathTest extends LinearOpMode {
             0);
 
     public static CustomPIDFCoefficients turnPIDFCoefficients = new CustomPIDFCoefficients(
-            1.3,
+            0.55,
             0,
             0,
             0);
@@ -151,18 +151,29 @@ public class PathTest extends LinearOpMode {
         while (opModeIsActive()) {
 
             if (gamepad1.a) {
-                printAngle(10,0);
-                printAngle(0,10);
-                printAngle(-10,0);
-                printAngle(0,-10);
+                moveToCoordinate(-20, 0, 0,2000);
                 while (gamepad1.a) sleep(10);
-            }
-
-
-            if (gamepad1.x) {
-                moveToCoordinate(TARGET_X, TARGET_Y, 0,2000);
                 sleep(3000);
                 displayPose();
+            }
+
+            if (gamepad1.b) {
+                moveToCoordinate(20, 20, 0,2000);
+                while (gamepad1.b) sleep(10);
+                displayPose();
+            }
+
+            if (gamepad1.y) {
+                moveToCoordinate(20, 0, 0,2000);
+                while (gamepad1.y) sleep(10);
+                displayPose();
+            }
+
+            if (gamepad1.x) {
+                moveToCoordinate(0, -20, 0,2000);
+                sleep(3000);
+                displayPose();
+                while (gamepad1.x) sleep(10);
             }
         }
     }
@@ -194,18 +205,27 @@ public class PathTest extends LinearOpMode {
         Increment speedIncrement = new Increment(0.01, 0.05, 0.1);
 
         while (opModeIsActive()) {
+
             if (gamepad1.y) {
                 heading = 0;
                 turnToWithPID(heading);
+                while (gamepad1.y) sleep(10);
+
             } else if (gamepad1.b) {
                 heading = -90;
                 turnToWithPID(heading);
+                while (gamepad1.b) sleep(10);
+
             } else if (gamepad1.a) {
                 heading = 180;
                 turnToWithPID(heading);
+                while (gamepad1.a) sleep(10);
+
             } else if (gamepad1.x) {
                 heading = 90;
                 turnToWithPID(heading);
+                while (gamepad1.x) sleep(10);
+
             } else if (gamepad1.dpad_up) {
                 // increase the speed to travel
                 speedIncrement.reset();
@@ -226,7 +246,7 @@ public class PathTest extends LinearOpMode {
             }
 
             setDisplaySpeed();
-            yawGyroMsg.setValue("%6.2f (error: %6.2f)", gyro.getYaw(), heading);
+            yawGyroMsg.setValue("%6.2f target: %6.2f %5.2f", gyro.getYaw(), heading, Math.toDegrees(localizer.getPose().getHeading()));
             telemetry.update();
 
             displayDashboardTelemetry();
@@ -299,22 +319,20 @@ public class PathTest extends LinearOpMode {
             toTurn = angleWrap(targetHeading - currentHeading);
             turnPID.updateError(toTurn);
             double error = turnPID.runPIDF();
-            double power = MathFunctions.clamp(error, TURN_MIN_SPEED, TURN_MAX_SPEED);
 
             Drive.DIRECTION direction;
-            if (power > 0) {
+            if (toTurn > 0) {
                 direction = Drive.DIRECTION.TURN_LEFT;
-            } else if (power < 0) {
+            } else if (toTurn < 0) {
                 direction = Drive.DIRECTION.TURN_RIGHT;
-                power = -power;
             } else {
                 return;
             }
 
+            double power = MathFunctions.clamp(Math.abs(error), TURN_MIN_SPEED, TURN_MAX_SPEED);
             drive.moveRobot(direction, power);
 
             //double rampSpeed = getRampedPower(currentTime, power, Math.abs(toTurn));
-            //drive.moveRobot(direction, rampSpeed);
 
             double degreesTurned = angleWrap(currentHeading - startHeading);
             Logger.message(
@@ -325,14 +343,13 @@ public class PathTest extends LinearOpMode {
                             String.format("  to turn: %-6.1f", Math.toDegrees(toTurn)) +
                             String.format("  turned: %-6.1f", Math.toDegrees(degreesTurned)) +
                             String.format("  last: %-6.1f", Math.toDegrees(lastHeading)) +
-                            String.format("  velocity: %-4.1f", Math.toDegrees(velocity)) +
-                            String.format("  time: %8.2f", currentTime-lastTime) +
+                            String.format("  velocity: %-6.1f", Math.toDegrees(velocity)) +
+                            String.format("  time: %6.2f", currentTime-lastTime) +
                             String.format("  power: %4.2f", power) +
-                            String.format("  power: %4.2f", error));
+                            String.format("  error: %5.2f", error) +
+                            String.format("  time: %4.2f", timer.seconds()));
 
             if (Math.abs(toTurn) < Math.toRadians(TURN_TOLERANCE)) {
-                sleep(2000);
-                Logger.message("turn ends at %5.1f", Math.toDegrees(localizer.getPose().getHeading()));
                 break;
             }
 
@@ -345,11 +362,17 @@ public class PathTest extends LinearOpMode {
         }
 
         drive.stopRobot();
+        double seconds = timer.seconds();
+        sleep(2000);
+        Logger.message("turn ends at %5.1f  time: %5.2f", Math.toDegrees(localizer.getPose().getHeading()),seconds );
     }
 
     /**
-     * Method to
+     * Move to the specified coordinate and heading
      *
+     * @param targetX
+     * @param targetY
+     * @param targetHeading
      * @param timeout timeout in milliseconds, 0 for no timeout
      */
     public void moveToCoordinate(double targetX, double targetY, double targetHeading, double timeout) {
@@ -360,7 +383,9 @@ public class PathTest extends LinearOpMode {
         double currentX, currentY, currentHeading;
         ElapsedTime timer = new ElapsedTime();
 
-        double startHeading = localizer.getPose().getHeading();
+        double maxVelocity = drive.getMaxVelocity() * MAX_SPEED;
+
+        Logger.message("to %3.0f, %3.0f", targetX, targetY);
 
         timer.reset();
         drivePID.reset();
@@ -385,7 +410,7 @@ public class PathTest extends LinearOpMode {
             drivePID.updateError(distance);
             power = drivePID.runPIDF();
 
-            double headingError = angleWrap(targetHeading - currentHeading);
+            double headingError = angleWrap(currentHeading - Math.toRadians(targetHeading));
             headingPID.updateError(headingError);
             double turn = headingPID.runPIDF();
 
@@ -404,21 +429,26 @@ public class PathTest extends LinearOpMode {
             double leftRearPower   = (power * (sin / max) + turn) / scale;
             double rightRearPower  = (power * (cos / max) - turn) / scale;
 
+            /*
             drive.leftFrontDrive.setPower(leftFrontPower);
             drive.rightFrontDrive.setPower(rightFrontPower);
             drive.leftBackDrive.setPower(leftRearPower);
             drive.rightBackDrive.setPower(rightRearPower);
+             */
+
+            drive.leftFrontDrive.setVelocity(leftFrontPower * maxVelocity);
+            drive.rightFrontDrive.setVelocity(rightFrontPower * maxVelocity);
+            drive.leftBackDrive.setVelocity(leftRearPower * maxVelocity);
+            drive.rightBackDrive.setVelocity(rightRearPower * maxVelocity);
 
             Logger.message("%s",
-                    String.format("x: %4.1f y: %4.1f h: %4.0f  ", rawPose.x, rawPose.y, Math.toDegrees(rawPose.h)) +
-                    //String.format("raw x: %4.1f y: %4.1f h: %4.0f  ", pose.getX(), pose.getY(), Math.toDegrees(pose.getHeading())) +
+                    String.format("x: %5.1f y: %5.1f h: %5.1f  ", rawPose.x, rawPose.y, Math.toDegrees(rawPose.h)) +
                     String.format("a: %5.2f b: %5.2f  distance: %5.2f  turn: %5.2f  ", a, b, distance, turn) +
                     String.format("angle: %5.2f (rad)  %4.0f (deg)  ", angle, Math.toDegrees(angle)) +
-                    String.format("heading: %6.1f %6.1f %6.1f  ", startHeading, currentHeading, rawPose.h) +
+                    String.format("heading: %6.1f %6.1f %6.1f  ", targetHeading, Math.toDegrees(currentHeading), Math.toDegrees(headingError)) +
                     String.format("power: %4.2f  sin: %5.2f  cos: %5.2f  ", power, sin, cos) +
-                    String.format("power: %4.2f  %4.2f  %4.2f  %4.2f   ", leftFrontPower, rightFrontPower, leftRearPower, rightRearPower) +
+                    String.format("power: %5.2f  %5.2f  %5.2f  %5.2f   ", leftFrontPower, rightFrontPower, leftRearPower, rightRearPower) +
                     String.format("derivative %f", drivePID.errorDerivative));
-
 
             if (Math.abs(distance) < DISTANCE_TOLERANCE)
                 break;

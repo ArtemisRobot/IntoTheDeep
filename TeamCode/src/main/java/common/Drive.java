@@ -26,6 +26,7 @@ import java.util.List;
 @com.acmerobotics.dashboard.config.Config
 
 @SuppressLint("DefaultLocale")
+@SuppressWarnings("FieldCanBeLocal")
 //@SuppressWarnings("unused")
 
 public class Drive extends Thread {
@@ -40,10 +41,13 @@ public class Drive extends Thread {
     public static double DRIFT_COEFFICIENT = 0.0015;
 
     // Drive train
-    private final double WHEEL_DIAMETER_INCHES = (96 / 25.4);    // 96 mm wheels converted to inches
-    //private final double COUNTS_PER_MOTOR_REV = 28 * 20;         // HD Hex Motor Encoder Ticks * gearing
-    private final double COUNTS_PER_MOTOR_REV = 384.5;           // Gobilda Yellow Jacket Motor 5203-2402-0001
-    private final double COUNTS_PER_INCH = COUNTS_PER_MOTOR_REV / (WHEEL_DIAMETER_INCHES * Math.PI);
+    private final double MOTOR_TICKS_PER_REV = 384.5;           // Gobilda Yellow Jacket Motor 5203-2402-0014
+    private final double MOTOR_RPM = 435;                       // Gobilda Yellow Jacket Motor 5203-2402-0014
+    private final double MAX_VELOCITY = MOTOR_TICKS_PER_REV * MOTOR_RPM / 60;
+
+    private final double WHEEL_DIAMETER_INCHES = (96 / 25.4);   // 96 mm wheels converted to inches
+    private final double COUNTS_PER_INCH = MOTOR_TICKS_PER_REV / (WHEEL_DIAMETER_INCHES * Math.PI);
+    //private final double TICKS_PER_MOTOR_REV = 28 * 20;         // HD Hex Motor Encoder Ticks * gearing
     private final double ODOMETER_COUNTS_PER_INCH = 2000/((48/25.4)*Math.PI); // counts per rev / wheel diameter in inches * pi
 
     private final double RAMP_DISTANCE = COUNTS_PER_INCH * 20;   // ramp down distance in encoder counts
@@ -157,6 +161,7 @@ public class Drive extends Thread {
             motors = Arrays.asList(leftFrontDrive, rightFrontDrive, leftBackDrive, rightBackDrive);
 
             for (DcMotor motor : motors) {
+                motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
                 motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             }
@@ -370,6 +375,7 @@ public class Drive extends Thread {
                         totalDrift += drift;
                         correction = power * Math.max(Math.min((totalDrift*PID_DRIVE_KP), PID_DRIVE_MAX_OUTPUT), -PID_DRIVE_MAX_OUTPUT);
                         turn += correction;
+                        turn = 0;
                     }
 
                 } else  if (turn != 0) {
@@ -387,13 +393,17 @@ public class Drive extends Thread {
                 double leftRearPower   = (power * (sin/max) + turn) / scale;
                 double rightRearPower  = (power * (cos/max) - turn) / scale;
 
-                if (true) {
+                if (false) {
                     leftFrontDrive.setPower(leftFrontPower);
                     rightFrontDrive.setPower(rightFrontPower);
                     leftBackDrive.setPower(leftRearPower);
                     rightBackDrive.setPower(rightRearPower);
                 } else {
-                    opMode.sleep(250);     // ToDo testing
+                    //opMode.sleep(250);     // ToDo testing
+                    leftFrontDrive.setVelocity(MAX_VELOCITY * leftFrontPower);
+                    rightFrontDrive.setVelocity(MAX_VELOCITY * rightFrontPower);
+                    leftBackDrive.setVelocity(MAX_VELOCITY * leftRearPower);
+                    rightBackDrive.setVelocity(MAX_VELOCITY * rightRearPower);
                 }
 
                 Logger.message("%s",
@@ -403,8 +413,9 @@ public class Drive extends Thread {
                         String.format("correction: %6.3f  ", correction) +
                         String.format("power: %4.2f  sin: %5.2f  cos: %5.2f  ", power, sin, cos) +
                         String.format("power: %4.2f  %4.2f  %4.2f  %4.2f   ", leftFrontPower, rightFrontPower, leftRearPower, rightRearPower) +
-                        String.format("pos: %6d %6d %6d %6d", leftFrontDrive.getCurrentPosition(), rightFrontDrive.getCurrentPosition(), leftBackDrive.getCurrentPosition(), rightBackDrive.getCurrentPosition())
-                );
+                        String.format("pos: %6d %6d %6d %6d  ", leftFrontDrive.getCurrentPosition(), rightFrontDrive.getCurrentPosition(), leftBackDrive.getCurrentPosition(), rightBackDrive.getCurrentPosition()) +
+                        String.format("velocity: %4.0f %4.0f %4.0f %4.0f", leftFrontDrive.getVelocity(), rightFrontDrive.getVelocity(), leftBackDrive.getVelocity(), rightBackDrive.getVelocity())
+                        );
 
             } else if (moving){
 
@@ -1631,6 +1642,10 @@ public class Drive extends Thread {
             return distanceSensor.getDistance(DistanceUnit.INCH);
 
         return -1;
+    }
+
+    public double getMaxVelocity () {
+        return MAX_VELOCITY;
     }
 
 } // end of class
