@@ -1648,5 +1648,12 @@ public class Drive extends Thread {
         return MAX_VELOCITY;
     }
 
+    public void setVelocity (double leftFront, double rightFront, double leftRear, double rightRear) {
+        leftFrontDrive.setVelocity(leftFront);
+        rightFrontDrive.setVelocity(rightFront);
+        leftBackDrive.setVelocity(leftRear);
+        rightBackDrive.setVelocity(rightRear);
+    }
+
 } // end of class
 
