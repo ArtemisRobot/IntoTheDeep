@@ -41,9 +41,9 @@ public class Robot extends Thread {
     public static int    LIFTER_TOP_BAR_POSITION = 0;
 
     // Grabbers
-    private final double PICKER_UP_POSITION    = 0.383;
-    private final double PICKER_STORE_POSITION = 0.342;
-    private final double PICKER_DOWN_POSITION  = 0.497;
+    private final double PICKER_UP_POSITION    = 0.150;
+    private final double PICKER_STORE_POSITION = 0.094;
+    private final double PICKER_DOWN_POSITION  = 0.259;
 
     private final double PICKER_YAW_0_DEGREES  = 0.155;
     private final double PICKER_YAW_45_DEGREES = 0.318;
@@ -54,10 +54,10 @@ public class Robot extends Thread {
 
     private final double DROPPER_UP_POSITION = 0.616;
     private final double DROPPER_DROP_POSITION = 0.552;
-    private final double DROPPER_DOWN_POSITION = 0.496;
+    private final double DROPPER_DOWN_POSITION = 0.495;
 
     private final double DROPPER_FINGER_CLOSED = 0.463;
-    private final double DROPPER_FINGER_OPEN = 0.60;
+    private final double DROPPER_FINGER_OPEN = 0.58;
 
     private boolean pickerOpened = true;
     private boolean dropperOpened = false;

@@ -8,6 +8,7 @@ import android.util.Log;
 
 public final class Logger {
     private static final String TAG = "DELMAR";
+    private static final boolean VERBOSE = true;
 
     public static String getCaller () {
         String caller = Thread.currentThread().getStackTrace()[4].getMethodName();
@@ -23,12 +24,6 @@ public final class Logger {
         Log.e(TAG, "\n");
         Log.println(Log.ERROR, TAG, msg);
         Log.e(TAG, e.getMessage());
-
-        /*
-        for (StackTraceElement element :  e.getStackTrace()) {
-            Log.e(TAG, element.toString());
-        }
-        */
 
         StackTraceElement[] stackTraceElements = e.getStackTrace();
         for (int i=0; i<Math.min(stackTraceElements.length, 4); i++)
@@ -49,8 +44,13 @@ public final class Logger {
         logString(msg);
     }
 
-    public static void message( String format, Object... args){
+    public static void message(String format, Object... args){
         logString(String.format(format, args));
+    }
+
+    public static void verbose(String format, Object... args) {
+        if (VERBOSE)
+            logString(String.format(format, args));
     }
 
     public static void addLine(String msg) {
