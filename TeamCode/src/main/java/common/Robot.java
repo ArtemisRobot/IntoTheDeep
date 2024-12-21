@@ -29,7 +29,7 @@ public class Robot extends Thread {
     public final int    ARM_OUT = 2000;
     public final int    AMR_OUT_PART_WAY = 750;
     public final int    ARM_OUT_START = 610;
-    public final int    ARM_EXCHANGE = 400;
+    public final int    ARM_EXCHANGE = 250;
     public static double ARM_SPEED = 0.5;
 
     // lifter
@@ -45,12 +45,12 @@ public class Robot extends Thread {
     private final double PICKER_STORE_POSITION = 0.094;
     private final double PICKER_DOWN_POSITION  = 0.259;
 
-    private final double PICKER_YAW_0_DEGREES  = 0.155;
-    private final double PICKER_YAW_45_DEGREES = 0.318;
-    private final double PICKER_YAW_90_DEGREES = 0.482;
+    private final double PICKER_YAW_0_DEGREES  = 0.167;
+    private final double PICKER_YAW_45_DEGREES = 0.320;
+    private final double PICKER_YAW_90_DEGREES = 0.494;
 
-    private final double PICKER_FINGER_CLOSED = 0.460;
-    private final double PICKER_FINGER_OPEN   = 0.121 ;
+    private final double PICKER_FINGER_CLOSED = 0.446;
+    private final double PICKER_FINGER_OPEN   = 0.620;
 
     private final double DROPPER_UP_POSITION = 0.616;
     private final double DROPPER_DROP_POSITION = 0.552;
@@ -214,7 +214,7 @@ public class Robot extends Thread {
                         dropperClose();
                         delay(400);          // wait for the dropper to get to the closed position
                         pickerOpen();
-                        delay(400);
+                        delay(200);
                         dropperUp();
                         delay(1000);
                         pickerOpen();
@@ -224,7 +224,7 @@ public class Robot extends Thread {
                     continue;
 
                 case DROP_SAMPLE_INTO_TOP_BUCKET:
-                    Logger.message("\n** Drop sample into top bucket");
+                    Logger.message("\n**  Drop sample into top bucket");
                     synchronized (this) {
                         //ToDo lifterUp();
                         while (lifterIsBusy() && opMode.opModeIsActive()) {
