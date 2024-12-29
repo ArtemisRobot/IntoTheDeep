@@ -13,7 +13,7 @@ import common.Auto;
 
     public static double START_X = 8.5;
     public static double START_Y = 102.5;
-    public static double START_HEADING = 0;
+    public static double START_HEADING = 90;
 
    public static double NET_ZONE_X = 15;
    public static double NET_ZONE_Y = 120;
