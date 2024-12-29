@@ -26,13 +26,17 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  *
  * See the sensor's product page: https://www.sparkfun.com/products/24904
  */
-@Disabled
+
 @TeleOp(name = "SparkFun OTOS", group = "Test")
 
 public class SparkFunOTOS extends LinearOpMode {
 
-    public static double LINEAR_SCALAR = 0.98;
-    public static double ANGULAR_SCALAR = 0.9931;
+    public static double LINEAR_SCALAR = 1.05;
+    public static double ANGULAR_SCALAR = 0.9911;
+
+    public static double START_X = 0;
+    public static double START_Y = 0;
+    public static double START_HEADING = 0;
 
     // Create an instance of the sensor
     com.qualcomm.hardware.sparkfun.SparkFunOTOS myOtos;
@@ -51,6 +55,8 @@ public class SparkFunOTOS extends LinearOpMode {
 
         // Wait for the start button to be pressed
         waitForStart();
+
+        myOtos.setPosition(new com.qualcomm.hardware.sparkfun.SparkFunOTOS.Pose2D(START_X, START_Y, START_HEADING));
 
         // Loop until the OpMode ends
         while (opModeIsActive()) {
