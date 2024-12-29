@@ -28,9 +28,10 @@ public class Robot extends Thread {
     public final int    ARM_IN = 0;
     public final int    ARM_OUT = 2000;
     public final int    AMR_OUT_PART_WAY = 750;
-    public final int    ARM_OUT_START = 610;
-    public final int    ARM_EXCHANGE = 250;
-    public static double ARM_SPEED = 0.5;
+    public final int    ARM_OUT_START = 190;
+    public final int    ARM_EXCHANGE = 230 ;
+    public final double ARM_SPEED = 0.5;
+    public final double ARM_HIGH_SPEED = 0.75;
 
     // lifter
     public static double LIFTER_SPEED = 0.90;
@@ -45,14 +46,14 @@ public class Robot extends Thread {
     private final double PICKER_STORE_POSITION = 0.094;
     private final double PICKER_DOWN_POSITION  = 0.259;
 
+    private final double PICKER_FINGER_CLOSED  = 0.420;
+    private final double PICKER_FINGER_OPEN    = 0.600;
+
     private final double PICKER_YAW_0_DEGREES  = 0.167;
     private final double PICKER_YAW_45_DEGREES = 0.320;
     private final double PICKER_YAW_90_DEGREES = 0.494;
 
-    private final double PICKER_FINGER_CLOSED = 0.446;
-    private final double PICKER_FINGER_OPEN   = 0.620;
-
-    private final double DROPPER_UP_POSITION = 0.616;
+    private final double DROPPER_UP_POSITION   = 0.616;
     private final double DROPPER_DROP_POSITION = 0.552;
     private final double DROPPER_DOWN_POSITION = 0.495;
 
@@ -122,7 +123,7 @@ public class Robot extends Thread {
             extendingArm = opMode.hardwareMap.get(DcMotor.class, Config.ARM);
             extendingArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             extendingArm.setDirection(DcMotorSimple.Direction.REVERSE);
-            extendingArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            extendingArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);       // ToDo should we do this?
             extendingArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
             extendingArmControl = new MotorControl(opMode, extendingArm);
@@ -170,14 +171,16 @@ public class Robot extends Thread {
                 case SET_TO_START_POSITION:
                     Logger.message("\n** Set to start position");
                     synchronized (this) {
+                        double  time = System.currentTimeMillis();
                         dropperClose();
                         dropperUp();
-                        armMoveTo(ARM_OUT_START);
-                        delay(1000);
+                        armMoveTo(ARM_OUT_START, ARM_HIGH_SPEED);
+                        while (armIsBusy()) delay(10);
+                        pickerRotateTo(PICKER_YAW_0_DEGREES);
                         pickerOpen();
                         pickerDown();
-                        delay(1000);
-                        armMoveTo(pickingPosition);
+                        armMoveTo(pickingPosition, ARM_HIGH_SPEED);
+                        waitUnitTime(time + 750);       // make sure the dropper is in the up position
                         robotState = ROBOT_STATE.IDLE;
                     }
                     continue;
@@ -185,13 +188,10 @@ public class Robot extends Thread {
                 case SET_TO_STOP_POSITION:
                     Logger.message("\n** Set to stop position");
                     synchronized (this) {
-                        armMoveTo(ARM_OUT_START);
-                        delay(1000);
-                        pickerClose();
                         pickerStore();
                         dropperOpen();
                         dropperDown();
-                        delay(1000);
+                        delay(500);
                         armMoveTo(ARM_IN);
                         robotState = ROBOT_STATE.IDLE;
                     }
@@ -204,19 +204,19 @@ public class Robot extends Thread {
                         dropperOpen();
                         dropperDown();
                         pickerClose();
-                        opMode.sleep(750);
+                        opMode.sleep(400);
                         setOkToMove(true);
                         pickerUp();
-                        opMode.sleep(1000);
+                        opMode.sleep(850);
                         while (lifterIsBusy() && opMode.opModeIsActive()) {
                             delay(10);
                         }
                         dropperClose();
-                        delay(400);          // wait for the dropper to get to the closed position
+                        delay(250);          // wait for the dropper to get to the closed position
                         pickerOpen();
-                        delay(200);
+                        delay(100);
                         dropperUp();
-                        delay(1000);
+                        delay(750);
                         pickerOpen();
                         pickerDown();
                         robotState = ROBOT_STATE.IDLE;
@@ -386,12 +386,19 @@ public class Robot extends Thread {
         extendingArmControl.stopMotor();
     }
 
+    public boolean armIsBusy() {
+        return extendingArmControl.motorIsBusy();
+    }
     /**
      * Move the arm to the specified position
      * @param position target position
      */
     public void armMoveTo (int position) {
         extendingArmControl.setPosition(position, ARM_SPEED, ARM_SPEED);
+    }
+
+    public void armMoveTo (int position, double speed) {
+        extendingArmControl.setPosition(position, speed, speed);
     }
 
     private void runMotorToPosition(DcMotor motor, int position, double speed, double lowSpeed) {
@@ -442,10 +449,12 @@ public class Robot extends Thread {
         pickerWrist.setPosition(PICKER_UP_POSITION);
         pickerUp = true;
     }
+
     public void pickerStore() {
         Logger.message("set picker to position %f", PICKER_STORE_POSITION);
-        pickerWrist.setPosition(PICKER_STORE_POSITION);
-        pickerUp = false;
+        pickerRotateTo(PICKER_YAW_90_DEGREES);
+        pickerClose();
+        pickerDown();
     }
 
     public void pickerDown() {
@@ -620,6 +629,11 @@ public class Robot extends Thread {
         }
     }
 
+    private void waitUnitTime(double time) {
+        while (System.currentTimeMillis() < time)
+            delay(1);
+    }
+
     private void setOkToMove(boolean ok)  {
 
         if (testRobot) return;
@@ -645,12 +659,6 @@ public class Robot extends Thread {
         opMode.sleep(200);
         dropperUp();
     }
-
-    public boolean isTestRobot () {
-        return testRobot;
-    }
-
-
 
 } // end of class
 
