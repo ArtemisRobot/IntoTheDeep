@@ -93,7 +93,7 @@ public class PathTest extends LinearOpMode {
             0.12, 0, 0, 0);
 
     public static CustomPIDFCoefficients headingHighSpeedPIDFCoefficients = new CustomPIDFCoefficients(
-            2, 0, 0, 0);
+            2.5, 0, 0, 0);
 
     public static CustomPIDFCoefficients headingLowSpeedPIDFCoefficients = new CustomPIDFCoefficients(
             1, 0, 0, 0);
@@ -348,11 +348,12 @@ public class PathTest extends LinearOpMode {
             headingPID.updateError(headingError);
             double turn = headingPID.runPIDF();
 
-            // If the heading error is greater than 45 degrees then just turn.
-            double power = 0;
-            if (Math.abs(headingError) < Math.toDegrees(45))  {
-                drivePID.updateError(distance);
-                power = drivePID.runPIDF();
+            drivePID.updateError(distance);
+            double power = drivePID.runPIDF();
+
+            // If the heading error is greater than 45 degrees then give the heading error greater weight
+            if (Math.abs(headingError) < Math.toRadians(45))  {
+                turn *= 2;
             }
 
             double scale = 1;
@@ -373,6 +374,7 @@ public class PathTest extends LinearOpMode {
                     Math.max(Math.abs(drive.leftFrontDrive.getVelocity()),
                             Math.max(Math.abs(drive.rightFrontDrive.getVelocity()),
                                     Math.max(Math.abs(drive.leftBackDrive.getVelocity()), Math.abs(drive.rightBackDrive.getVelocity()))));
+
             Logger.verbose("%s",
                     String.format("x: %-5.1f  y: %-5.1f  h: %-5.1f  ", currentX, currentY, Math.toDegrees(currentHeading)) +
                     String.format("a: %5.1f  b: %5.1f  distance: %5.2f  ", a, b, distance) +
@@ -386,7 +388,7 @@ public class PathTest extends LinearOpMode {
                     //String.format("integral %5.2f", drivePID.errorIntegral)
             );
 
-            if (Math.abs(distance) < distanceTolerance &&
+            if (Math.abs(a) < distanceTolerance && Math.abs(b) < distanceTolerance &&
                     Math.abs(Math.toDegrees(headingError)) < headingTolerance &&
                     Math.abs(currentVelocity) <= velocityTolerance) {
                 break;
