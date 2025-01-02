@@ -293,6 +293,9 @@ public class PathTest extends LinearOpMode {
         velocityTolerance = VELOCITY_TOLERANCE_LOW_SPEED * drive.getMaxVelocity();
         moveTo(targetX, targetY, targetHeading, timeout);
 
+
+        //driveC.moveToCoordinate(targetX, targetY, targetHeading, timeout);
+
         long end = System.currentTimeMillis();
         sleep(500);
 
