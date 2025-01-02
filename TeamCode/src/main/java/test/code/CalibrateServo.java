@@ -93,16 +93,16 @@ public class CalibrateServo extends LinearOpMode {
         setDisplayDirection(directionMsg);
 
         telemetry.addData("\nServo Calibration Controls", "\n" +
+                "  left stick - increase/decrease home position\n" +
+                "  right stick - increase/decrease target position\n" +
+                "  x - run to home position\n" +
+                "  b - run servo to target position\n" +
+                "  y - set home position to current position\n" +
+                "  a - set target position to current position\n" +
                 "  dpad left - select previous servo\n" +
                 "  dpad right - select next servo\n" +
                 "  left trigger - run servo backwards\n" +
                 "  right trigger - run the servo forward\n" +
-                "  left stick - increase/decrease target position\n" +
-                "  right stick - increase/decrease home position\n" +
-                "  y - set home position to current position\n" +
-                "  a - set target position to current position\n" +
-                "  x - run to home position\n" +
-                "  b - run servo to target position\n" +
                 "\n");
 
         telemetry.update();
@@ -163,14 +163,14 @@ public class CalibrateServo extends LinearOpMode {
                 runtime.reset();
                 while (gamepad1.left_stick_x != 0 || gamepad1.left_stick_y != 0 ) {
                     if (gamepad1.left_stick_x > 0)
-                        servos[currentServo].target = Math.min(1, servos[currentServo].target + incrementFine());
+                        servos[currentServo].home = Math.min(1, servos[currentServo].home + incrementFine());
                     else if (gamepad1.left_stick_x < 0)
-                        servos[currentServo].target = Math.max(0, servos[currentServo].target - incrementFine());
+                        servos[currentServo].home = Math.max(0, servos[currentServo].home - incrementFine());
                     else if (gamepad1.left_stick_y < 0)
-                        servos[currentServo].target = Math.min(1, servos[currentServo].target + incrementCoarse());
+                        servos[currentServo].home = Math.min(1, servos[currentServo].home + incrementCoarse());
                     else if (gamepad1.left_stick_y > 0)
-                        servos[currentServo].target = Math.max(0, servos[currentServo].target - incrementCoarse());
-                    setDisplayTarget(targetMsg);
+                        servos[currentServo].home = Math.max(0, servos[currentServo].home - incrementCoarse());
+                    setDisplayHome(homeMsg);
                     telemetry.update();
                 }
 
@@ -178,14 +178,14 @@ public class CalibrateServo extends LinearOpMode {
                 runtime.reset();
                 while (gamepad1.right_stick_x != 0 || gamepad1.right_stick_y != 0 ) {
                     if (gamepad1.right_stick_x > 0)
-                        servos[currentServo].home = Math.min(1, servos[currentServo].home + incrementFine());
+                        servos[currentServo].target = Math.min(1, servos[currentServo].target + incrementFine());
                     else if (gamepad1.right_stick_x < 0)
-                        servos[currentServo].home = Math.max(0, servos[currentServo].home - incrementFine());
+                        servos[currentServo].target = Math.max(0, servos[currentServo].target - incrementFine());
                     else if (gamepad1.right_stick_y < 0)
-                        servos[currentServo].home = Math.min(1, servos[currentServo].home + incrementCoarse());
+                        servos[currentServo].target = Math.min(1, servos[currentServo].target + incrementCoarse());
                     else if (gamepad1.right_stick_y > 0)
-                        servos[currentServo].home = Math.max(0, servos[currentServo].home - incrementCoarse());
-                    setDisplayHome(homeMsg);
+                        servos[currentServo].target = Math.max(0, servos[currentServo].target - incrementCoarse());
+                    setDisplayTarget(targetMsg);
                     telemetry.update();
                 }
 
