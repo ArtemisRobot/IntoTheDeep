@@ -7,12 +7,12 @@ package common;
 import android.util.Log;
 
 public final class Logger {
+    public static final boolean VERBOSE = true;
     private static final String TAG = "DELMAR";
-    private static final boolean VERBOSE = true;
 
     public static String getCaller () {
         String caller = Thread.currentThread().getStackTrace()[4].getMethodName();
-        return String.format("%-24s", caller);
+        return String.format("%-16s", caller);
     }
 
     private static void logString (String str) {
@@ -26,7 +26,7 @@ public final class Logger {
         Log.e(TAG, e.getMessage());
 
         StackTraceElement[] stackTraceElements = e.getStackTrace();
-        for (int i=0; i<Math.min(stackTraceElements.length, 4); i++)
+        for (int i=0; i<Math.min(stackTraceElements.length, 10); i++)
             Log.e(TAG, stackTraceElements[i].toString());
     }
 
@@ -49,8 +49,9 @@ public final class Logger {
     }
 
     public static void verbose(String format, Object... args) {
-        if (VERBOSE)
+        if (VERBOSE) {
             logString(String.format(format, args));
+        }
     }
 
     public static void addLine(String msg) {
