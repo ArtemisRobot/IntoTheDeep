@@ -1,10 +1,13 @@
 package test.code;
 
+import android.annotation.SuppressLint;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import common.Logger;
 import common.Robot;
 
 @TeleOp(name="AutoTest", group = "Test")
@@ -13,6 +16,7 @@ public class AutoTest extends LinearOpMode {
 
     Robot robot;
 
+    @SuppressLint("DefaultLocale")
     @Override
     public void runOpMode() {
 
@@ -53,6 +57,7 @@ public class AutoTest extends LinearOpMode {
                     robot.pickerUp();
                 while (gamepad1.right_bumper) sleep(10);
                 }
+
             } else if (gamepad1.left_bumper) {
                 if (robot.dropperIsUp()) {
                     robot.dropperDown();
@@ -60,6 +65,23 @@ public class AutoTest extends LinearOpMode {
                     robot.dropperUp();
                 }
                 while (gamepad1.left_bumper) sleep(10);
+
+            } else if (gamepad1.dpad_up) {
+                long start = System.currentTimeMillis();
+                robot.lifterUp();
+                while (robot.lifterIsBusy() && opModeIsActive()) {
+                    sleep(1);
+                }
+                Logger.message(String.format("lifter up time: %,d milliseconds", System.currentTimeMillis() - start));
+            }
+
+            else if (gamepad1.dpad_down) {
+                long start = System.currentTimeMillis();
+                robot.lifterDown();
+                while (robot.lifterIsBusy() && opModeIsActive()) {
+                    sleep(1);
+                }
+                Logger.message(String.format("lifter down time: %,d milliseconds", System.currentTimeMillis() - start));
             }
 
             telemetry.addData("Robot is busy", robot.isBusy());
