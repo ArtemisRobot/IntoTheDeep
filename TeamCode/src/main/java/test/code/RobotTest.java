@@ -115,13 +115,13 @@ import common.Robot;
 
         } else if (gamepad2.right_trigger > 0) {
             robot.LifterExtend();
-            while (gamepad2.right_trigger > 0 && robot.lifterExtendable())
+            while (gamepad2.right_trigger > 0)
                 sleep(10);
             robot.lifterStop();
 
         } else if (gamepad2.left_trigger > 0) {
             robot.lifterRetract();
-            while (gamepad2.left_trigger > 0 && robot.lifterRetractable())
+            while (gamepad2.left_trigger > 0)
                 sleep(10);
             robot.lifterStop();
 
@@ -222,13 +222,13 @@ import common.Robot;
 
         } else if (gamepad.left_stick_y < 0) {
             robot.LifterExtend();
-            while (gamepad2.left_stick_y < 0 && robot.lifterExtendable())
+            while (gamepad2.left_stick_y < 0)
                 sleep(10);
             robot.lifterStop();
 
         } else if (gamepad.left_stick_y > 0) {
             robot.lifterRetract();
-            while (gamepad2.left_stick_y > 0 && robot.lifterRetractable())
+            while (gamepad2.left_stick_y > 0)
                 sleep(10);
             robot.lifterStop();
         }
