@@ -54,8 +54,8 @@ public class Drive extends Thread {
     private final double RAMP_TIME = 1000;                       // ramp up time in milliseconds
     private final double RAMP_MIN_SPEED = 0.2;
 
-    private final double MIN_SPEED = 0.20;
-    private final double MAX_SPEED = 0.9;
+    public static double MIN_SPEED = 0.20;
+    public static double MAX_SPEED = 0.9;
     public static double MIN_STRAFE_SPEED = 0.35;
     public static double MAX_STRAFE_SPEED = 0.95;
     public static double MIN_ROTATE_SPEED = 0.15;
@@ -329,7 +329,7 @@ public class Drive extends Thread {
             double y = -gamepad.left_stick_y;
             double x2 = gamepad.right_stick_x;
             double noise = 0.01;
-            //if (x2 != 0) Logger.message("%f", x2);
+
             // Is either stick being used?
             if (Math.abs(x) > noise || Math.abs(y) > noise || Math.abs(x2) > noise ) {
 
@@ -468,6 +468,23 @@ public class Drive extends Thread {
         if (Math.abs(Math.toDegrees(angle)) == 90)
             return MAX_SPEED;
         return MAX_STRAFE_SPEED;
+    }
+
+    public double getMinPower () {
+        return MIN_SPEED;
+    }
+
+    public double getMaxPower ( ) {
+        return MAX_SPEED;
+    }
+
+    public double getMinTurnPower () {
+
+        return MIN_ROTATE_SPEED;
+    }
+
+    public double getMaxTurnPower ( ) {
+        return MAX_ROTATE_SPEED;
     }
 
     private double scalePower (double power, double angle) {
@@ -1653,6 +1670,12 @@ public class Drive extends Thread {
         rightFrontDrive.setVelocity(rightFront);
         leftBackDrive.setVelocity(leftRear);
         rightBackDrive.setVelocity(rightRear);
+    }
+
+    public double getCurrentVelocity() {
+        return (Math.max(Math.abs(leftFrontDrive.getVelocity()),
+                    Math.max(Math.abs(rightFrontDrive.getVelocity()),
+                        Math.max(Math.abs(leftBackDrive.getVelocity()), Math.abs(rightBackDrive.getVelocity())))));
     }
 
 } // end of class
