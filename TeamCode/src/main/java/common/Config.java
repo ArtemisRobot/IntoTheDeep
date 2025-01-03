@@ -20,7 +20,6 @@ public class Config {
 
     public static final String CAMERA           = "Webcam 1";
 
-    public static final String LIFTER           = "lifter";
     public static final String LIFTER_LEFT      = "lifterLeft";
     public static final String LIFTER_RIGHT     = "lifterRight";
     public static final String ARM              = "extendingArm";
