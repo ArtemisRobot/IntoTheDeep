@@ -1,9 +1,7 @@
 package common;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class DriveGamepad extends Thread {
 
@@ -11,15 +9,21 @@ public class DriveGamepad extends Thread {
     public final double BUCKET_Y = 128;
     public final double BUCKET_HEADING = 135;
 
-    public class Pose {
+    public static class Pose {
         double x;
         double y;
         double heading;
+
+        Pose (double x, double y, double heading) {
+            this.x = x;
+            this.y = y;
+            this.heading = heading;
+        }
     }
 
     private enum PosePosition { A, B, X, Y}
-    private int poseCount = PosePosition.values().length;
-    Pose[] poses = new Pose[poseCount];
+    private final int poseCount = PosePosition.values().length;
+    private final Pose[] poses = new Pose[poseCount];
 
     LinearOpMode opMode;
     DriveControl driveControl;
@@ -96,9 +100,8 @@ public class DriveGamepad extends Thread {
     }
 
     public void setPosePosition (PosePosition position, double x, double y, double heading) {
-        poses[position.ordinal()].x = x;
-        poses[position.ordinal()].y = y;
-        poses[position.ordinal()].heading = heading;
+        int index = position.ordinal();
+        poses[index] = new Pose(x, y, heading);
     }
 }
 
