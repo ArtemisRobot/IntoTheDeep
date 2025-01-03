@@ -106,6 +106,10 @@ public class Lifter extends Thread {
         state = LIFTER_STATE.IDLE;
     }
 
+    public void setPosition(int position, double speed) {
+        setPosition(position, speed, speed);
+    }
+
     /**
      * Run the lifter to the specified encoder position.
      *
