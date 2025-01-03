@@ -1,10 +1,8 @@
 package common;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierCurve;
@@ -12,9 +10,6 @@ import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierLine;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
-
-import main.BlueSideBlueAuto;
-import main.RedSideYellowAuto;
 
 public class Auto {
 
@@ -78,7 +73,7 @@ public class Auto {
                 case NET_ZONE_IN2:
                 case NET_ZONE_IN3:
                     waitUntilNotMoving();
-                    waitUntilRobotIdIdle();         // ToDo necessary?
+                    waitUntilRobotIdIdle();
                     robot.lifterUp();
                     waitUntilRobotIdIdle();
                     followPath();
