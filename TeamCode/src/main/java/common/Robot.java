@@ -12,7 +12,6 @@ package common;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -34,10 +33,13 @@ public class Robot extends Thread {
     public final double ARM_HIGH_SPEED = 0.75;
 
     // lifter
-    public static double LIFTER_SPEED = 0.90;
+    public static double LIFTER_SPEED = 0.50;
+    public static double LIFTER_UP_SPEED = 0.70;
+    public static double LIFTER_DOWN_SPEED = 0.50;
+
     public static double LIFTER_SPEED_LOW = 0.20;
     public static int    LIFTER_STOP_TICKS = 500;
-    public static int    LIFTER_UP_POSITION = 3228;
+    public static int    LIFTER_UP_POSITION = 1614;
     public static int    LIFTER_DOWN_POSITION = 0;
     public static int    LIFTER_TOP_BAR_POSITION = 0;
 
@@ -67,19 +69,21 @@ public class Robot extends Thread {
     private double pickerYawPosition = PICKER_YAW_0_DEGREES;
 
     // Define Motor and Servo objects
-    private DcMotorEx       lifter;
-    private DcMotor         extendingArm;
     private Servo           pickerWrist;
     private Servo           pickerFingers;
     private Servo           pickerYaw;
     private Servo           dropperWrist;
     private Servo           dropperFingers;
 
-    private MotorControl    lifterControl;
+    private Lifter          lifter;
+
+    private DcMotor         extendingArm;
     private MotorControl    extendingArmControl;
 
     // drivetrain
     public Drive      drive = null;
+    private DriveGamepad driveGamepad;
+    private DriveControl driveControl;
 
     // Declare OpMode members.
     private final LinearOpMode opMode;
@@ -105,6 +109,12 @@ public class Robot extends Thread {
     public void init() {
         this.setName("robot");
         drive = new Drive(opMode);
+
+        driveControl = new DriveControl(opMode, drive);
+        driveControl.start();
+
+        driveGamepad = new DriveGamepad(opMode, driveControl);
+
         okToMove = new Semaphore(1);
 
         try {
@@ -136,17 +146,10 @@ public class Robot extends Thread {
         }
 
         try {
-            lifter = opMode.hardwareMap.get(DcMotorEx.class, Config.LIFTER);
-            lifter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            lifter.setDirection(DcMotorSimple.Direction.REVERSE);
-            lifter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            lifter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-            lifterControl = new MotorControl(opMode, lifter);
-            lifterControl.setRange(LIFTER_DOWN_POSITION, LIFTER_UP_POSITION);
-            lifterControl.setLowSpeedThreshold(LIFTER_STOP_TICKS);
-            lifterControl.setName("lifter");
-            lifterControl.start();
+            lifter = new Lifter(opMode);
+            lifter.setRange(LIFTER_DOWN_POSITION, LIFTER_UP_POSITION);
+            lifter.setLowSpeedThreshold(LIFTER_STOP_TICKS);
+            lifter.start();
 
         } catch (Exception e) {
             testRobot = true;
@@ -155,6 +158,10 @@ public class Robot extends Thread {
 
         if (! testRobot)
             start();
+    }
+
+    public void startDriveGamepad() {
+        driveGamepad.start();
     }
 
     public void run () {
@@ -267,72 +274,46 @@ public class Robot extends Thread {
     }
 
     /**
-     * Returns true if the lifter is extendable
-     * @return true if extendable, false if fully extend
-     */
-    public boolean lifterExtendable() {
-        int position = lifter.getCurrentPosition();
-        boolean extendable = position < LIFTER_UP_POSITION;
-        Logger.message("lifter position %d %B", position, extendable);
-        return extendable;
-    }
-
-    /**
-     * Returns true if the lifter is retractable from its current position
-     * @return true if retractable, false if all the way down
-     */
-    public boolean lifterRetractable() {
-        int position = lifter.getCurrentPosition();
-        boolean retractable = position > LIFTER_DOWN_POSITION;
-        Logger.message("lifter position %d %B", position, retractable);
-        return  retractable;
-    }
-
-    /**
      * Extend lifter to the specified position
      */
     public void LifterExtend() {
-        if (lifterExtendable())
-            lifter.setPower(LIFTER_SPEED);
+        lifter.runLifter(LIFTER_SPEED);
     }
 
     /**
      * Retract lifter to the specified position
      */
     public void lifterRetract () {
-        if (lifterRetractable())
-            lifter.setPower(-LIFTER_SPEED);
+        lifter.runLifter(-LIFTER_SPEED);
     }
 
     /**
      * Stop the lifter from moving
      */
     public void lifterStop () {
-        lifter.setPower(0);
+        lifter.stopLifter();
     }
 
     /**
      * Raise the lifter to the specified position
      */
     public void lifterUp() {
-        Logger.message("set lifter to position %d at %4.2f speed", LIFTER_UP_POSITION, LIFTER_SPEED);
-
-         lifterControl.setPosition(LIFTER_UP_POSITION, LIFTER_SPEED, LIFTER_SPEED);
+        Logger.message("set lifter to position %d at %4.2f speed", LIFTER_UP_POSITION, LIFTER_UP_SPEED);
+         lifter.setPosition(LIFTER_UP_POSITION, LIFTER_UP_SPEED);
     }
 
     /**
      * Lower the lifter to its down position
      */
     public void lifterDown() {
-        //runMotorToPosition(lifter, LIFTER_DOWN_POSITION, LIFTER_SPEED, LIFTER_SPEED_LOW);
-        lifterControl.setPosition(LIFTER_DOWN_POSITION, LIFTER_SPEED, LIFTER_SPEED_LOW);
+        lifter.setPosition(LIFTER_DOWN_POSITION, LIFTER_DOWN_SPEED, LIFTER_SPEED_LOW);
     }
 
     /**
      * Raise the lifter to the specimen top bar scoring position
      */
     public void lifterToTopBar () {
-        lifterControl.setPosition(LIFTER_TOP_BAR_POSITION, LIFTER_SPEED, LIFTER_SPEED);
+        lifter.setPosition(LIFTER_TOP_BAR_POSITION, LIFTER_SPEED, LIFTER_SPEED);
     }
 
     /**
@@ -340,7 +321,7 @@ public class Robot extends Thread {
      * @return true if the lifter is moving
      */
     public boolean lifterIsBusy () {
-        return lifterControl.motorIsBusy();
+        return lifter.lifterIsBusy();
     }
 
     /**
@@ -568,7 +549,7 @@ public class Robot extends Thread {
     }
 
     public boolean isBusy () {
-        return lifterControl.motorIsBusy() || extendingArmControl.motorIsBusy() || robotState != ROBOT_STATE.IDLE;
+        return lifter.lifterIsBusy() || extendingArmControl.motorIsBusy() || robotState != ROBOT_STATE.IDLE;
     }
 
     public void setToStartPosition() {
@@ -649,6 +630,14 @@ public class Robot extends Thread {
         } catch (InterruptedException e) {
             Logger.message("InterruptedException");
         }
+    }
+
+    public void moveToCoordinate(double targetX, double targetY, double targetHeading, double timeout) {
+        driveControl.moveToCoordinate(targetX, targetY, targetHeading, timeout);
+    }
+
+    public boolean driveIsBusy() {
+        return driveControl.isBusy();
     }
 
     public void dropTest () {
