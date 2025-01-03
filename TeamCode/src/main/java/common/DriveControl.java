@@ -61,7 +61,7 @@ public class DriveControl extends Thread {
 
     private boolean highSpeed;
 
-    private enum DRIVE_STATE { IDLE, MOVING, MOVING_TO_COORDINATE, MOVING_TO_OBJECT }
+    private enum DRIVE_STATE { IDLE, MOVING, MOVING_TO_COORDINATE, MOVING_TO_OBJECT, STOPPING }
     private DRIVE_STATE driveState;
 
     private final Drive drive;
@@ -109,6 +109,11 @@ public class DriveControl extends Thread {
 
                 case MOVING_TO_OBJECT:
                     moveToObject();
+                    driveState = DRIVE_STATE.IDLE;
+                    continue;
+
+                case STOPPING:
+                    drive.setVelocity(0, 0, 0,0 );
                     driveState = DRIVE_STATE.IDLE;
             }
         }
@@ -330,10 +335,12 @@ public class DriveControl extends Thread {
         } else  if (turn != 0) {
             // if only turning scale joystick value for turning only.
             double sign = (turn < 0) ? -1 : 1;
-            turn = Math.pow(Math.abs(Math.min(turn, 1)), 3);  // exponential power curve for better low speed control
             double minTurn = drive.getMinTurnPower();
             double maxTurn = drive.getMaxTurnPower();
-            turn *= (maxTurn - minTurn) + maxTurn;
+            turn = Math.pow(Math.min(Math.abs(turn), 1), 3);  // exponential power curve for better low speed control
+
+            //turn = Math.pow(Math.abs(Math.min(turn, 1)), 3);
+            turn = (turn * (maxTurn - minTurn)) + minTurn;
             turn *= sign;
         }
 
@@ -353,9 +360,10 @@ public class DriveControl extends Thread {
                 rightRearPower * maxVelocity);
 
         Logger.message("%s",
-                String.format("x: %5.2f  y: %5.2f  turn: %5.2f  ", x, y, turn) +
+                String.format("x: %5.2f  y: %5.2f  x2: %5.2f  ", x, y, rightX) +
                         String.format("angle: %5.2f (rad)  %4.0f (deg)  ", angle, Math.toDegrees(angle)) +
                         String.format("power: %4.2f  sin: %5.2f  cos: %5.2f  ", power, sin, cos) +
+                        String.format("turn: %5.2f  ", turn) +
                         String.format("power: %4.2f  %4.2f  %4.2f  %4.2f   ", leftFrontPower, rightFrontPower, leftRearPower, rightRearPower) +
                         String.format("pos: %6d %6d %6d %6d  ", drive.leftFrontDrive.getCurrentPosition(), drive.rightFrontDrive.getCurrentPosition(), drive.leftBackDrive.getCurrentPosition(), drive.rightBackDrive.getCurrentPosition()) +
                         String.format("velocity: %4.0f %4.0f %4.0f %4.0f", drive.leftFrontDrive.getVelocity(), drive.rightFrontDrive.getVelocity(), drive.leftBackDrive.getVelocity(), drive.rightBackDrive.getVelocity())
@@ -407,6 +415,7 @@ public class DriveControl extends Thread {
         }
     }
 
+    @SuppressWarnings("unused")
     public void moveToObject (double stopDistance, double timeout) {
 
         synchronized (this) {
@@ -433,11 +442,13 @@ public class DriveControl extends Thread {
     }
 
     public void stopMoving() {
-        if (driveState != DRIVE_STATE.IDLE) {
-            interruptAction();
+
+        synchronized (this) {
+            if (driveState != DRIVE_STATE.IDLE && driveState != DRIVE_STATE.MOVING) {
+                interruptAction();
+            }
+            driveState = DRIVE_STATE.STOPPING;
         }
-        drive.stopRobot();
-        driveState = DRIVE_STATE.IDLE;
     }
 
     public void startMoving() {
