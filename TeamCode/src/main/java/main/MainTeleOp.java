@@ -20,9 +20,7 @@ import common.Robot;
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         robot = new Robot(this);
-
-        // start the drivetrain manual drive thread
-        robot.drive.start();
+        robot.startDriveGamepad();
 
         telemetry.addLine("Press Start");
         telemetry.update();
@@ -115,13 +113,13 @@ import common.Robot;
 
         } else if (gamepad.right_stick_y < 0) {
             robot.LifterExtend();
-            while (gamepad2.right_stick_y < 0 && robot.lifterExtendable())
+            while (gamepad.right_stick_y < 0)
                 sleep(10);
             robot.lifterStop();
 
         } else if (gamepad.right_stick_y > 0) {
             robot.lifterRetract();
-            while (gamepad2.right_stick_y > 0 && robot.lifterRetractable())
+            while (gamepad.right_stick_y > 0)
                 sleep(10);
             robot.lifterStop();
 
