@@ -16,21 +16,15 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
+import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.MathFunctions;
+
 import java.util.concurrent.Semaphore;
 
 @SuppressWarnings("FieldCanBeLocal")
 @com.acmerobotics.dashboard.config.Config           // allows public static to be changed in TFC Dashboard
 
 public class Robot extends Thread {
-
-    // arm extender
-    public final int    ARM_IN = 0;
-    public final int    ARM_OUT = 2000;
-    public final int    AMR_OUT_PART_WAY = 750;
-    public final int    ARM_OUT_START = 190;
-    public final int    ARM_EXCHANGE = 230 ;
-    public final double ARM_SPEED = 0.5;
-    public final double ARM_HIGH_SPEED = 0.75;
 
     // lifter
     public static double LIFTER_SPEED = 0.50;
@@ -43,6 +37,16 @@ public class Robot extends Thread {
     public static int    LIFTER_DOWN_POSITION = 0;
     public static int    LIFTER_TOP_BAR_POSITION = 0;
 
+    // arm extender
+    public final int    ARM_IN = 0;
+    public final int    ARM_OUT = 2000;
+    public final int    AMR_OUT_PART_WAY = 750;
+    public final int    ARM_OUT_START = 190;
+    public final int    ARM_EXCHANGE = 230;
+    public final int    ARM_AUTO_PICK = 617;
+    public final double ARM_SPEED = 0.5;
+    public final double ARM_HIGH_SPEED = 0.75;
+
     // Grabbers
     private final double PICKER_UP_POSITION    = 0.150;
     private final double PICKER_STORE_POSITION = 0.094;
@@ -51,16 +55,20 @@ public class Robot extends Thread {
     private final double PICKER_FINGER_CLOSED  = 0.420;
     private final double PICKER_FINGER_OPEN    = 0.600;
 
-    private final double PICKER_YAW_0_DEGREES  = 0.167;
-    private final double PICKER_YAW_45_DEGREES = 0.320;
-    private final double PICKER_YAW_90_DEGREES = 0.494;
+    public  final double PICKER_YAW_0_DEGREES  = 0.167;
+    public  final double PICKER_YAW_45_DEGREES = 0.320;
+    public  final double PICKER_YAW_90_DEGREES = 0.494;
 
     private final double DROPPER_UP_POSITION   = 0.616;
     private final double DROPPER_DROP_POSITION = 0.552;
     private final double DROPPER_DOWN_POSITION = 0.495;
+    private final double DROPPER_SPECIMEN_UP   = 0.550;
+    private final double DROPPER_SPECIMEN_DOWN = 0.550;
 
     private final double DROPPER_FINGER_CLOSED = 0.463;
-    private final double DROPPER_FINGER_OPEN = 0.58;
+    private final double DROPPER_FINGER_OPEN   = 0.58;
+
+    private final double SPECIMEN_STOP_POSTION = 5;
 
     private boolean pickerOpened = true;
     private boolean dropperOpened = false;
@@ -88,7 +96,7 @@ public class Robot extends Thread {
     // Declare OpMode members.
     private final LinearOpMode opMode;
 
-    private enum ROBOT_STATE { IDLE, SET_TO_START_POSITION, SET_TO_STOP_POSITION, PICKUP_SAMPLE, DROP_SAMPLE_INTO_TOP_BUCKET, SCORE_SPECIMEN }
+    private enum ROBOT_STATE { IDLE, SET_TO_START_POSITION, SET_TO_STOP_POSITION, PICKUP_SAMPLE, MOVE_SAMPLE_TO_DROPPER, DROP_SAMPLE_INTO_TOP_BUCKET, SCORE_SPECIMEN }
     private ROBOT_STATE robotState = ROBOT_STATE.IDLE;
 
     private int pickingPosition = AMR_OUT_PART_WAY;
@@ -195,15 +203,15 @@ public class Robot extends Thread {
                 case SET_TO_STOP_POSITION:
                     Logger.message("\n** Set to stop position");
                     synchronized (this) {
-                        pickerStore();
                         dropperOpen();
                         dropperDown();
+                        pickerDown();
+                        pickerRotateTo(PICKER_YAW_90_DEGREES);
                         delay(500);
                         armMoveTo(ARM_IN);
                         robotState = ROBOT_STATE.IDLE;
                     }
                     continue;
-
 
                 case PICKUP_SAMPLE:
                     Logger.message("\n** Pickup sample");
@@ -213,22 +221,27 @@ public class Robot extends Thread {
                         pickerClose();
                         opMode.sleep(400);
                         setOkToMove(true);
-                        pickerUp();
-                        opMode.sleep(850);
-                        while (lifterIsBusy() && opMode.opModeIsActive()) {
-                            delay(10);
-                        }
-                        dropperClose();
-                        delay(250);          // wait for the dropper to get to the closed position
-                        pickerOpen();
-                        delay(100);
-                        dropperUp();
-                        delay(750);
-                        pickerOpen();
-                        pickerDown();
                         robotState = ROBOT_STATE.IDLE;
                     }
                     continue;
+
+                case MOVE_SAMPLE_TO_DROPPER:
+                    pickerUp();
+                    opMode.sleep(850);
+                    while (lifterIsBusy() && opMode.opModeIsActive()) {
+                        delay(10);
+                    }
+                    dropperClose();
+                    delay(250);          // wait for the dropper to get to the closed position
+                    pickerOpen();
+                    delay(100);
+                    dropperUp();
+                    delay(750);
+                    pickerOpen();
+                    pickerDown();
+                    robotState = ROBOT_STATE.IDLE;
+                    continue;
+
 
                 case DROP_SAMPLE_INTO_TOP_BUCKET:
                     Logger.message("\n**  Drop sample into top bucket");
@@ -256,8 +269,26 @@ public class Robot extends Thread {
                         while (lifterIsBusy() && opMode.opModeIsActive()) {
                             delay(10);
                         }
-                        setOkToMove(true);
 
+                        dropperSpecimenUp();
+                        delay(200);
+
+                        driveControl.moveToObject(SPECIMEN_STOP_POSTION, 2000);
+                        while (driveControl.isBusy()&& opMode.opModeIsActive()) {
+                            delay(10);
+                        }
+
+                        dropperSpecimenDown();
+                        delay(200);
+
+                        dropperOpen();
+                        delay(100);
+
+                        dropperUp();
+                        delay(200);
+
+                        lifterDown();
+                        setOkToMove(true);
                     }
             }
         }
@@ -504,6 +535,16 @@ public class Robot extends Thread {
         dropperUp = false;
     }
 
+    public void dropperSpecimenUp() {
+        dropperWrist.setPosition(DROPPER_SPECIMEN_UP);
+        dropperUp = false;
+    }
+
+    public void dropperSpecimenDown() {
+        dropperWrist.setPosition(DROPPER_SPECIMEN_DOWN);
+        dropperUp = false;
+    }
+
     public void dropperOpen(){
         Logger.message("set dropper to position %f", DROPPER_FINGER_OPEN);
         dropperFingers.setPosition(DROPPER_FINGER_OPEN);
@@ -579,6 +620,12 @@ public class Robot extends Thread {
         }
     }
 
+    public void moveSampleToDropper () {
+        synchronized (this) {
+            robotState = ROBOT_STATE.MOVE_SAMPLE_TO_DROPPER;
+        }
+    }
+
     public void dropSampleInTopBucket() {
         synchronized (this) {
             robotState = ROBOT_STATE.DROP_SAMPLE_INTO_TOP_BUCKET;
@@ -638,6 +685,10 @@ public class Robot extends Thread {
 
     public boolean driveIsBusy() {
         return driveControl.isBusy();
+    }
+
+    public DriveControl getDriveControl () {
+        return driveControl;
     }
 
     public void dropTest () {
