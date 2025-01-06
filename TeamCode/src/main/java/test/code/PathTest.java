@@ -124,7 +124,8 @@ public class PathTest extends LinearOpMode {
             telemetry.update();
             waitForStart();
 
-            competitionTest2();
+            competitionTest();
+            //competitionTest2();
             //competitionTest3 (BUCKET_X, BUCKET_Y, BUCKET_HEADING);
 
         } catch (Exception e) {
