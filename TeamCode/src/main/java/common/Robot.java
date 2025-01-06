@@ -259,7 +259,7 @@ public class Robot extends Thread {
                         dropperUp();
                         setOkToMove(true);
                         // todo armMoveTo(ARM_EXCHANGE);
-                        lifterDown();
+                        // todo lifterDown();
                         robotState = ROBOT_STATE.IDLE;
                     }
                     continue;
