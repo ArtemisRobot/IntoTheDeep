@@ -35,7 +35,7 @@ public class Robot extends Thread {
     public static int    LIFTER_STOP_TICKS = 500;
     public static int    LIFTER_UP_POSITION = 1614;
     public static int    LIFTER_DOWN_POSITION = 0;
-    public static int    LIFTER_TOP_BAR_POSITION = 0;
+    public static int    LIFTER_TOP_BAR_POSITION = 800;
 
     // arm extender
     public final int    ARM_IN = 0;
@@ -258,8 +258,8 @@ public class Robot extends Thread {
                         delay(200);
                         dropperUp();
                         setOkToMove(true);
-                        //ToDo armMoveTo(ARM_EXCHANGE);
-                        //ToDo lifterDown();
+                        // todo armMoveTo(ARM_EXCHANGE);
+                        lifterDown();
                         robotState = ROBOT_STATE.IDLE;
                     }
                     continue;
