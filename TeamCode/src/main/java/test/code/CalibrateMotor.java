@@ -136,6 +136,7 @@ public class CalibrateMotor extends LinearOpMode {
                 "  right stick - increase/decrease home position\n" +
                 "  left bumper - decrease motor speed\n" +
                 "  right bumper - increase motor speed\n" +
+                "  left stick button - zero encoders" +
                 "  y - set home position to current position\n" +
                 "  a - set target position to current position\n" +
                 "  x - run to home position\n" +
@@ -269,6 +270,13 @@ public class CalibrateMotor extends LinearOpMode {
                 while (gamepad1.dpad_up) {
                     sleep(10);
                 }
+
+            } else if (gamepad1.left_stick_button) {
+                // zero encoder
+                DcMotor.RunMode mode = motor.getMode();
+                motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                motor.setMode(mode);
 
             } else if (gamepad1.back) {
                 // exit opmode without saving calibration data

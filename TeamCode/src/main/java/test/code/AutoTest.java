@@ -55,8 +55,8 @@ public class AutoTest extends LinearOpMode {
                     robot.pickerDown();
                 } else {
                     robot.pickerUp();
-                while (gamepad1.right_bumper) sleep(10);
                 }
+                while (gamepad1.right_bumper) sleep(10);
 
             } else if (gamepad1.left_bumper) {
                 if (robot.dropperIsUp()) {

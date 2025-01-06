@@ -7,7 +7,7 @@ import common.Lifter;
 import common.Logger;
 
 @com.acmerobotics.dashboard.config.Config
-@TeleOp(name="Lifter Test")
+@TeleOp(name="Lifter Test", group="Test")
 
  public class LifterTest extends LinearOpMode {
 

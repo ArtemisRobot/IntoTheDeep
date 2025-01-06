@@ -46,11 +46,13 @@ import org.firstinspires.ftc.teamcode.pedroPathing.util.CustomPIDFCoefficients;
 import org.firstinspires.ftc.teamcode.pedroPathing.util.PIDFController;
 
 import common.Drive;
+import common.DriveControl;
+import common.DriveGamepad;
 import common.Gyro;
 import common.Logger;
 import utils.Increment;
 
-@TeleOp(name="* Path Test", group="Test")
+@TeleOp(name="Path Test", group="Test")
 @SuppressLint("DefaultLocale")
 @com.acmerobotics.dashboard.config.Config
 
@@ -82,6 +84,9 @@ public class PathTest extends LinearOpMode {
     private Telemetry.Item speedMsg;
 
     private Drive drive;
+    private DriveGamepad driveGamepad;
+    private DriveControl driveControl;
+
     Gyro gyro;
     Localizer localizer;
     private SparkFunOTOS otos;
@@ -114,24 +119,13 @@ public class PathTest extends LinearOpMode {
 
         try {
             initialize();
+
+            telemetry.addLine("Press start");
+            telemetry.update();
             waitForStart();
 
-            /*
-            double x= 10;
-            double y = 0;
-            double targetHeading = 90;
-            double currentHeading = 90;
-
-            printAngle(x, y, targetHeading, currentHeading);
-            localizer.setPose(new Pose(0, 0, Math.toRadians(currentHeading)));
-            moveToCoordinate(x, y, targetHeading, 2000);
-             */
-
-            competitionTest2 ();
-
-            //runDriveToCoordinateTest();
-            //velocityDeceleration();
-            //runTurnTest();
+            competitionTest2();
+            //competitionTest3 (BUCKET_X, BUCKET_Y, BUCKET_HEADING);
 
         } catch (Exception e) {
             Logger.error(e, "Exception");
@@ -142,20 +136,31 @@ public class PathTest extends LinearOpMode {
     private void initialize() {
         gyro = new Gyro(hardwareMap, "imu");
         drive = new Drive(this);
-        drive.start();
+        //drive.start();
+
+        driveControl = new DriveControl(this, drive);
+        driveGamepad = new DriveGamepad(this, driveControl);
+        driveControl.start();
+        //driveGamepad.start();
 
         localizer = new OTOSLocalizer(hardwareMap);
         otos = hardwareMap.get(SparkFunOTOS.class, "sensor_otos");
 
         heading = 0;
-
-        telemetry.addLine("Press start");
-        telemetry.update();
-        //telemetry.setAutoClear(false);
     }
 
     private void runDriveToCoordinateTest() {
 
+        /*
+        double x= 10;
+        double y = 0;
+        double targetHeading = 90;
+        double currentHeading = 90;
+
+        printAngle(x, y, targetHeading, currentHeading);
+        localizer.setPose(new Pose(0, 0, Math.toRadians(currentHeading)));
+        moveToCoordinate(x, y, targetHeading, 2000);
+         */
         localizer.setPose(new Pose(0, 0, Math.toRadians(90)));
 
         while (opModeIsActive()) {
@@ -206,15 +211,15 @@ public class PathTest extends LinearOpMode {
     public static double BUCKET_Y = 128;
     public static double BUCKET_HEADING = 135;
 
-    public static double YELLOW_RIGHT_X = 35.25;
-    public static double YELLOW_RIGHT_Y = 119.5;
+    public static double YELLOW_RIGHT_X = 32;
+    public static double YELLOW_RIGHT_Y = 118;
     public static double YELLOW_RIGHT_HEADING = 0;
 
-    public static double YELLOW_MIDDLE_X = 35.25;
-    public static double YELLOW_MIDDLE_Y = 129.5;
+    public static double YELLOW_MIDDLE_X = 32;
+    public static double YELLOW_MIDDLE_Y = 128;
     public static double YELLOW_MIDDLE_HEADING = 0;
 
-    public static double YELLOW_LEFT_X = 45.25;
+    public static double YELLOW_LEFT_X = 43;
     public static double YELLOW_LEFT_Y = 129.5;
     public static double YELLOW_LEFT_HEADING = 90;
 
@@ -227,27 +232,27 @@ public class PathTest extends LinearOpMode {
         while (opModeIsActive()) {
 
             if (gamepad1.a) {
-                moveToCoordinate(BUCKET_X, BUCKET_Y, BUCKET_HEADING, timeout);
+                driveControl.moveToCoordinate(BUCKET_X, BUCKET_Y, BUCKET_HEADING, timeout);
                 while (gamepad1.a) sleep(10);
             }
 
             if (gamepad1.b) {
-                moveToCoordinate(YELLOW_RIGHT_X, YELLOW_RIGHT_Y, YELLOW_RIGHT_HEADING, timeout);
+                driveControl.moveToCoordinate(YELLOW_RIGHT_X, YELLOW_RIGHT_Y, YELLOW_RIGHT_HEADING, timeout);
                 while (gamepad1.b) sleep(10);
             }
 
             if (gamepad1.x) {
-                moveToCoordinate(YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, YELLOW_MIDDLE_HEADING, timeout);
+                driveControl.moveToCoordinate(YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, YELLOW_MIDDLE_HEADING, timeout);
                 while (gamepad1.x) sleep(10);
             }
 
             if (gamepad1.y) {
-                moveToCoordinate(YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING, timeout);
+                driveControl.moveToCoordinate(YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING, timeout);
                 while (gamepad1.y) sleep(10);
             }
 
             if (gamepad1.right_bumper) {
-                moveToCoordinate(START_X, START_Y, START_HEADING, timeout);
+                driveControl.moveToCoordinate(START_X, START_Y, START_HEADING, timeout);
                 while (gamepad1.right_bumper) sleep(10);
             }
 
@@ -262,15 +267,47 @@ public class PathTest extends LinearOpMode {
 
         localizer.setPose(new Pose(START_X, START_Y, Math.toRadians(START_HEADING)));
 
-        moveToCoordinate(BUCKET_X, BUCKET_Y, BUCKET_HEADING, timeout);
-        moveToCoordinate(YELLOW_RIGHT_X, YELLOW_RIGHT_Y, YELLOW_RIGHT_HEADING, timeout);
-        moveToCoordinate(BUCKET_X, BUCKET_Y, BUCKET_HEADING, timeout);
-        moveToCoordinate(YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, YELLOW_MIDDLE_HEADING, timeout);
-        moveToCoordinate(BUCKET_X, BUCKET_Y, BUCKET_HEADING, timeout);
-        moveToCoordinate(YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING, timeout);
-        moveToCoordinate(BUCKET_X, BUCKET_Y, BUCKET_HEADING, timeout);
+        driveControl.moveToCoordinate(BUCKET_X, BUCKET_Y, BUCKET_HEADING, timeout);
+        waitUntilNotMoving();
+
+        driveControl.moveToCoordinate(YELLOW_RIGHT_X, YELLOW_RIGHT_Y, YELLOW_RIGHT_HEADING, timeout);
+        waitUntilNotMoving();
+
+        driveControl.moveToCoordinate(BUCKET_X, BUCKET_Y, BUCKET_HEADING, timeout);
+        waitUntilNotMoving();
+
+        driveControl.moveToCoordinate(YELLOW_MIDDLE_X, YELLOW_MIDDLE_Y, YELLOW_MIDDLE_HEADING, timeout);
+        waitUntilNotMoving();
+
+        driveControl.moveToCoordinate(BUCKET_X, BUCKET_Y, BUCKET_HEADING, timeout);
+        waitUntilNotMoving();
+
+        driveControl.moveToCoordinate(YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING, timeout);
+        waitUntilNotMoving();
+
+        driveControl.moveToCoordinate(BUCKET_X, BUCKET_Y, BUCKET_HEADING, timeout);
+        waitUntilNotMoving();
 
         Logger.message(String.format("time: %,d milliseconds", System.currentTimeMillis() - start));
+    }
+
+    private void competitionTest3(double targetX, double targetY, double targetHeading) {
+        double timeout = 5000;
+
+        localizer.setPose(new Pose(START_X, START_Y, Math.toRadians(START_HEADING)));
+
+        long start = System.currentTimeMillis();
+
+        driveControl.moveToCoordinate(targetX, targetY, targetHeading, timeout);
+        waitUntilNotMoving();
+
+    }
+
+    private void waitUntilNotMoving() {
+        while (driveControl.isBusy() && opModeIsActive()) {
+            sleep(1);
+        }
+        sleep(100);
     }
 
     public void moveToCoordinate(double targetX, double targetY, double targetHeading, double timeout) {

@@ -17,8 +17,6 @@ import common.Robot;
     @Override
     public void runOpMode() {
 
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-
         robot = new Robot(this);
         robot.startDriveGamepad();
 
@@ -37,6 +35,8 @@ import common.Robot;
                 "  dpad left or right - drop in bucket\n" +
                 "  left stick - arm manual control\n" +
                 "  right stick - lifter manual control\n" +
+                "  left bumper - picker up / down" +
+                "  right bumper - picker rotate" +
                 "\n");
 
         telemetry.update();
@@ -44,9 +44,10 @@ import common.Robot;
         robot.setToStartPosition();
 
         while (opModeIsActive()) {
-
             robotHandleGamepad();
         }
+
+        robot.setToStopPosition();
     }
 
     private void robotHandleGamepad () {
@@ -72,9 +73,11 @@ import common.Robot;
             while (gamepad.b) sleep(10);
 
         } else if (gamepad.y) {
+            robot.pickUpSample();
+            while (robot.isBusy() && opModeIsActive()) sleep(10);
             robot.armMoveTo(robot.ARM_EXCHANGE);
             while (robot.isBusy() && opModeIsActive()) sleep(10);
-            robot.pickUpSample();
+            robot.moveSampleToDropper();
             while (gamepad.y) sleep(10);
 
         } else if (gamepad.a) {

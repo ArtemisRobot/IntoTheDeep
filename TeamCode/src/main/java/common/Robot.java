@@ -127,10 +127,12 @@ public class Robot extends Thread {
 
         try {
             pickerWrist = opMode.hardwareMap.get(Servo.class, Config.PICKER_WRIST);
+            //pickerWrist = new ServoEx(ServoEx.ServoType.TORQUE_5_TURN, opMode.hardwareMap, Config.PICKER_WRIST);
             pickerFingers = opMode.hardwareMap.get(Servo.class, Config.PICKER_FINGERS);
             pickerYaw = opMode.hardwareMap.get(Servo.class, Config.PICKER_YAW);
 
             dropperWrist = opMode.hardwareMap.get(Servo.class, Config.DROPPER_WRIST);
+            //dropperWrist = new ServoEx(ServoEx.ServoType.TORQUE_5_TURN, opMode.hardwareMap, Config.DROPPER_WRIST);
             dropperFingers = opMode.hardwareMap.get(Servo.class, Config.DROPPER_FINGERS);
 
         } catch (Exception e) {
@@ -236,9 +238,9 @@ public class Robot extends Thread {
                     pickerOpen();
                     delay(100);
                     dropperUp();
-                    delay(750);
-                    pickerOpen();
                     pickerDown();
+                    pickerOpen();
+                    delay(750);
                     robotState = ROBOT_STATE.IDLE;
                     continue;
 
@@ -457,7 +459,7 @@ public class Robot extends Thread {
     }
 
     public void pickerUp() {
-        Logger.message("set picker to position %f", PICKER_UP_POSITION);
+        Logger.message("set picker to position %f ", PICKER_UP_POSITION);
         pickerWrist.setPosition(PICKER_UP_POSITION);
         pickerUp = true;
     }

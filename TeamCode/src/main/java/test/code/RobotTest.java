@@ -21,9 +21,6 @@ import common.Robot;
 
         robot = new Robot(this);
 
-        // start the drivetrain manual drive thread
-        robot.drive.start();
-
         telemetry.addLine("Press Start");
         telemetry.update();
 
