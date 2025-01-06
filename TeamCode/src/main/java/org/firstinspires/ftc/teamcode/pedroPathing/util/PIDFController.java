@@ -19,7 +19,7 @@ public class PIDFController {
     private double error;
     private double position;
     private double targetPosition;
-    private double errorIntegral;
+    public double errorIntegral;
     public double errorDerivative;
     private double feedForwardInput;
 
