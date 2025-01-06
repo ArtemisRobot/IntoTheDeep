@@ -11,8 +11,8 @@ import common.Robot;
 //@Disabled
  public class RobotTest extends LinearOpMode {
 
-    private enum GAMEPAD_MODE { ARM, LIFTER, COMPETITION }
-    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.ARM;
+    private enum GAMEPAD_MODE { ARM, LIFTER, COMPETITION, GRABBERS, SPECIMEN }
+    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.SPECIMEN;
 
     Robot   robot;
 
@@ -41,17 +41,29 @@ import common.Robot;
 
         while (opModeIsActive()) {
 
-            if (gamepadMode == GAMEPAD_MODE.ARM) {
-                dropperHandleGamepad();
-            } else if (gamepadMode == GAMEPAD_MODE.LIFTER) {
-                lifterHandleGamepad();
-            } else if (gamepadMode == GAMEPAD_MODE.COMPETITION) {
-                robotHandleGamepad();
+            switch (gamepadMode) {
+                case GRABBERS:
+                    grabbersHandleGamepad();
+                    break;
+                case LIFTER:
+                    lifterHandleGamepad();
+                    break;
+                case COMPETITION:
+                    robotHandleGamepad();
+                    break;
+                case SPECIMEN:
+                    specimenHandleGamepad();
             }
         }
     }
 
-    private void dropperHandleGamepad () {
+    private  void specimenHandleGamepad () {
+        if (gamepad2.a) {
+            robot.scoreSpecimen();
+        }
+    }
+
+    private void grabbersHandleGamepad () {
 
         if (gamepad2.left_bumper) {
             robot.armMoveTo(robot.ARM_IN);
