@@ -61,8 +61,8 @@ public class Robot extends Thread {
     public  final double PICKER_YAW_135_DEGREES = 0.657;
 
 
-    private final double DROPPER_UP_POSITION   = 0.616;
-    private final double DROPPER_DROP_POSITION = 0.552;
+    private final double DROPPER_UP_POSITION   = 0.872;
+    private final double DROPPER_DROP_POSITION = 0.218;
     private final double DROPPER_DOWN_POSITION = 0.495;
     private final double DROPPER_SPECIMEN_UP   = 0.550;
     private final double DROPPER_SPECIMEN_DOWN = 0.550;
