@@ -55,9 +55,11 @@ public class Robot extends Thread {
     private final double PICKER_FINGER_CLOSED  = 0.420;
     private final double PICKER_FINGER_OPEN    = 0.600;
 
-    public  final double PICKER_YAW_0_DEGREES  = 0.167;
-    public  final double PICKER_YAW_45_DEGREES = 0.320;
-    public  final double PICKER_YAW_90_DEGREES = 0.494;
+    public  final double PICKER_YAW_0_DEGREES   = 0.167;
+    public  final double PICKER_YAW_45_DEGREES  = 0.320;
+    public  final double PICKER_YAW_90_DEGREES  = 0.494;
+    public  final double PICKER_YAW_135_DEGREES = 0.657;
+
 
     private final double DROPPER_UP_POSITION   = 0.616;
     private final double DROPPER_DROP_POSITION = 0.552;
@@ -244,7 +246,6 @@ public class Robot extends Thread {
                     robotState = ROBOT_STATE.IDLE;
                     continue;
 
-
                 case DROP_SAMPLE_INTO_TOP_BUCKET:
                     Logger.message("\n**  Drop sample into top bucket");
                     synchronized (this) {
@@ -257,6 +258,7 @@ public class Robot extends Thread {
                         dropperOpen();
                         delay(200);
                         dropperUp();
+                        pickerRotateTo(PICKER_YAW_0_DEGREES);
                         setOkToMove(true);
                         // todo armMoveTo(ARM_EXCHANGE);
                         // todo lifterDown();
@@ -504,6 +506,8 @@ public class Robot extends Thread {
             pickerYawPosition = PICKER_YAW_45_DEGREES;
         } else if (pickerYawPosition == PICKER_YAW_45_DEGREES) {
             pickerYawPosition = PICKER_YAW_90_DEGREES;
+        } else if (pickerYawPosition == PICKER_YAW_90_DEGREES) {
+            pickerYawPosition = PICKER_YAW_135_DEGREES;
         } else {
             pickerYawPosition = PICKER_YAW_0_DEGREES;
         }
