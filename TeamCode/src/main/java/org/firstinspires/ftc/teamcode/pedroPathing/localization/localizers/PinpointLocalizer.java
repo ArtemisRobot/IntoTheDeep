@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.localization.localizers;
 
 
+import android.util.Log;
+
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -11,6 +13,8 @@ import org.firstinspires.ftc.teamcode.pedroPathing.localization.Localizer;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.MathFunctions;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Vector;
+
+import common.Logger;
 
 /**
  * This is the Pinpoint class. This class extends the Localizer superclass and is a
@@ -67,20 +71,40 @@ public class PinpointLocalizer extends Localizer {
     public PinpointLocalizer(HardwareMap map, Pose setStartPose){
         hardwareMap = map;
         // TODO: replace this with your Pinpoint port
-        odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");
+        odo = hardwareMap.get(GoBildaPinpointDriver.class,"pinpoint");
 
         //This uses mm, to use inches divide these numbers by 25.4
-        odo.setOffsets(-84.0, -168.0); //these are tuned for 3110-0002-0001 Product Insight #1
+        //odo.setOffsets(-84.0, -168.0); //these are tuned for 3110-0002-0001 Product Insight #1
+
+        //odo.setOffsets(196.0, -160.0); //these are tuned for 3110-0002-0001 Product Insight #1
+        odo.setOffsets(196.0, -160.0); //these are tuned for 3110-0002-0001 Product Insight #1
         //TODO: If you find that the gobilda Yaw Scaling is incorrect you can edit this here
       //  odo.setYawScalar(1.0);
         //TODO: Set your encoder resolution here, I have the Gobilda Odometry products already included.
         //TODO: If you would like to use your own odometry pods input the ticks per mm in the commented part below
-        odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        //odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        //odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
+
+        float goBILDA_SWINGARM_POD = 13.26291192f; //ticks-per-mm for the goBILDA Swingarm Pod
+        double ticks = goBILDA_SWINGARM_POD / 1.035;
+        odo.setEncoderResolution(ticks);
+
         //odo.setEncoderResolution(13.26291192);
         //TODO: Set encoder directions
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
 
         odo.resetPosAndIMU();
+        long time = System.currentTimeMillis();
+        do {
+            odo.update();
+            GoBildaPinpointDriver.DeviceStatus status = odo.getDeviceStatus();
+            if (status == GoBildaPinpointDriver.DeviceStatus.READY) {
+                Logger.message("pinpoint sensor is ready, time %d", System.currentTimeMillis() - time);
+                break;
+            } else if (System.currentTimeMillis() - time > 2000) {
+                Logger.warning("pinpoint sensor not ready");
+            }
+        } while (true);
 
         setStartPose(setStartPose);
         totalHeading = 0;
@@ -133,7 +157,9 @@ public class PinpointLocalizer extends Localizer {
      * @param setStart the new start pose
      */
     @Override
-    public void setStartPose(Pose setStart) {startPose = setStart;}
+    public void setStartPose(Pose setStart) {
+        startPose = setStart;
+    }
 
     /**
      * This sets the current pose estimate. Changing this should just change the robot's current
@@ -143,7 +169,7 @@ public class PinpointLocalizer extends Localizer {
      */
     @Override
     public void setPose(Pose setPose) {
-    resetPinpoint();
+    //resetPinpoint();
     Pose setPinpointPose = MathFunctions.subtractPoses(setPose, startPose);
     odo.setPosition(new Pose2D(DistanceUnit.INCH, setPinpointPose.getX(), setPinpointPose.getY(), AngleUnit.RADIANS, setPinpointPose.getHeading()));
     }
