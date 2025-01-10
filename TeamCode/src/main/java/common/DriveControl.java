@@ -59,6 +59,8 @@ public class DriveControl extends Thread {
     private double targetY;
     private double targetHeading;
 
+    private double maxSpeed;
+
     private double stopDistance;
 
     private double leftX;
@@ -275,7 +277,7 @@ public class DriveControl extends Thread {
         // Looping until we move the desired distance
         while (opMode.opModeIsActive() && !interruptAction) {
 
-            double maxVelocity = drive.getMaxVelocity() * MAX_SPEED;
+            double maxVelocity = drive.getMaxVelocity() * maxSpeed;
             Pose pose = localizer.getPose();
 
             double currentX = pose.getX();
@@ -291,8 +293,8 @@ public class DriveControl extends Thread {
             double power = drivePID.runPIDF();
 
             double scale = 1;
-            if (power + Math.abs(turn) > MAX_SPEED)
-                scale = (power + Math.abs(turn)) / MAX_SPEED;
+            if (power + Math.abs(turn) > maxSpeed)
+                scale = (power + Math.abs(turn)) / maxSpeed;
 
             double leftFrontPower  = (power + turn) / scale;
             double rightFrontPower = (power - turn) / scale;
@@ -494,7 +496,7 @@ public class DriveControl extends Thread {
         return opMode.gamepad1.back;
     }
 
-    public void moveToCoordinate(double targetX, double targetY, double targetHeading, double timeout) {
+    public void moveToCoordinate(double targetX, double targetY, double targetHeading, double maxSpeed, double timeout) {
 
         synchronized (this) {
             interruptAction();
@@ -502,11 +504,15 @@ public class DriveControl extends Thread {
             this.targetX = targetX;
             this.targetY = targetY;
             this.targetHeading = targetHeading;
+            this.maxSpeed = maxSpeed;
             this.timeout = timeout;
             driveState = DRIVE_STATE.MOVING_TO_COORDINATE;
         }
     }
 
+    public void moveToCoordinate(double targetX, double targetY, double targetHeading, double timeout) {
+        moveToCoordinate(targetX, targetY, targetHeading, MIN_SPEED, timeout);
+    }
 
     public void turnBy(double degrees, double timeout) {
 
