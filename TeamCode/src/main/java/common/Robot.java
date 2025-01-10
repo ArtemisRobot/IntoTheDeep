@@ -43,7 +43,7 @@ public class Robot extends Thread {
     public final int    AMR_OUT_PART_WAY = 750;
     public final int    ARM_OUT_START = 190;
     public final int    ARM_EXCHANGE = 230;
-    public final int    ARM_AUTO_PICK = 617;
+    public final int    ARM_AUTO_PICK = 450;
     public final double ARM_SPEED = 0.5;
     public final double ARM_HIGH_SPEED = 0.75;
 
@@ -53,17 +53,17 @@ public class Robot extends Thread {
     private final double PICKER_DOWN_POSITION  = 0.259;
 
     private final double PICKER_FINGER_CLOSED  = 0.420;
-    private final double PICKER_FINGER_OPEN    = 0.600;
+    private final double PICKER_FINGER_OPEN    = 0.670;
 
     public  final double PICKER_YAW_0_DEGREES   = 0.167;
     public  final double PICKER_YAW_45_DEGREES  = 0.320;
     public  final double PICKER_YAW_90_DEGREES  = 0.494;
     public  final double PICKER_YAW_135_DEGREES = 0.657;
 
-
     private final double DROPPER_UP_POSITION   = 0.872;
-    private final double DROPPER_DROP_POSITION = 0.218;
-    private final double DROPPER_DOWN_POSITION = 0.495;
+    private final double DROPPER_DROP_POSITION = 0.550;
+    private final double DROPPER_DOWN_POSITION = 0.218;
+
     private final double DROPPER_SPECIMEN_UP   = 0.550;
     private final double DROPPER_SPECIMEN_DOWN = 0.550;
 
@@ -198,24 +198,27 @@ public class Robot extends Thread {
                         pickerRotateTo(PICKER_YAW_0_DEGREES);
                         pickerOpen();
                         pickerDown();
-                        armMoveTo(pickingPosition, ARM_HIGH_SPEED);
-                        waitUnitTime(time + 750);       // make sure the dropper is in the up position
+                        //armMoveTo(pickingPosition, ARM_HIGH_SPEED);
+                        waitUnitTime(time + 300);       // make sure the dropper is in the up position
                         robotState = ROBOT_STATE.IDLE;
                     }
-                    continue;
+                    Logger.message("\n** Set to start position ends");
+                    break;
 
                 case SET_TO_STOP_POSITION:
                     Logger.message("\n** Set to stop position");
                     synchronized (this) {
+                        pickerRotateTo(PICKER_YAW_90_DEGREES);
+                        pickerClose();
+                        pickerDown();
                         dropperOpen();
                         dropperDown();
-                        pickerDown();
-                        pickerRotateTo(PICKER_YAW_90_DEGREES);
-                        delay(500);
+                        delay(500);         // todo necessary?
                         armMoveTo(ARM_IN);
                         robotState = ROBOT_STATE.IDLE;
                     }
-                    continue;
+                    Logger.message("\n** Set to stop position ends");
+                    break;
 
                 case PICKUP_SAMPLE:
                     Logger.message("\n** Pickup sample");
@@ -224,27 +227,34 @@ public class Robot extends Thread {
                         dropperDown();
                         pickerClose();
                         opMode.sleep(400);
+                        pickerUp();
+                        pickerRotateTo(PICKER_YAW_0_DEGREES);
                         setOkToMove(true);
                         robotState = ROBOT_STATE.IDLE;
                     }
-                    continue;
+                    Logger.message("\n** Pickup sample ends");
+                    break;
 
                 case MOVE_SAMPLE_TO_DROPPER:
-                    pickerUp();
-                    opMode.sleep(850);
-                    while (lifterIsBusy() && opMode.opModeIsActive()) {
-                        delay(10);
+                    Logger.message("\n** move sample to dropper");
+                    synchronized (this) {
+                        pickerUp();
+                        opMode.sleep(850);
+                        while (lifterIsBusy() && opMode.opModeIsActive()) {
+                            delay(10);
+                        }
+                        dropperClose();
+                        delay(250);          // wait for the dropper to get to the closed position
+                        pickerOpen();
+                        delay(100);
+                        dropperUp();
+                        pickerDown();
+                        pickerOpen();
+                        delay(750);
+                        robotState = ROBOT_STATE.IDLE;
                     }
-                    dropperClose();
-                    delay(250);          // wait for the dropper to get to the closed position
-                    pickerOpen();
-                    delay(100);
-                    dropperUp();
-                    pickerDown();
-                    pickerOpen();
-                    delay(750);
-                    robotState = ROBOT_STATE.IDLE;
-                    continue;
+                    Logger.message("\n** move sample to dropper ends");
+                    break;
 
                 case DROP_SAMPLE_INTO_TOP_BUCKET:
                     Logger.message("\n**  Drop sample into top bucket");
@@ -254,7 +264,7 @@ public class Robot extends Thread {
                             delay(10);
                         }
                         dropperDropPosition();
-                        delay(300);
+                        delay(200);
                         dropperOpen();
                         delay(200);
                         dropperUp();
@@ -264,7 +274,7 @@ public class Robot extends Thread {
                         // todo lifterDown();
                         robotState = ROBOT_STATE.IDLE;
                     }
-                    continue;
+                    break;
 
                 case SCORE_SPECIMEN:
                     Logger.message("** Score specimen");
