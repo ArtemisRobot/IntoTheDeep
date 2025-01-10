@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Localizer;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.localizers.OTOSLocalizer;
+import org.firstinspires.ftc.teamcode.pedroPathing.localization.localizers.PinpointLocalizer;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.MathFunctions;
 import org.firstinspires.ftc.teamcode.pedroPathing.util.CustomPIDFCoefficients;
 import org.firstinspires.ftc.teamcode.pedroPathing.util.PIDFController;
@@ -19,7 +20,7 @@ import java.util.logging.LoggingPermission;
 
 public class DriveControl extends Thread {
 
-    public static double MAX_SPEED = 0.9;
+    public static double MAX_SPEED = 0.6;      // todo 0.9;
     public static double MIN_SPEED = 0.025;
 
     public static double DISTANCE_TOLERANCE_HIGH_SPEED = 10;
@@ -87,7 +88,8 @@ public class DriveControl extends Thread {
         timeoutTimer = new ElapsedTime();
 
         try {
-            localizer = new OTOSLocalizer(opMode.hardwareMap);
+            //localizer = new OTOSLocalizer(opMode.hardwareMap);
+            localizer = new PinpointLocalizer(opMode.hardwareMap);
         } catch (Exception e) {
             Logger.error(e, "Optical Tracking Odometry Sensor not found");
         }
@@ -172,8 +174,8 @@ public class DriveControl extends Thread {
         // Looping until we move the desired distance
         while (opMode.opModeIsActive() && !interruptAction) {
 
-            double maxVelocity = drive.getMaxVelocity() * MAX_SPEED;
-            Pose pose = localizer.getPose();
+            double maxVelocity = drive.getMaxVelocity();
+            Pose pose = getPose();
 
             double currentX = pose.getX();
             double currentY = pose.getY();
@@ -256,7 +258,7 @@ public class DriveControl extends Thread {
 
         drive.stopRobot();
 
-        Pose pose = localizer.getPose();
+        Pose pose = getPose();
         double x = pose.getX();
         double y =  pose.getY();
         double heading = Math.toDegrees(pose.getHeading());
@@ -278,7 +280,7 @@ public class DriveControl extends Thread {
         while (opMode.opModeIsActive() && !interruptAction) {
 
             double maxVelocity = drive.getMaxVelocity() * maxSpeed;
-            Pose pose = localizer.getPose();
+            Pose pose = getPose();
 
             double currentX = pose.getX();
             double currentY = pose.getY();
@@ -413,7 +415,7 @@ public class DriveControl extends Thread {
         while (opMode.opModeIsActive() && !interruptAction) {
 
             double maxVelocity = drive.getMaxVelocity() * MAX_SPEED;
-            Pose pose = localizer.getPose();
+            Pose pose = getPose();
             double currentHeading = pose.getHeading();
             double signedAngle = polarToSignedAngle(currentHeading);
             double headingError = angleWrap(currentHeading - Math.toRadians(targetHeading));
@@ -540,7 +542,7 @@ public class DriveControl extends Thread {
 
             this.stopDistance = stopDistance;
             this.timeout = timeout;
-            this.targetHeading = localizer.getPose().getHeading();
+            this.targetHeading = getPose().getHeading();
             driveState = DRIVE_STATE.MOVING_TO_OBJECT;
         }
     }
@@ -577,6 +579,7 @@ public class DriveControl extends Thread {
     }
 
     public Pose getPose() {
+        localizer.update();
         return localizer.getPose();
     }
     
