@@ -16,21 +16,21 @@ import common.Logger;
     public static double START_Y = 102.5;
     public static double START_HEADING = 90;
 
-    public static double BUCKET_X = 14;
-    public static double BUCKET_Y = 128;
-    public static double BUCKET_HEADING = 135;
+   public static double BUCKET_X = 15;
+   public static double BUCKET_Y = 127;
+   public static double BUCKET_HEADING = 135;
 
-    public static double YELLOW_RIGHT_X = 32;
-    public static double YELLOW_RIGHT_Y = 119.5;
-    public static double YELLOW_RIGHT_HEADING = 0;
+   public static double YELLOW_RIGHT_X = 34;
+   public static double YELLOW_RIGHT_Y = 120;
+   public static double YELLOW_RIGHT_HEADING = 0;
 
-    public static double YELLOW_MIDDLE_X = 32;
-    public static double YELLOW_MIDDLE_Y = 129.5;
-    public static double YELLOW_MIDDLE_HEADING = 0;
+   public static double YELLOW_MIDDLE_X = 34;
+   public static double YELLOW_MIDDLE_Y = 130;
+   public static double YELLOW_MIDDLE_HEADING = 0;
 
-    public static double YELLOW_LEFT_X = 43;
-    public static double YELLOW_LEFT_Y = 129.5;
-    public static double YELLOW_LEFT_HEADING = 90;
+   public static double YELLOW_LEFT_X = 47.5;
+   public static double YELLOW_LEFT_Y = 128.5;
+   public static double YELLOW_LEFT_HEADING = 90;
 
     public static double PARK_X = BUCKET_X;
     public static double PARK_Y = BUCKET_Y;
