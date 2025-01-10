@@ -11,8 +11,8 @@ import common.Robot;
 //@Disabled
  public class RobotTest extends LinearOpMode {
 
-    private enum GAMEPAD_MODE { ARM, LIFTER, COMPETITION, GRABBERS, SPECIMEN }
-    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.SPECIMEN;
+    private enum GAMEPAD_MODE { ARM, LIFTER, COMPETITION, GRABBERS, SPECIMEN, DROPPER }
+    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.DROPPER;
 
     Robot   robot;
 
@@ -26,17 +26,7 @@ import common.Robot;
 
         waitForStart();
 
-        telemetry.addData("\n Robot Controls", "\n" +
-                "  y - set robot to dropper position\n" +
-                "  a - set robot to picking position\n" +
-                "  x - dropper open / close\n" +
-                "  b - picker open / close\n" +
-                "  dpad up - lifter up\n" +
-                "  dpad down - lifer down\n" +
-                "  left stick - lifter manual control\n" +
-                "  right stick - arm manual control\n" +
-                "\n");
-
+        telemetry.addData("Mode:", gamepadMode);
         telemetry.update();
 
         while (opModeIsActive()) {
@@ -53,9 +43,29 @@ import common.Robot;
                     break;
                 case SPECIMEN:
                     specimenHandleGamepad();
+                    break;
+                case DROPPER:
+                    droppderHandleGamepad();
             }
         }
     }
+
+    private void displayControls() {
+        telemetry.addData("\n Robot Controls", "\n" +
+                "  y - set robot to dropper position\n" +
+                "  a - set robot to picking position\n" +
+                "  x - dropper open / close\n" +
+                "  b - picker open / close\n" +
+                "  dpad up - lifter up\n" +
+                "  dpad down - lifer down\n" +
+                "  left stick - lifter manual control\n" +
+                "  right stick - arm manual control\n" +
+                "\n");
+
+        telemetry.update();
+
+    }
+
 
     private  void specimenHandleGamepad () {
         if (gamepad2.a) {
@@ -240,6 +250,18 @@ import common.Robot;
             while (gamepad2.left_stick_y > 0)
                 sleep(10);
             robot.lifterStop();
+        }
+    }
+
+    private void droppderHandleGamepad() {
+        Gamepad gamepad = gamepad1;
+
+        if (gamepad.a) {
+            robot.dropperClose();
+            sleep(100);
+            robot.dropSampleInTopBucket();
+            while (gamepad.a) sleep(10);
+
         }
     }
 
