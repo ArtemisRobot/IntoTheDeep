@@ -6,6 +6,7 @@ import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstan
 import static org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants.rightRearMotorName;
 
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -28,7 +29,7 @@ import common.Drive;
 import common.Logger;
 
 @com.acmerobotics.dashboard.config.Config
-
+@Disabled
 @TeleOp(name = "Route Builder", group = "Test")
 public class RouteBuilder extends LinearOpMode {
 
