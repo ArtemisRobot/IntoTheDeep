@@ -38,6 +38,10 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.pedroPathing.localization.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Localizer;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.localizers.OTOSLocalizer;
@@ -90,6 +94,7 @@ public class PathTest extends LinearOpMode {
     Gyro gyro;
     Localizer localizer;
     private SparkFunOTOS otos;
+    GoBildaPinpointDriver pinpoint;
 
     public static CustomPIDFCoefficients driveHighSpeedPIDFCoefficients = new CustomPIDFCoefficients(
             0.3, 0, 0, 0);
@@ -124,9 +129,10 @@ public class PathTest extends LinearOpMode {
             telemetry.update();
             waitForStart();
 
-            competitionTest();
-            //competitionTest2();
-            //competitionTest3 (BUCKET_X, BUCKET_Y, BUCKET_HEADING);
+            //runDriveToCoordinateTest();
+            //competitionTest();
+            competitionTest2();
+            //competitionTest3();
 
         } catch (Exception e) {
             Logger.error(e, "Exception");
@@ -145,62 +151,63 @@ public class PathTest extends LinearOpMode {
         //driveGamepad.start();
 
         localizer = new OTOSLocalizer(hardwareMap);
+
         otos = hardwareMap.get(SparkFunOTOS.class, "sensor_otos");
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
         heading = 0;
     }
 
     private void runDriveToCoordinateTest() {
 
-        /*
-        double x= 10;
-        double y = 0;
+        double x = 10;
+        double y = 10;
+        double startHeading = 90;
         double targetHeading = 90;
-        double currentHeading = 90;
 
-        printAngle(x, y, targetHeading, currentHeading);
-        localizer.setPose(new Pose(0, 0, Math.toRadians(currentHeading)));
-        moveToCoordinate(x, y, targetHeading, 2000);
-         */
-        localizer.setPose(new Pose(0, 0, Math.toRadians(90)));
+        //printAngle(x, y, targetHeading, currentHeading);
+
+        driveControl.setPose(new Pose(0, 0, Math.toRadians(startHeading)));
+        localizer.setPose(new Pose(0, 0, Math.toRadians(startHeading)));
 
         while (opModeIsActive()) {
 
+            if (gamepad1.y) {
+                driveControl.moveToCoordinate(0, y, targetHeading,2000);
+                while (gamepad1.y) sleep(10);
+                sleep(1000);
+                displayPose();
+            }
+
             if (gamepad1.a) {
-                moveToCoordinate(0, -20, 0,2000);
+                driveControl.moveToCoordinate(0, -y, targetHeading,2000);
                 while (gamepad1.a) sleep(10);
                 sleep(1000);
                 displayPose();
             }
 
             if (gamepad1.b) {
-                moveToCoordinate(20, 0, 0,2000);
+                driveControl.moveToCoordinate(x, 0, targetHeading,2000);
                 while (gamepad1.b) sleep(10);
                 sleep(1000);
                 displayPose();
             }
 
-            if (gamepad1.y) {
-                moveToCoordinate(0, 20, 0,2000);
-                while (gamepad1.y) sleep(10);
-                sleep(1000);
-                displayPose();
-            }
-
             if (gamepad1.x) {
-                moveToCoordinate(-20, 0,     0,2000);
+                driveControl.moveToCoordinate(-x, 0,targetHeading,2000);
                 sleep(1000);
                 displayPose();
                 while (gamepad1.x) sleep(10);
             }
 
             if (gamepad1.right_bumper) {
-                moveToCoordinate(0, 0, 0,2000);
+                driveControl.moveToCoordinate(0, 0, startHeading,2000);
                 sleep(1000);
                 displayPose();
                 while (gamepad1.right_bumper) sleep(10);
 
             }
+            displayPose(true);
         }
     }
 
@@ -208,27 +215,27 @@ public class PathTest extends LinearOpMode {
     public static double START_Y = 102.5;
     public static double START_HEADING = 90;
 
-    public static double BUCKET_X = 14;
-    public static double BUCKET_Y = 128;
+    public static double BUCKET_X = 15;
+    public static double BUCKET_Y = 127;
     public static double BUCKET_HEADING = 135;
 
-    public static double YELLOW_RIGHT_X = 32;
-    public static double YELLOW_RIGHT_Y = 118;
+    public static double YELLOW_RIGHT_X = 34;
+    public static double YELLOW_RIGHT_Y = 120;
     public static double YELLOW_RIGHT_HEADING = 0;
 
-    public static double YELLOW_MIDDLE_X = 32;
-    public static double YELLOW_MIDDLE_Y = 128;
+    public static double YELLOW_MIDDLE_X = 34;
+    public static double YELLOW_MIDDLE_Y = 130;
     public static double YELLOW_MIDDLE_HEADING = 0;
 
-    public static double YELLOW_LEFT_X = 43;
-    public static double YELLOW_LEFT_Y = 129.5;
+    public static double YELLOW_LEFT_X = 47.5;
+    public static double YELLOW_LEFT_Y = 128.5;
     public static double YELLOW_LEFT_HEADING = 90;
 
     private void competitionTest() {
 
         double timeout = 5000;
 
-        localizer.setPose(new Pose(START_X, START_Y, Math.toRadians(START_HEADING)));
+        driveControl.setPose(new Pose(START_X, START_Y, Math.toRadians(START_HEADING)));
 
         while (opModeIsActive()) {
 
@@ -266,7 +273,7 @@ public class PathTest extends LinearOpMode {
         double timeout = 5000;
         long start = System.currentTimeMillis();
 
-        localizer.setPose(new Pose(START_X, START_Y, Math.toRadians(START_HEADING)));
+        driveControl.setPose(new Pose(START_X, START_Y, Math.toRadians(START_HEADING)));
 
         driveControl.moveToCoordinate(BUCKET_X, BUCKET_Y, BUCKET_HEADING, timeout);
         waitUntilNotMoving();
@@ -292,13 +299,17 @@ public class PathTest extends LinearOpMode {
         Logger.message(String.format("time: %,d milliseconds", System.currentTimeMillis() - start));
     }
 
-    private void competitionTest3(double targetX, double targetY, double targetHeading) {
+    private void competitionTest3() {
+
+        moveFromTo (START_X, START_Y, START_HEADING, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
+        waitUntilNotMoving();
+        moveFromTo (BUCKET_X, BUCKET_Y, BUCKET_HEADING, YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING);
+    }
+
+    private void moveFromTo(double startX, double startY, double startHeading, double targetX, double targetY, double targetHeading) {
         double timeout = 5000;
 
-        localizer.setPose(new Pose(START_X, START_Y, Math.toRadians(START_HEADING)));
-
-        long start = System.currentTimeMillis();
-
+        driveControl.setPose(new Pose(startX, startY, Math.toRadians(startHeading)));
         driveControl.moveToCoordinate(targetX, targetY, targetHeading, timeout);
         waitUntilNotMoving();
 
@@ -816,13 +827,20 @@ public class PathTest extends LinearOpMode {
         private void displayPose(boolean telemetryOnly) {
 
         Pose pose = localizer.getPose();
-        SparkFunOTOS.Pose2D rawPose = otos.getPosition();
+        Pose pose2 = driveControl.getPose();
+        SparkFunOTOS.Pose2D otosPose = otos.getPosition();
+        pinpoint.update();
+        Pose2D pinpointPose = pinpoint.getPosition();
 
         String str1 = String.format("x %5.1f  y %5.1f  heading %5.1f", pose.getX(), pose.getY(), Math.toDegrees(pose.getHeading()));
-        String str2 = String.format("x %5.1f  y %5.1f  heading %5.1f", rawPose.x, rawPose.y, Math.toDegrees(rawPose.h));
+        String str2 = String.format("x %5.1f  y %5.1f  heading %5.1f", pose2.getX(), pose2.getY(), Math.toDegrees(pose2.getHeading()));
+        String str3 = String.format("x %5.1f  y %5.1f  heading %5.1f", otosPose.x, otosPose.y, Math.toDegrees(otosPose.h));
+        String str4 = String.format("x %5.1f  y %5.1f  heading %5.1f", pinpointPose.getX(DistanceUnit.INCH), pinpointPose.getY(DistanceUnit.INCH), pinpointPose.getHeading(AngleUnit.DEGREES));
 
-        telemetry.addData("pose", str1);
-        telemetry.addData("rawPose", str2);
+        telemetry.addData("localizer otos", str1);
+        telemetry.addData("localizer pinpoint", str2);
+        telemetry.addData("otos pose", str3);
+        telemetry.addData("pinpoint pose", str4);
         telemetry.update();
 
         if (! telemetryOnly) {
