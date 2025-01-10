@@ -9,7 +9,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 public class Auto {
 
     private enum PathState {
-        START_YELLOW, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, YELLOW_LEFT, PARK,
+        START_YELLOW, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, YELLOW_LEFT, BUCKET4, PARK,
         START_BLUE_RED, BAR1, SPECIMEN_RIGHT, OBSERVE_ZONE1, SPECIMEN_MIDDLE, OBSERVE_ZONE2, SPECIMEN_LEFT, OBSERVE_ZONE3, PICKUP_ZONE1, BAR2, PICKUP_ZONE2, BAR3, PICKUP_ZONE3, BAR4;
 
         public static PathState next(int id) {
@@ -48,7 +48,10 @@ public class Auto {
         elapsedTime.reset();
         while (running && opMode.opModeIsActive()) {
 
-            displayPose();
+            //displayPose();
+            PathState currentState = pathState;
+            Logger.message("\n**\n** %s starts,  time: %6.2f", currentState, elapsedTime.seconds());
+
             switch (pathState) {
                 case START_YELLOW:
                     setStartingPose();
@@ -57,8 +60,9 @@ public class Auto {
                     break;
 
                 case BUCKET1:
-                case BUCKET3:
                 case BUCKET2:
+                case BUCKET3:
+                case BUCKET4:
                     waitUntilNotMoving();
                     waitUntilRobotIdIdle();
                     // todo robot.lifterUp();
@@ -76,7 +80,8 @@ public class Auto {
                     waitUntilRobotIdIdle();
                     waitUntilNotMoving();
                     robot.pickUpSample();
-                    robot.armMoveTo(robot.ARM_EXCHANGE);    // todo delay here?
+                    waitUntilRobotIdIdle();
+                    robot.armMoveTo(robot.ARM_EXCHANGE);
                     followPath();
                     waitUntilRobotIdIdle();
                     robot.moveSampleToDropper();
@@ -85,8 +90,13 @@ public class Auto {
                 case YELLOW_LEFT:
                     waitUntilNotMoving();
                     robot.pickerRotateTo(robot.PICKER_YAW_90_DEGREES);
+                    robot.armMoveTo(robot.ARM_AUTO_PICK);
+                    opMode.sleep(200);
                     robot.pickUpSample();
                     followPath();
+                    waitUntilRobotIdIdle();
+                    robot.pickerRotateTo(robot.PICKER_YAW_0_DEGREES);
+                    robot.armMoveTo(robot.ARM_EXCHANGE);
                     waitUntilRobotIdIdle();
                     robot.moveSampleToDropper();
                     break;
@@ -98,6 +108,7 @@ public class Auto {
                     running = false;
                     break;
             }
+            Logger.message("\n** %s ends,  time: %6.2f\n**", currentState, elapsedTime.seconds());
         }
         Logger.message("elapsed time %4.1f", elapsedTime.seconds());
     }
@@ -170,6 +181,7 @@ public class Auto {
         paths[PathState.index(PathState.YELLOW_MIDDLE)] = createPose(yellowMiddleX, yellowMiddleY, yellowMiddleHeading);
         paths[PathState.index(PathState.BUCKET3)]       = createPose(bucketX, bucketY, bucketHeading);
         paths[PathState.index(PathState.YELLOW_LEFT)]   = createPose(yellowLeftX, yellowLeftY, yellowLeftHeading);
+        paths[PathState.index(PathState.BUCKET4)]       = createPose(bucketX, bucketY, bucketHeading);
         paths[PathState.index(PathState.PARK)]          = createPose(parkX, parkY, parkHeading);
         
         pathState = PathState.START_YELLOW;
@@ -227,14 +239,14 @@ public class Auto {
         Logger.message("path %s index %d  (%.0f, %.0f) heading: %.0f",
                 pathState, index, pose.getX(), pose.getY(), Math.toDegrees(pose.getHeading()));
         navigator.setPose(new Pose(pose.getX(), pose.getY(), pose.getHeading()));
-        pathState  = PathState.next(index+1);
     }
 
     private void followPath() {
 
         waitUntilOkToMove();
 
-        int index = pathState.ordinal();
+        int index = pathState.ordinal() + 1;
+        pathState  = PathState.next(index);
         Pose currentPath = paths[index];
         if (currentPath == null) {
             Logger.warning("path for %s missing", pathState);
@@ -247,7 +259,6 @@ public class Auto {
         Logger.message("path %s index %d  (%.1f, %.1f) heading: %.0f", pathState, index, targetX, targetY, heading);
         
         robot.moveToCoordinate(targetX, targetY, heading, 4000);
-        pathState  = PathState.next(index+1);
     }
 
     private void waitUntilNotMoving () {
