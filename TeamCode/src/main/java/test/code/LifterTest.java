@@ -1,5 +1,6 @@
 package test.code;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -7,6 +8,7 @@ import common.Lifter;
 import common.Logger;
 
 @com.acmerobotics.dashboard.config.Config
+@Disabled
 @TeleOp(name="Lifter Test", group="Test")
 
  public class LifterTest extends LinearOpMode {
