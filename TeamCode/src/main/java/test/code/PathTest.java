@@ -96,19 +96,19 @@ public class PathTest extends LinearOpMode {
     private SparkFunOTOS otos;
     GoBildaPinpointDriver pinpoint;
 
-    public static CustomPIDFCoefficients driveHighSpeedPIDFCoefficients = new CustomPIDFCoefficients(
+    private CustomPIDFCoefficients driveHighSpeedPIDFCoefficients = new CustomPIDFCoefficients(
             0.3, 0, 0, 0);
 
-    public static CustomPIDFCoefficients driveLowSpeedPIDFCoefficients = new CustomPIDFCoefficients(
+    private CustomPIDFCoefficients driveLowSpeedPIDFCoefficients = new CustomPIDFCoefficients(
             0.12, 0, 0, 0);
 
-    public static CustomPIDFCoefficients headingHighSpeedPIDFCoefficients = new CustomPIDFCoefficients(
+    private CustomPIDFCoefficients headingHighSpeedPIDFCoefficients = new CustomPIDFCoefficients(
             2.5, 0, 0, 0);
 
-    public static CustomPIDFCoefficients headingLowSpeedPIDFCoefficients = new CustomPIDFCoefficients(
+    private CustomPIDFCoefficients headingLowSpeedPIDFCoefficients = new CustomPIDFCoefficients(
             1, 0, 0, 0);
 
-    public static CustomPIDFCoefficients turnPIDFCoefficients = new CustomPIDFCoefficients(
+    private CustomPIDFCoefficients turnPIDFCoefficients = new CustomPIDFCoefficients(
             0.55, 0, 0, 0);
 
     PIDFController drivePID  = new PIDFController(driveHighSpeedPIDFCoefficients);
