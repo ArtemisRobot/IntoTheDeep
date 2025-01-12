@@ -6,6 +6,8 @@ package common;
 
 import android.util.Log;
 
+import java.util.Objects;
+
 public final class Logger {
     public static final boolean VERBOSE = true;
     private static final String TAG = "DELMAR";
@@ -15,32 +17,27 @@ public final class Logger {
         return String.format("%-16s", caller);
     }
 
-    private static void logString (String str) {
-        String caller = Thread.currentThread().getStackTrace()[4].getMethodName();
-        Log.d(TAG, String.format("%-24s %-24s %s", Thread.currentThread().getName(), caller, str));
+    private static String format(String str) {
+        String caller = Thread.currentThread().getStackTrace()[5].getMethodName();
+        return String.format("%-20s %-24s %s", Thread.currentThread().getName(), caller, str);
     }
 
-    public static void error (Exception e, String msg) {
-        Log.e(TAG, "\n");
-        Log.println(Log.ERROR, TAG, msg);
-        Log.e(TAG, e.getMessage());
-
-        StackTraceElement[] stackTraceElements = e.getStackTrace();
-        for (int i=0; i<Math.min(stackTraceElements.length, 10); i++)
-            Log.e(TAG, stackTraceElements[i].toString());
+    private static void logString (String message) {
+        String str = format(message);
+        Log.d(TAG, str);
     }
 
     public static void warning(String warning) {
-        String caller = Thread.currentThread().getStackTrace()[4].getMethodName();
-        Log.w(TAG, String.format("%-24s %s", caller, warning));
+        String str = format(warning);
+        Log.w(TAG, str);
     }
 
     public static void warning(String format, Object... args) {
-        String caller = Thread.currentThread().getStackTrace()[4].getMethodName();
-        Log.w(TAG, String.format("%-24s %s", caller, String.format(format, args)));
+        String str = format(String.format(format, args));
+        Log.w(TAG, str);
     }
 
-    public static void message(String msg){
+    public static void message(String msg) {
         logString(msg);
     }
 
@@ -54,7 +51,18 @@ public final class Logger {
         }
     }
 
+    public static void error (Exception e, String msg) {
+        Log.e(TAG, "\n");
+        Log.println(Log.ERROR, TAG, msg);
+        Log.e(TAG, Objects.requireNonNull(e.getMessage()));
+
+        StackTraceElement[] stackTraceElements = e.getStackTrace();
+        for (int i=0; i<Math.min(stackTraceElements.length, 10); i++)
+            Log.e(TAG, stackTraceElements[i].toString());
+    }
+
     public static void addLine(String msg) {
         Log.d(TAG, msg);
     }
+
 }
