@@ -130,9 +130,7 @@ public class PathTest extends LinearOpMode {
             waitForStart();
 
             //runDriveToCoordinateTest();
-            //competitionTest();
             competitionTest2();
-            //competitionTest3();
 
         } catch (Exception e) {
             Logger.error(e, "Exception");
@@ -160,8 +158,8 @@ public class PathTest extends LinearOpMode {
 
     private void runDriveToCoordinateTest() {
 
-        double x = 10;
-        double y = 10;
+        double x = 20;
+        double y = 20;
         double startHeading = 90;
         double targetHeading = 90;
 
@@ -231,7 +229,7 @@ public class PathTest extends LinearOpMode {
     public static double YELLOW_LEFT_Y = 128.5;
     public static double YELLOW_LEFT_HEADING = 90;
 
-    private void competitionTest() {
+    private void competitionTest1() {
 
         double timeout = 5000;
 
@@ -836,11 +834,13 @@ public class PathTest extends LinearOpMode {
         String str2 = String.format("x %5.1f  y %5.1f  heading %5.1f", pose2.getX(), pose2.getY(), Math.toDegrees(pose2.getHeading()));
         String str3 = String.format("x %5.1f  y %5.1f  heading %5.1f", otosPose.x, otosPose.y, Math.toDegrees(otosPose.h));
         String str4 = String.format("x %5.1f  y %5.1f  heading %5.1f", pinpointPose.getX(DistanceUnit.INCH), pinpointPose.getY(DistanceUnit.INCH), pinpointPose.getHeading(AngleUnit.DEGREES));
+        String str5 = String.format("x %5.1f  y %5.1f  heading %5.1f", pose.getX() - pose2.getX(), pose.getY() - pose2.getY(), Math.toDegrees(pose.getHeading()-pose2.getHeading()));
 
         telemetry.addData("localizer otos", str1);
         telemetry.addData("localizer pinpoint", str2);
         telemetry.addData("otos pose", str3);
         telemetry.addData("pinpoint pose", str4);
+        telemetry.addData("delta", str5);
         telemetry.update();
 
         if (! telemetryOnly) {
