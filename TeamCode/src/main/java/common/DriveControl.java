@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Localizer;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
+import org.firstinspires.ftc.teamcode.pedroPathing.localization.localizers.OTOSLocalizer;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.localizers.PinpointLocalizer;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.MathFunctions;
 import org.firstinspires.ftc.teamcode.pedroPathing.util.CustomPIDFCoefficients;
@@ -71,6 +72,7 @@ public class DriveControl extends Thread {
 
     private final Drive drive;
     Localizer localizer;
+    Localizer localizerOTOS;
     LinearOpMode opMode;
 
     public DriveControl(LinearOpMode opMode, Drive drive) {
@@ -82,7 +84,7 @@ public class DriveControl extends Thread {
         timeoutTimer = new ElapsedTime();
 
         try {
-            //localizer = new OTOSLocalizer(opMode.hardwareMap);
+            localizerOTOS = new OTOSLocalizer(opMode.hardwareMap);
             localizer = new PinpointLocalizer(opMode.hardwareMap);
         } catch (Exception e) {
             Logger.error(e, "Optical Tracking Odometry Sensor not found");
@@ -214,16 +216,18 @@ public class DriveControl extends Thread {
 
             double currentVelocity = drive.getCurrentVelocity();
 
+            Pose otosPose = localizerOTOS.getPose();
             Logger.verbose("%s",
                     String.format("x: %-5.1f  y: %-5.1f  h: %-5.1f  ", currentX, currentY, Math.toDegrees(currentHeading)) +
-                            String.format("a: %5.1f  b: %5.1f  distance: %5.2f  ", a, b, distance) +
-                            String.format("heading error: %6.1f  ", Math.toDegrees(headingError)) +
-                            String.format("angle: %4.0f  ", Math.toDegrees(angle)) +
-                            //String.format("signed angle: %4.0f  ", Math.toDegrees(signedAngle)) +
-                            String.format("turn: %5.2f  power: %4.2f  sin: %5.2f  cos: %5.2f  ", turn, power, sin, cos) +
-                            String.format("wheels: %5.2f  %5.2f  %5.2f  %5.2f   ", leftFrontPower, rightFrontPower, leftRearPower, rightRearPower) +
-                            String.format("velocity: %6.1f   ", currentVelocity) +
-                            String.format("time: %4.0f   ", timeoutTimer.milliseconds())
+                    String.format("x: %-5.1f  y: %-5.1f  h: %-5.1f  ", currentX-otosPose.getX(), currentY-otosPose.getY(), Math.toDegrees(currentHeading-otosPose.getHeading())) +
+                    String.format("a: %5.1f  b: %5.1f  distance: %5.2f  ", a, b, distance) +
+                    String.format("heading error: %6.1f  ", Math.toDegrees(headingError)) +
+                    String.format("angle: %4.0f  ", Math.toDegrees(angle)) +
+                    //String.format("signed angle: %4.0f  ", Math.toDegrees(signedAngle)) +
+                    String.format("turn: %5.2f  power: %4.2f  sin: %5.2f  cos: %5.2f  ", turn, power, sin, cos) +
+                    String.format("wheels: %5.2f  %5.2f  %5.2f  %5.2f   ", leftFrontPower, rightFrontPower, leftRearPower, rightRearPower) +
+                    String.format("velocity: %6.1f   ", currentVelocity) +
+                    String.format("time: %4.0f   ", timeoutTimer.milliseconds())
             );
 
             if (Math.abs(a) < distanceTolerance && Math.abs(b) < distanceTolerance &&
@@ -577,6 +581,7 @@ public class DriveControl extends Thread {
     
     public void setPose(Pose pose) {
         localizer.setPose(pose);
+        localizerOTOS.setPose(pose);            // todo for testing
     }
 }
 
