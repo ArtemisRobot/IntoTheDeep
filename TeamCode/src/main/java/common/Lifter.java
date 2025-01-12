@@ -225,7 +225,7 @@ public class Lifter extends Thread {
             if (emergencyStop())
                 break;
 
-
+            /*
             Logger.verbose("%s position left: %5d   position right: %5d   remaining left: %5d  remaining right: %5d  delta: %5d  elapsed %6.2f ",
                     state,
                     currentLeft,
@@ -234,6 +234,7 @@ public class Lifter extends Thread {
                     Math.abs(targetPosition - currentRight),
                     Math.abs(Math.abs(targetPosition - currentLeft) - Math.abs(targetPosition - currentRight)),
                     elapsedTime.milliseconds()/1000);
+             */
         }
 
         leftMotor.setVelocity(0);
