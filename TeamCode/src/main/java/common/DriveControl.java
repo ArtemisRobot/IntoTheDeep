@@ -7,20 +7,17 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Localizer;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
-import org.firstinspires.ftc.teamcode.pedroPathing.localization.localizers.OTOSLocalizer;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.localizers.PinpointLocalizer;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.MathFunctions;
 import org.firstinspires.ftc.teamcode.pedroPathing.util.CustomPIDFCoefficients;
 import org.firstinspires.ftc.teamcode.pedroPathing.util.PIDFController;
-
-import java.util.logging.LoggingPermission;
 
 @SuppressLint("DefaultLocale")
 @com.acmerobotics.dashboard.config.Config
 
 public class DriveControl extends Thread {
 
-    public static double MAX_SPEED = 0.6;      // todo 0.9;
+    public static double MAX_SPEED = 0.6;
     public static double MIN_SPEED = 0.025;
 
     public static double DISTANCE_TOLERANCE_HIGH_SPEED = 10;
@@ -42,9 +39,6 @@ public class DriveControl extends Thread {
             2.5, 0, 0, 0);
 
     public static CustomPIDFCoefficients headingLowSpeedPIDFCoefficients = new CustomPIDFCoefficients(
-            1, 0, 0, 0);
-
-    public static CustomPIDFCoefficients turnPIDFCoefficients = new CustomPIDFCoefficients(
             1, 0, 0, 0);
 
     PIDFController drivePID  = new PIDFController(driveHighSpeedPIDFCoefficients);
@@ -199,7 +193,6 @@ public class DriveControl extends Thread {
             // If the heading error is greater than 45 degrees then give the heading error greater weight
             if (Math.abs(headingError) < Math.toRadians(45))  {
                 turn *= 2;
-                //power /= 2;
             }
 
             double scale = 1;
@@ -226,12 +219,11 @@ public class DriveControl extends Thread {
                             String.format("a: %5.1f  b: %5.1f  distance: %5.2f  ", a, b, distance) +
                             String.format("heading error: %6.1f  ", Math.toDegrees(headingError)) +
                             String.format("angle: %4.0f  ", Math.toDegrees(angle)) +
-                            String.format("signed angle: %4.0f  ", Math.toDegrees(signedAngle)) +
+                            //String.format("signed angle: %4.0f  ", Math.toDegrees(signedAngle)) +
                             String.format("turn: %5.2f  power: %4.2f  sin: %5.2f  cos: %5.2f  ", turn, power, sin, cos) +
-                            String.format("power: %5.2f  %5.2f  %5.2f  %5.2f   ", leftFrontPower, rightFrontPower, leftRearPower, rightRearPower) +
+                            String.format("wheels: %5.2f  %5.2f  %5.2f  %5.2f   ", leftFrontPower, rightFrontPower, leftRearPower, rightRearPower) +
                             String.format("velocity: %6.1f   ", currentVelocity) +
-                            String.format("time: %4.0f   ", timeoutTimer.milliseconds()) +
-                            String.format("integral %5.2f", drivePID.errorIntegral * 0.01)
+                            String.format("time: %4.0f   ", timeoutTimer.milliseconds())
             );
 
             if (Math.abs(a) < distanceTolerance && Math.abs(b) < distanceTolerance &&
