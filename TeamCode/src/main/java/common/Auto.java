@@ -92,6 +92,7 @@ public class Auto {
                     robot.pickerRotateTo(robot.PICKER_YAW_90_DEGREES);
                     robot.armMoveTo(robot.ARM_AUTO_PICK);
                     opMode.sleep(200);
+                    waitUntilRobotIdIdle();
                     robot.pickUpSample();
                     followPath();
                     waitUntilRobotIdIdle();
@@ -102,7 +103,6 @@ public class Auto {
                     break;
 
                 case PARK:
-                    waitUntilRobotIdIdle();
                     robot.setToStopPosition();
                     waitUntilRobotIdIdle();
                     running = false;
