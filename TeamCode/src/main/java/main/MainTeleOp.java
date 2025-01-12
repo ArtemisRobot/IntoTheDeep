@@ -30,13 +30,14 @@ import common.Robot;
                 "  a - set robot to picking position\n" +
                 "  x - dropper open / close\n" +
                 "  b - picker open / close\n" +
+                "  right bumper - picker up / down\n" +
+                "  left bumper - picker rotate\n" +
                 "  dpad up - lifter up\n" +
                 "  dpad down - lifer down\n" +
-                "  dpad left or right - drop in bucket\n" +
+                "  dpad left - dropper to dropping position\n" +
+                "  dpad right - drop in bucket\n" +
                 "  left stick - arm manual control\n" +
                 "  right stick - lifter manual control\n" +
-                "  left bumper - picker up / down" +
-                "  right bumper - picker rotate" +
                 "\n");
 
         telemetry.update();
@@ -73,6 +74,7 @@ import common.Robot;
             while (gamepad.b) sleep(10);
 
         } else if (gamepad.y) {
+            // move the sample from the picker to the dropper
             robot.pickUpSample();
             while (robot.isBusy() && opModeIsActive()) sleep(10);
             robot.armMoveTo(robot.ARM_EXCHANGE);
@@ -81,7 +83,8 @@ import common.Robot;
             while (gamepad.y) sleep(10);
 
         } else if (gamepad.a) {
-            robot.setToPickingPosition(robot.AMR_OUT_PART_WAY);
+            // move the arm to picking position
+            robot.armMoveTo(robot.AMR_OUT_PART_WAY);
             robot.lifterDown();
             while (gamepad.a) sleep(10);
 
@@ -95,9 +98,15 @@ import common.Robot;
             robot.lifterDown();
             while (gamepad.dpad_down) sleep(10);
 
-        } else if (gamepad.dpad_left || gamepad.dpad_right) {
+        } else if (gamepad.dpad_left) {
+            // move the dropper wrist to dropping position
+            robot.dropperDropPosition();
+            while (gamepad.dpad_left ) sleep(10);
+
+        } else if (gamepad.dpad_right) {
+            // drop the sample in the bucket
             robot.dropSampleInTopBucket();
-            while (gamepad.dpad_left || gamepad.dpad_right) sleep(10);
+            while (gamepad.dpad_right) sleep(10);
 
         } else if (gamepad.left_stick_y < 0) {
             // retract the arm
@@ -115,18 +124,21 @@ import common.Robot;
             robot.armStop();
 
         } else if (gamepad.right_stick_y < 0) {
+            // manually control the lifter
             robot.LifterExtend();
             while (gamepad.right_stick_y < 0)
                 sleep(10);
             robot.lifterStop();
 
         } else if (gamepad.right_stick_y > 0) {
+            // manually control the arm
             robot.lifterRetract();
             while (gamepad.right_stick_y > 0)
                 sleep(10);
             robot.lifterStop();
 
         } else if (gamepad.right_bumper) {
+            // toggle picker up / down
             if (robot.pickerIsUp()) {
                 robot.pickerDown();
             } else {
@@ -135,6 +147,7 @@ import common.Robot;
             while (gamepad.right_bumper) sleep(10);
 
         } else if (gamepad.left_bumper) {
+            // rotate the picker
             robot.pickerRotate();
             while (gamepad.left_bumper) sleep(10);
         }
