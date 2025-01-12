@@ -32,8 +32,8 @@ import common.Logger;
    public static double YELLOW_LEFT_Y = 128.5;
    public static double YELLOW_LEFT_HEADING = 90;
 
-    public static double PARK_X = BUCKET_X;
-    public static double PARK_Y = BUCKET_Y;
+    public static double PARK_X = START_X+10;
+    public static double PARK_Y = START_Y;
     public static double PARK_HEADING = START_HEADING;
 
     Auto auto;
@@ -41,10 +41,10 @@ import common.Logger;
     @Override
     public void runOpMode() {
 
-       try {
-          auto = new Auto(this);
+        try {
+            auto = new Auto(this);
 
-          auto.buildSamplePaths(
+            auto.buildSamplePaths(
                START_X,
                START_Y,
                START_HEADING,
@@ -64,14 +64,16 @@ import common.Logger;
                PARK_Y,
                PARK_HEADING);
 
-         waitForStart();
+            sleep(1000); // wait for pinpoint hardware to reset
 
-         auto.runSamplesAuto();
+            waitForStart();
 
-       } catch (Exception e) {
-          Logger.error(e, "Exception");
-          throw e;
-       }
+            auto.runSamplesAuto();
+
+        } catch (Exception e) {
+            Logger.error(e, "Exception");
+            throw e;
+        }
     }
 }
 
