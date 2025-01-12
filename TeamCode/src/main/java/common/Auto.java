@@ -48,7 +48,6 @@ public class Auto {
         elapsedTime.reset();
         while (running && opMode.opModeIsActive()) {
 
-            //displayPose();
             PathState currentState = pathState;
             Logger.message("\n**\n** %s starts,  time: %6.2f", currentState, elapsedTime.seconds());
 
