@@ -1,6 +1,5 @@
 package test.code;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -11,7 +10,7 @@ import common.Robot;
 //@Disabled
  public class RobotTest extends LinearOpMode {
 
-    private enum GAMEPAD_MODE { ARM, LIFTER, COMPETITION, GRABBERS, SPECIMEN, DROPPER }
+    private enum GAMEPAD_MODE { PICKER, DROPPER, ARM, LIFTER, ROBOT, SPECIMEN }
     GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.DROPPER;
 
     Robot   robot;
@@ -26,143 +25,260 @@ import common.Robot;
 
         waitForStart();
 
-        telemetry.addData("Mode:", gamepadMode);
-        telemetry.update();
+        displayControls();
 
         while (opModeIsActive()) {
 
+            handleModeChange();
+
             switch (gamepadMode) {
-                case GRABBERS:
-                    grabbersHandleGamepad();
+                case PICKER:
+                    pickersHandleGamepad();
+                    break;
+                case DROPPER:
+                    dropperHandleGamepad();
+                    break;
+                case ARM:
+                    armHandleGamepad();
                     break;
                 case LIFTER:
                     lifterHandleGamepad();
                     break;
-                case COMPETITION:
+                case ROBOT:
                     robotHandleGamepad();
                     break;
                 case SPECIMEN:
                     specimenHandleGamepad();
                     break;
-                case DROPPER:
-                    droppderHandleGamepad();
             }
         }
     }
 
+    private void handleModeChange() {
+
+        if (gamepad1.dpad_left) {
+            int index = (gamepadMode.ordinal() - 1);
+            if (index < 0)
+                index = GAMEPAD_MODE.values().length - 1;
+            gamepadMode = GAMEPAD_MODE.values()[index];
+            displayControls();
+            while (gamepad1.dpad_left) sleep(10);
+
+        } else if (gamepad1.dpad_right) {
+            int index = (gamepadMode.ordinal() + 1) % GAMEPAD_MODE.values().length;
+            gamepadMode = GAMEPAD_MODE.values()[index];
+            displayControls();
+            while (gamepad1.dpad_right) sleep(10);
+        }
+    }
+
     private void displayControls() {
-        telemetry.addData("\n Robot Controls", "\n" +
-                "  y - set robot to dropper position\n" +
-                "  a - set robot to picking position\n" +
-                "  x - dropper open / close\n" +
+
+        telemetry.addData("Mode:", gamepadMode);
+
+        switch (gamepadMode) {
+            case PICKER:
+                displayPickerControls();
+                break;
+            case DROPPER:
+                displayDropperControls();
+                break;
+            case ARM:
+                displayArmControls();
+                break;
+            case LIFTER:
+                displayLifterControls();
+                break;
+            case ROBOT:
+                displayRobotControls();
+                break;
+            case SPECIMEN:
+                break;
+        }
+        telemetry.update();
+    }
+
+    private void displayPickerControls() {
+        telemetry.addData("\n Grabber Controls", "\n" +
+                "  y - picker up\n" +
+                "  a - picker down\n" +
+                "  x - picker open / close\n" +
                 "  b - picker open / close\n" +
+                "  right bumper - picker rotate\n" +
+                "\n");
+    }
+
+    private void displayDropperControls() {
+        telemetry.addData("\n Dropper Controls", "\n" +
+                "  y - drop up\n" +
+                "  a - drop down\n" +
+                "  x - drop open / close\n" +
+                "  b - drop open / close\n" +
+                "\n");
+    }
+
+    private void displayArmControls() {
+        telemetry.addData("\n Dropper Controls", "\n" +
+                "  y - arm out\n" +
+                "  a - arm in\n" +
+                "  x - arm exchange position\n" +
+                "  left trigger - arm manually retract\n" +
+                "  right trigger - arm manually extend\n" +
+                "\n");
+    }
+    private void displayLifterControls() {
+        telemetry.addData("\n Dropper Controls", "\n" +
+                "  dpad up - lifter up\n" +
+                "  dpad down - lifter down\n" +
+                "  left trigger - arm manually retract\n" +
+                "  right trigger - arm manually extend\n" +
+                "\n");
+    }
+
+    private void displayRobotControls() {
+        telemetry.addData("\n Robot Controls", "\n" +
+                "  a - pickup sample\n" +
+                "  y - move sample to dropper\n" +
+                "  b - drop sample in bucket\n" +
                 "  dpad up - lifter up\n" +
                 "  dpad down - lifer down\n" +
                 "  left stick - lifter manual control\n" +
                 "  right stick - arm manual control\n" +
                 "\n");
-
-        telemetry.update();
-
     }
 
+    private void pickersHandleGamepad () {
 
-    private  void specimenHandleGamepad () {
-        if (gamepad2.a) {
-            robot.scoreSpecimen();
+        Gamepad gamepad = gamepad1;
+
+        if (gamepad.y) {
+            robot.pickerUp();
+            while (gamepad.y)
+                sleep(10);
+
+        } else if (gamepad.a) {
+            robot.pickerDown();
+            while (gamepad.a)
+                sleep(10);
+
+        } else if (gamepad.x) {
+            robot.pickerOpen();
+            while (gamepad.x)
+                sleep(10);
+
+        } else if (gamepad.b) {
+            robot.pickerClose();
+            while (gamepad.b)
+                sleep(10);
+
+        } else if (gamepad.left_bumper) {
+            robot.pickerRotate();
+            while (gamepad.left_bumper) sleep(10);
+
+        } else if (gamepad.right_bumper) {
+            // toggle the picker open or closed
+            if (robot.pickerIsOpen()) {
+                robot.pickerClose();
+            } else {
+                robot.pickerOpen();
+            }
+            while (gamepad.right_bumper) sleep(10);
         }
     }
 
-    private void grabbersHandleGamepad () {
+    private void dropperHandleGamepad() {
 
-        if (gamepad2.left_bumper) {
-            robot.armMoveTo(robot.ARM_IN);
-            while (gamepad2.left_bumper)
+        Gamepad gamepad = gamepad1;
+
+        if (gamepad.a) {
+            robot.dropperDown();
+            while (gamepad.a)
                 sleep(10);
 
-        } else if (gamepad2.right_bumper) {
+        } else if (gamepad.y) {
+            robot.dropperUp();
+            while (gamepad.y)
+                sleep(10);
+
+        } else if (gamepad.x) {
+            robot.dropperOpen();
+            while (gamepad.x)
+                sleep(10);
+
+        } else if (gamepad.b) {
+            robot.dropperClose();
+            while (gamepad.b)
+                sleep(10);
+
+        } else if (gamepad.left_bumper) {
+            // toggle the dropper open or closed
+            if (robot.dropperIsOpen()) {
+                robot.dropperClose();
+            } else {
+                robot.dropperOpen();
+            }
+            while (gamepad.left_bumper) sleep(10);
+        }
+    }
+
+    private void armHandleGamepad () {
+        Gamepad gamepad = gamepad1;
+
+        if (gamepad.y) {
             robot.armMoveTo(robot.ARM_OUT);
-            while (gamepad2.right_bumper)
+            while (gamepad.y)
                 sleep(10);
 
-        } else if (gamepad2.left_trigger > 0) {
+        } else if (gamepad.a) {
+            robot.armMoveTo(robot.ARM_IN);
+            while (gamepad.a)
+                sleep(10);
+
+        } else if (gamepad.x) {
+            robot.armMoveTo(robot.ARM_EXCHANGE);
+            while (gamepad.x)
+                sleep(10);
+
+        } else if (gamepad.left_trigger > 0) {
             robot.amrRetract();
-            while (gamepad2.left_trigger > 0 && robot.armRetractable())
+            while (gamepad.left_trigger > 0 && robot.armRetractable())
                 sleep(10);
             robot.armStop();
 
-        } else if (gamepad2.right_trigger > 0) {
+        } else if (gamepad.right_trigger > 0) {
             robot.armExtend();
-            while (gamepad2.right_trigger > 0 && robot.armExtendable()) {
+            while (gamepad.right_trigger > 0 && robot.armExtendable()) {
                 sleep(10);
             }
             robot.armStop();
-
-        } else if (gamepad2.a) {
-            robot.pickerDown();
-            while (gamepad2.a)
-                sleep(10);
-
-        } else if (gamepad2.y) {
-            robot.pickerUp();
-            while (gamepad2.y)
-                sleep(10);
-
-        } else if (gamepad2.x) {
-            robot.pickerOpen();
-            while (gamepad2.x)
-                sleep(10);
-
-        } else if (gamepad2.b) {
-            robot.pickerClose();
-            while (gamepad2.b)
-                sleep(10);
         }
     }
 
     private void lifterHandleGamepad () {
 
-        if (gamepad2.left_bumper) {
+        Gamepad gamepad = gamepad1;
+
+        if (gamepad.dpad_down) {
             robot.lifterDown();
-            while (gamepad2.left_bumper)
+            while (gamepad.dpad_down)
                 sleep(10);
 
-        } else if (gamepad2.right_bumper) {
+        } else if (gamepad.dpad_up) {
             robot.lifterUp();
-            while (gamepad2.right_bumper)
+            while (gamepad.dpad_up)
                 sleep(10);
 
-        } else if (gamepad2.right_trigger > 0) {
+        } else if (gamepad.right_trigger > 0) {
             robot.LifterExtend();
-            while (gamepad2.right_trigger > 0)
+            while (gamepad.right_trigger > 0)
                 sleep(10);
             robot.lifterStop();
 
-        } else if (gamepad2.left_trigger > 0) {
+        } else if (gamepad.left_trigger > 0) {
             robot.lifterRetract();
-            while (gamepad2.left_trigger > 0)
+            while (gamepad.left_trigger > 0)
                 sleep(10);
             robot.lifterStop();
-
-        } else if (gamepad2.a) {
-            robot.dropperDown();
-            while (gamepad2.a)
-                sleep(10);
-
-        } else if (gamepad2.y) {
-            robot.dropperUp();
-            while (gamepad2.y)
-                sleep(10);
-
-        } else if (gamepad2.x) {
-            robot.dropperOpen();
-            while (gamepad2.x)
-                sleep(10);
-
-        } else if (gamepad2.b) {
-            robot.dropperClose();
-            while (gamepad2.b)
-                sleep(10);
         }
     }
 
@@ -171,48 +287,21 @@ import common.Robot;
         Gamepad gamepad = gamepad1;
 
         if (gamepad.start) {
-            robotStart();
+            robot.setToStartPosition();
             while (gamepad.start) sleep(10);
-
-        } else if (gamepad.x) {
-            // toggle the picker open or closed
-            if (robot.pickerIsOpen()) {
-                robot.pickerClose();
-            } else {
-                robot.pickerOpen();
-            }
-            while (gamepad.x) sleep(10);
-
-        } else if (gamepad.b) {
-            // toggle the dropper open or closed
-            if (robot.dropperIsOpen()) {
-                robot.dropperClose();
-            } else {
-                robot.dropperOpen();
-            }
-            while (gamepad.b) sleep(10);
 
         } else if (gamepad.y) {
             // move the game piece to scoring position
-            robot.pickerUp();
-            robot.dropperDown();
-            sleep(1000);         // wait for the dropper to get to the down position
-            robot.armMoveTo(robot.ARM_EXCHANGE);
-            robot.dropperClose();
-            sleep(400);          // wait for the dropper to get to the closed position
-            robot.pickerOpen();
-            sleep(400);
-            robot.pickerUp();
+            robot.moveSampleToDropper();
             while (gamepad.y) sleep(10);
 
         } else if (gamepad.a) {
-            robot.dropperOpen();
-            robot.dropperDown();
-            robot.armMoveTo(robot.AMR_OUT_PART_WAY);
-            robot.pickerOpen();
-            robot.pickerDown();
-            robot.lifterDown();
+            robot.pickUpSample();
             while (gamepad.a) sleep(10);
+
+        } else if (gamepad.b) {
+            robot.dropSampleInTopBucket();
+            while (gamepad.b) sleep(10);
 
         } else if (gamepad.dpad_up) {
             // raise the lifter
@@ -241,19 +330,51 @@ import common.Robot;
 
         } else if (gamepad.left_stick_y < 0) {
             robot.LifterExtend();
-            while (gamepad2.left_stick_y < 0)
+            while (gamepad.left_stick_y < 0)
                 sleep(10);
             robot.lifterStop();
 
         } else if (gamepad.left_stick_y > 0) {
             robot.lifterRetract();
-            while (gamepad2.left_stick_y > 0)
+            while (gamepad.left_stick_y > 0)
                 sleep(10);
             robot.lifterStop();
         }
     }
 
-    private void droppderHandleGamepad() {
+    private  void specimenHandleGamepad () {
+
+        Gamepad gamepad = gamepad1;
+
+        if (gamepad.a) {
+            robot.scoreSpecimen();
+            while (gamepad.a) sleep(10);
+        }
+
+        if (gamepad.y) {
+            robot.dropperSpecimenUp();
+            while (gamepad.y) sleep(10);
+        }
+
+        if (gamepad.b) {
+            robot.dropperSpecimenDown();
+            sleep(100);
+            robot.dropperOpen();
+            while (gamepad.b) sleep(10);
+        }
+
+        if (gamepad.dpad_up) {
+            robot.lifterToTopBar();
+            while (gamepad.dpad_up) sleep(10);
+        }
+
+        if (gamepad.dpad_down) {
+            robot.lifterDown();
+            while (gamepad.dpad_down) sleep(10);
+        }
+    }
+
+    private void dropTest() {
         Gamepad gamepad = gamepad1;
 
         if (gamepad.a) {
@@ -261,16 +382,6 @@ import common.Robot;
             sleep(100);
             robot.dropSampleInTopBucket();
             while (gamepad.a) sleep(10);
-
         }
-    }
-
-    private void robotStart() {
-
-        robot.dropperDown();
-        robot.dropperOpen();
-        robot.armMoveTo(robot.AMR_OUT_PART_WAY);
-        robot.pickerDown();
-        robot.pickerOpen();
     }
 }
