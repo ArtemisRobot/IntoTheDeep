@@ -40,7 +40,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Vector;
  */
 @Config
 public class OTOSLocalizer extends Localizer {
-    public static double LINEAR_SCALAR = 1.05;
+    public static double LINEAR_SCALAR = 1.07;
     public static double ANGULAR_SCALAR = 0.9911;
 
     private HardwareMap hardwareMap;
