@@ -19,6 +19,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.util.PIDFController;
 public class DriveControl extends Thread {
 
     public static double MAX_SPEED = 0.6;
+    public static double MAX_STICK_SPEED = 0.90;
     public static double MIN_SPEED = 0.025;
 
     public static double DISTANCE_TOLERANCE_HIGH_SPEED = 10;
@@ -84,8 +85,9 @@ public class DriveControl extends Thread {
         timeoutTimer = new ElapsedTime();
 
         try {
-            localizerOTOS = new OTOSLocalizer(opMode.hardwareMap);
-            localizer = new PinpointLocalizer(opMode.hardwareMap);
+            //localizerOTOS = new OTOSLocalizer(opMode.hardwareMap);
+            localizer = new OTOSLocalizer(opMode.hardwareMap);
+            //localizer = new PinpointLocalizer(opMode.hardwareMap);
         } catch (Exception e) {
             Logger.error(e, "Optical Tracking Odometry Sensor not found");
         }
@@ -348,7 +350,7 @@ public class DriveControl extends Thread {
         double y = leftY;
         double turn = rightX;
 
-        double maxVelocity = drive.getMaxVelocity() * MAX_SPEED;
+        double maxVelocity = drive.getMaxVelocity();
         double angle = Math.atan2(y, x);
         double sin = Math.sin(angle - (Math.PI / 4));
         double cos = Math.cos(angle - (Math.PI / 4));
@@ -376,8 +378,8 @@ public class DriveControl extends Thread {
         }
 
         double scale = 1;
-        if (power != 0 &&(power + Math.abs(turn) > MAX_SPEED))
-            scale = (power + Math.abs(turn)) / MAX_SPEED;
+        if (power != 0 &&(power + Math.abs(turn) > MAX_STICK_SPEED))
+            scale = (power + Math.abs(turn)) / MAX_STICK_SPEED;
 
         double leftFrontPower  = (power * (cos/max) + turn) / scale;
         double rightFrontPower = (power * (sin/max) - turn) / scale;

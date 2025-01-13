@@ -6,7 +6,11 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.R;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 
+@com.acmerobotics.dashboard.config.Config           // allows public static to be changed in TFC Dashboard
+
 public class Auto {
+    public static boolean lifterEnabled = false;
+    private static boolean dropperEnabled = false;
 
     private enum PathState {
         START_YELLOW, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, YELLOW_LEFT, BUCKET4, PARK,
@@ -42,7 +46,7 @@ public class Auto {
         navigator = robot.getDriveControl();
     }
 
-    public void runSamplesAuto() {
+    public void  runSamplesAuto() {
 
         running = true;
         elapsedTime.reset();
@@ -64,9 +68,12 @@ public class Auto {
                 case BUCKET4:
                     waitUntilNotMoving();
                     waitUntilRobotIdIdle();
-                    // todo robot.lifterUp();
+                    waitForButtonPress();
+                    if (lifterEnabled)
+                        robot.lifterUp();
                     waitUntilRobotIdIdle();
-                    robot.dropSampleInTopBucket();
+                    if (dropperEnabled)
+                        robot.dropSampleInTopBucket();
                     waitUntilRobotIdIdle();
                     robot.lifterDown();
                     opMode.sleep(500);
@@ -75,12 +82,12 @@ public class Auto {
 
                 case YELLOW_RIGHT:
                 case YELLOW_MIDDLE:
-                    robot.armMoveTo(robot.ARM_AUTO_PICK);
+                    robot.armMoveTo(robot.ARM_AUTO_PICK, robot.ARM_HIGH_SPEED);
                     waitUntilRobotIdIdle();
                     waitUntilNotMoving();
                     robot.pickUpSample();
                     waitUntilRobotIdIdle();
-                    robot.armMoveTo(robot.ARM_EXCHANGE);
+                    robot.armMoveTo(robot.ARM_EXCHANGE, robot.ARM_HIGH_SPEED);
                     followPath();
                     waitUntilRobotIdIdle();
                     robot.moveSampleToDropper();

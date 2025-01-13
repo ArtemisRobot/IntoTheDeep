@@ -49,7 +49,7 @@ public class Robot extends Thread {
     private final double PICKER_STORE_POSITION = 0.094;
     private final double PICKER_DOWN_POSITION  = 0.259;
 
-    private final double PICKER_FINGER_CLOSED  = 0.420;
+    private final double PICKER_FINGER_CLOSED  = 0.400;
     private final double PICKER_FINGER_OPEN    = 0.670;
 
     public  final double PICKER_YAW_0_DEGREES   = 0.167;
@@ -58,7 +58,7 @@ public class Robot extends Thread {
     public  final double PICKER_YAW_135_DEGREES = 0.657;
 
     private final double DROPPER_UP_POSITION   = 0.672;
-    private final double DROPPER_DROP_POSITION = 0.356;
+    private final double DROPPER_DROP_POSITION = 0.280;
     private final double DROPPER_DOWN_POSITION = 0.020;
 
     private final double DROPPER_SPECIMEN_UP   = 0.550;
@@ -222,7 +222,7 @@ public class Robot extends Thread {
                         dropperOpen();
                         dropperDown();
                         pickerClose();
-                        delay(400);
+                        delay(200);
                         pickerUp();
                         pickerRotateTo(PICKER_YAW_0_DEGREES);
                         setOkToMove(true);
