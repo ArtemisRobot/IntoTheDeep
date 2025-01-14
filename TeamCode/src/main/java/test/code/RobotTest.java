@@ -4,14 +4,15 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+import common.Logger;
 import common.Robot;
 
 @TeleOp(name="RobotTest", group="Test")
 //@Disabled
  public class RobotTest extends LinearOpMode {
 
-    private enum GAMEPAD_MODE { PICKER, DROPPER, ARM, LIFTER, ROBOT, SPECIMEN }
-    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.DROPPER;
+    private enum GAMEPAD_MODE { PICKER, DROPPER, ARM, LIFTER, ROBOT, AUTO, SPECIMEN }
+    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.AUTO;
 
     Robot   robot;
 
@@ -46,6 +47,9 @@ import common.Robot;
                     break;
                 case ROBOT:
                     robotHandleGamepad();
+                    break;
+                case AUTO:
+                    autoHandleGamepad();
                     break;
                 case SPECIMEN:
                     specimenHandleGamepad();
@@ -92,6 +96,9 @@ import common.Robot;
             case ROBOT:
                 displayRobotControls();
                 break;
+            case AUTO:
+                displayAutoControls();
+                break;
             case SPECIMEN:
                 break;
         }
@@ -122,6 +129,7 @@ import common.Robot;
                 "  y - arm out\n" +
                 "  a - arm in\n" +
                 "  x - arm exchange position\n" +
+                "  b - arm aoto pick position\n" +
                 "  left trigger - arm manually retract\n" +
                 "  right trigger - arm manually extend\n" +
                 "\n");
@@ -146,6 +154,14 @@ import common.Robot;
                 "  right stick - arm manual control\n" +
                 "\n");
     }
+
+    private void displayAutoControls() {
+        telemetry.addData("\n Robot Controls", "\n" +
+                "  a - pickup sample\n" +
+                "  y - drop sample in bucket\n" +
+                "\n");
+    }
+
 
     private void pickersHandleGamepad () {
 
@@ -235,8 +251,13 @@ import common.Robot;
                 sleep(10);
 
         } else if (gamepad.x) {
-            robot.armMoveTo(robot.ARM_EXCHANGE);
+            robot.armMoveTo(robot.ARM_EXCHANGE, robot.ARM_HIGH_SPEED);
             while (gamepad.x)
+                sleep(10);
+
+        } else if (gamepad.b) {
+            robot.armMoveTo(robot.ARM_AUTO_PICK, robot.ARM_HIGH_SPEED);
+            while (gamepad.b)
                 sleep(10);
 
         } else if (gamepad.left_trigger > 0) {
@@ -342,6 +363,24 @@ import common.Robot;
         }
     }
 
+    private void autoHandleGamepad () {
+
+        Gamepad gamepad = gamepad1;
+        if (gamepad.a) {
+            robot.pickUpSample();
+            waitUntilRobotIdIdle();
+            robot.armMoveTo(robot.ARM_EXCHANGE, robot.ARM_HIGH_SPEED);
+            waitUntilRobotIdIdle();
+            robot.moveSampleToDropper();
+            while (gamepad.a) sleep(10);
+        }
+
+        if (gamepad.y) {
+            robot.dropSampleInTopBucket();
+            while (gamepad.y) sleep(10);
+        }
+    }
+
     private  void specimenHandleGamepad () {
 
         Gamepad gamepad = gamepad1;
@@ -374,14 +413,17 @@ import common.Robot;
         }
     }
 
-    private void dropTest() {
-        Gamepad gamepad = gamepad1;
-
-        if (gamepad.a) {
-            robot.dropperClose();
-            sleep(100);
-            robot.dropSampleInTopBucket();
-            while (gamepad.a) sleep(10);
+    private void waitUntilRobotIdIdle() {
+        Logger.message("waiting");
+        long start = System.currentTimeMillis();
+        while (robot.isBusy() && opModeIsActive()) {
+            if (System.currentTimeMillis()-start > 3000) {
+                Logger.warning("robot timed out");
+                break;
+            }
         }
+        Logger.message("done waiting");
     }
+
 }
+
