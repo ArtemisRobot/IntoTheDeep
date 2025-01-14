@@ -27,11 +27,11 @@ public class Robot extends Thread {
     public static double LIFTER_SPEED = 0.50;
     public static double LIFTER_UP_SPEED = 0.70;
     public static double LIFTER_DOWN_SPEED = 0.50;
-
     public static double LIFTER_SPEED_LOW = 0.20;
     public static int    LIFTER_STOP_TICKS = 500;
     public static int    LIFTER_UP_POSITION = 1614;
     public static int    LIFTER_DOWN_POSITION = 0;
+    public static int    LIFTER_HALF_UP_POSITION = 807;
     public static int    LIFTER_TOP_BAR_POSITION = 800;
 
     // arm extender
@@ -39,15 +39,14 @@ public class Robot extends Thread {
     public final int    ARM_OUT = 2000;
     public final int    AMR_OUT_PART_WAY = 750;
     public final int    ARM_OUT_START = 190;
-    public final int    ARM_EXCHANGE = 230;
-    public final int    ARM_AUTO_PICK = 450;
+    public final int    ARM_EXCHANGE = 270;
+    public final int    ARM_AUTO_PICK = 560;
     public final double ARM_SPEED = 0.5;
     public final double ARM_HIGH_SPEED = 0.75;
 
     // Grabbers
-    private final double PICKER_UP_POSITION    = 0.152;
-    private final double PICKER_STORE_POSITION = 0.094;
-    private final double PICKER_DOWN_POSITION  = 0.259;
+    private final double PICKER_UP_POSITION    = 0.230;
+    private final double PICKER_DOWN_POSITION  = 0.890;
 
     private final double PICKER_FINGER_CLOSED  = 0.400;
     private final double PICKER_FINGER_OPEN    = 0.670;
@@ -101,6 +100,7 @@ public class Robot extends Thread {
     private int pickingPosition = AMR_OUT_PART_WAY;
 
     private Semaphore okToMove;
+    private Semaphore okToLift;
 
     boolean testRobot = false;
 
@@ -123,6 +123,7 @@ public class Robot extends Thread {
         driveGamepad = new DriveGamepad(opMode, driveControl);
 
         okToMove = new Semaphore(1);
+        okToLift = new Semaphore(1);
 
         try {
             pickerWrist = opMode.hardwareMap.get(Servo.class, Config.PICKER_WRIST);
@@ -178,6 +179,8 @@ public class Robot extends Thread {
 
         while (!opMode.isStarted()) Thread.yield();
 
+        long start;
+
         while (opMode.opModeIsActive()) {
             switch (robotState) {
                 case IDLE:
@@ -218,37 +221,40 @@ public class Robot extends Thread {
 
                 case PICKUP_SAMPLE:
                     Logger.message("\n** Pickup sample");
+                    start = System.currentTimeMillis();
                     synchronized (this) {
+                        pickerClose();
                         dropperOpen();
                         dropperDown();
-                        pickerClose();
-                        delay(200);
+                        delay(350);
                         pickerUp();
                         pickerRotateTo(PICKER_YAW_0_DEGREES);
                         setOkToMove(true);
                         robotState = ROBOT_STATE.IDLE;
                     }
-                    Logger.message("\n** Pickup sample ends");
+                    Logger.message("\n** Pickup sample ends, time %d", System.currentTimeMillis()-start);
                     break;
 
                 case MOVE_SAMPLE_TO_DROPPER:
                     Logger.message("\n** move sample to dropper");
+                    start = System.currentTimeMillis();
                     synchronized (this) {
                         pickerUp();
-                        delay(850);
+                        delay(500);
                         while (lifterIsBusy() && opMode.opModeIsActive()) {
                             delay(10);
                         }
                         dropperClose();
-                        delay(250);          // wait for the dropper to get to the closed position
+                        delay(200);          // wait for the dropper to get to the closed position
                         pickerOpen();
                         delay(100);
+                        setOkToLift(true);
                         dropperUp();
                         pickerDown();
-                        delay(500);
+                        delay(400);
                         robotState = ROBOT_STATE.IDLE;
                     }
-                    Logger.message("\n** move sample to dropper ends");
+                    Logger.message("\n** move sample to dropper ends, time %d", System.currentTimeMillis()-start);
                     break;
 
                 case DROP_SAMPLE_INTO_TOP_BUCKET:
@@ -346,6 +352,12 @@ public class Robot extends Thread {
     public void lifterDown() {
         lifter.setPosition(LIFTER_DOWN_POSITION, LIFTER_DOWN_SPEED, LIFTER_SPEED_LOW);
     }
+
+    public void lifterHalfUp() {
+        Logger.message("set lifter to position %d at %4.2f speed", LIFTER_HALF_UP_POSITION, LIFTER_UP_SPEED);
+        lifter.setPosition(LIFTER_HALF_UP_POSITION, LIFTER_UP_SPEED);
+    }
+
 
     /**
      * Raise the lifter to the specimen top bar scoring position
@@ -467,13 +479,6 @@ public class Robot extends Thread {
         Logger.message("set picker to position %f ", PICKER_UP_POSITION);
         pickerWrist.setPosition(PICKER_UP_POSITION);
         pickerUp = true;
-    }
-
-    public void pickerStore() {
-        Logger.message("set picker to position %f", PICKER_STORE_POSITION);
-        pickerRotateTo(PICKER_YAW_90_DEGREES);
-        pickerClose();
-        pickerDown();
     }
 
     public void pickerDown() {
@@ -632,6 +637,7 @@ public class Robot extends Thread {
     public void moveSampleToDropper () {
         synchronized (this) {
             robotState = ROBOT_STATE.MOVE_SAMPLE_TO_DROPPER;
+            setOkToLift(false);
         }
     }
 
@@ -653,8 +659,9 @@ public class Robot extends Thread {
 
     }
 
-    public boolean okToMove () {
-        return okToMove.availablePermits() == 1;
+    private void waitUnitTime(double time) {
+        while (System.currentTimeMillis() < time)
+            delay(1);
     }
 
     public void waitUntilOkToMove () {
@@ -666,9 +673,8 @@ public class Robot extends Thread {
         }
     }
 
-    private void waitUnitTime(double time) {
-        while (System.currentTimeMillis() < time)
-            delay(1);
+    public boolean okToMove () {
+        return okToMove.availablePermits() == 1;
     }
 
     private void setOkToMove(boolean ok)  {
@@ -682,6 +688,36 @@ public class Robot extends Thread {
             } else {
                 Logger.message("not ok to move");
                 okToMove.acquire();
+            }
+        } catch (InterruptedException e) {
+            Logger.message("InterruptedException");
+        }
+    }
+
+    public void waitUntilOkToLift () {
+        if (okToLift.availablePermits() != 1) {
+            Logger.message("wait until ok to lift");
+            while (okToLift.availablePermits() != 1)
+                delay(1);                       // ToDo this a better why
+            Logger.message("ok to lift");
+        }
+    }
+
+    public boolean okToLift () {
+        return okToLift.availablePermits() == 1;
+    }
+
+    private void setOkToLift(boolean ok)  {
+
+        if (testRobot) return;
+
+        try {
+            if (ok) {
+                Logger.message("set ok to lift");
+                okToLift.release();
+            } else {
+                Logger.message("set not ok to move");
+                okToLift.acquire();
             }
         } catch (InterruptedException e) {
             Logger.message("InterruptedException");
