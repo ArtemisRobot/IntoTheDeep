@@ -104,8 +104,9 @@ public class Auto {
                     robot.pickUpSample();
                     followPath();
                     waitUntilRobotIdIdle();
-                    robot.pickerRotateTo(robot.PICKER_YAW_0_DEGREES);
                     robot.armMoveTo(robot.ARM_EXCHANGE);
+                    opMode.sleep(200);
+                    robot.pickerRotateTo(robot.PICKER_YAW_0_DEGREES);
                     robot.moveSampleToDropper();
                     break;
 

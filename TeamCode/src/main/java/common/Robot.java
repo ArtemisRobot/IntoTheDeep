@@ -245,7 +245,7 @@ public class Robot extends Thread {
                             delay(10);
                         }
                         dropperClose();
-                        delay(200);          // wait for the dropper to get to the closed position
+                        delay(300);          // wait for the dropper to get to the closed position
                         pickerOpen();
                         delay(100);
                         setOkToLift(true);

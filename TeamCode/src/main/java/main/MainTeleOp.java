@@ -86,6 +86,7 @@ import common.Robot;
             // move the arm to picking position
             robot.armMoveTo(robot.AMR_OUT_PART_WAY);
             robot.lifterDown();
+            robot.pickerUp();
             while (gamepad.a) sleep(10);
 
         } else if (gamepad.dpad_up) {
@@ -100,7 +101,10 @@ import common.Robot;
 
         } else if (gamepad.dpad_left) {
             // move the dropper wrist to dropping position
-            robot.dropperDropPosition();
+            if (robot.dropperIsUp())
+                robot.dropperDropPosition();
+            else
+                robot.dropperUp();
             while (gamepad.dpad_left ) sleep(10);
 
         } else if (gamepad.dpad_right) {
@@ -108,17 +112,17 @@ import common.Robot;
             robot.dropSampleInTopBucket();
             while (gamepad.dpad_right) sleep(10);
 
-        } else if (gamepad.left_stick_y < 0) {
+        } else if (gamepad.left_stick_y > 0) {
             // retract the arm
             robot.amrRetract();
-            while (gamepad.left_stick_y < 0 && robot.armRetractable())
+            while (gamepad.left_stick_y > 0 && robot.armRetractable())
                 sleep(10);
             robot.armStop();
 
-        } else if (gamepad.left_stick_y > 0) {
+        } else if (gamepad.left_stick_y < 0) {
             // extend the arm
             robot.armExtend();
-            while (gamepad.left_stick_y > 0 && robot.armExtendable()) {
+            while (gamepad.left_stick_y < 0 && robot.armExtendable()) {
                 sleep(10);
             }
             robot.armStop();

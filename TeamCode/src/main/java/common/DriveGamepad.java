@@ -15,7 +15,7 @@ public class DriveGamepad extends Thread {
     public final double SUBMERSIBLE_Y = 130;
     public final double SUBMERSIBLE_HEADING = 270;
 
-    private final double MAX_WAYPOINT_SPEED = 0.4;
+    private final double MAX_WAYPOINT_SPEED = 0.5;
 
     private enum PoseButton { A, B, X, Y}
     private final int poseCount = PoseButton.values().length;
