@@ -3,14 +3,15 @@ package common;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.R;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 
 @com.acmerobotics.dashboard.config.Config           // allows public static to be changed in TFC Dashboard
 
 public class Auto {
-    public static boolean lifterEnabled = false;
-    private static boolean dropperEnabled = false;
+
+    public static boolean enableLifter = false;
+    public static boolean enableDropper = false;
+    public static boolean enableWait = true;
 
     private enum PathState {
         START_YELLOW, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, YELLOW_LEFT, BUCKET4, PARK,
@@ -31,8 +32,7 @@ public class Auto {
     boolean running;
 
     private final LinearOpMode opMode;
-    private Robot robot;
-    //private final RobotSimulator robot = new RobotSimulator(opMode, new Robot(opMode));;
+    private final Robot robot;
 
     private final DriveControl navigator;
 
@@ -66,13 +66,14 @@ public class Auto {
                 case BUCKET2:
                 case BUCKET3:
                 case BUCKET4:
+                    waitUntilOkToLift();
                     waitUntilNotMoving();
                     waitUntilRobotIdIdle();
                     waitForButtonPress();
-                    if (lifterEnabled)
+                    if (enableLifter)
                         robot.lifterUp();
                     waitUntilRobotIdIdle();
-                    if (dropperEnabled)
+                    if (enableDropper)
                         robot.dropSampleInTopBucket();
                     waitUntilRobotIdIdle();
                     robot.lifterDown();
@@ -85,11 +86,11 @@ public class Auto {
                     robot.armMoveTo(robot.ARM_AUTO_PICK, robot.ARM_HIGH_SPEED);
                     waitUntilRobotIdIdle();
                     waitUntilNotMoving();
+                    waitForButtonPress();
                     robot.pickUpSample();
                     waitUntilRobotIdIdle();
                     robot.armMoveTo(robot.ARM_EXCHANGE, robot.ARM_HIGH_SPEED);
                     followPath();
-                    waitUntilRobotIdIdle();
                     robot.moveSampleToDropper();
                     break;
 
@@ -99,12 +100,12 @@ public class Auto {
                     robot.armMoveTo(robot.ARM_AUTO_PICK);
                     opMode.sleep(200);
                     waitUntilRobotIdIdle();
+                    waitForButtonPress();
                     robot.pickUpSample();
                     followPath();
                     waitUntilRobotIdIdle();
                     robot.pickerRotateTo(robot.PICKER_YAW_0_DEGREES);
                     robot.armMoveTo(robot.ARM_EXCHANGE);
-                    waitUntilRobotIdIdle();
                     robot.moveSampleToDropper();
                     break;
 
@@ -309,6 +310,23 @@ public class Auto {
         Logger.message("done waiting");
     }
 
+    private void waitUntilOkToLift() {
+        Logger.message("waiting");
+        timer.reset();
+        while (opMode.opModeIsActive()) {
+            if (navigator.nearPose() ) {
+                break;
+            } else {
+                Thread.yield();
+            }
+            if (timer.milliseconds() > 5000) {
+                Logger.warning("robot timed out");
+                break;
+            }
+        }
+        Logger.message("done waiting");
+    }
+
     private Pose createPose(double x, double y, double heading) {
         return new Pose(x, y, Math.toRadians(heading));
     }
@@ -325,6 +343,9 @@ public class Auto {
     }
 
     private void waitForButtonPress() {
+
+        if (! enableWait) return;
+
         Logger.message("waiting for button press");
 
         boolean pressed = false;
