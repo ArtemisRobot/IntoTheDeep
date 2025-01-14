@@ -121,7 +121,8 @@ public class MotorControl extends Thread {
 
         int current = motor.getCurrentPosition();
         int last = current;
-        Logger.message("run from %d to %d at %4.2f", current, targetPosition, speed);
+        int distance = Math.abs(current - targetPosition);
+        Logger.message("run from %d to %d  distance %d at %4.2f", current, targetPosition, distance, speed);
         DcMotor.RunMode mode = motor.getMode();
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor.setTargetPosition(targetPosition);
@@ -159,7 +160,7 @@ public class MotorControl extends Thread {
                 break;
             }
 
-            //Logger.message("%s position %5d   remaining %5d  elapsed %6.2f ", state, current, remaining, elapsedTime.milliseconds());
+            //Logger.message("position %5d   remaining %5d  percent %5d  elapsed %6.2f ", current, remaining, (remaining*100/distance), elapsedTime.milliseconds());
         }
         Logger.message("current: %d target: %d", current, targetPosition);
         motor.setPower(0);
