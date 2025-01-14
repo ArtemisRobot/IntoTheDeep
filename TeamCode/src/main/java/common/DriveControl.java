@@ -18,9 +18,11 @@ import org.firstinspires.ftc.teamcode.pedroPathing.util.PIDFController;
 
 public class DriveControl extends Thread {
 
-    public static double MAX_SPEED = 0.6;
+    public static double MAX_SPEED       = 0.6;
     public static double MAX_STICK_SPEED = 0.90;
-    public static double MIN_SPEED = 0.025;
+    public static double MAX_TURN_SPEED  = 0.5;
+    public static double MIN_SPEED       = 0.025;
+    public static double MIN_TURN_SPEED  = 0.100;
 
     public static double DISTANCE_TOLERANCE_HIGH_SPEED = 10;
     public static double DISTANCE_TOLERANCE_LOW_SPEED = 0.5;
@@ -57,6 +59,7 @@ public class DriveControl extends Thread {
     private double targetHeading;
 
     private double maxSpeed;
+    private double minSpeed;
 
     private double stopDistance;
 
@@ -67,12 +70,13 @@ public class DriveControl extends Thread {
     private boolean interruptAction = false;
 
     private boolean highSpeed;
+    private volatile boolean nearPose = false;
 
     private enum DRIVE_STATE { IDLE, MOVING, MOVING_TO_COORDINATE, MOVING_TO_OBJECT, TURN_TO, STOPPING }
     private DRIVE_STATE driveState;
 
     private final Drive drive;
-    Localizer localizer;
+    PinpointLocalizer localizer;
     Localizer localizerOTOS;
     LinearOpMode opMode;
 
@@ -85,9 +89,10 @@ public class DriveControl extends Thread {
         timeoutTimer = new ElapsedTime();
 
         try {
-            //localizerOTOS = new OTOSLocalizer(opMode.hardwareMap);
-            localizer = new OTOSLocalizer(opMode.hardwareMap);
-            //localizer = new PinpointLocalizer(opMode.hardwareMap);
+            localizerOTOS = new OTOSLocalizer(opMode.hardwareMap);
+            //localizer = new OTOSLocalizer(opMode.hardwareMap);
+            localizer = new PinpointLocalizer(opMode.hardwareMap);
+
         } catch (Exception e) {
             Logger.error(e, "Optical Tracking Odometry Sensor not found");
         }
@@ -147,7 +152,8 @@ public class DriveControl extends Thread {
             drivePID.setCoefficients(driveHighSpeedPIDFCoefficients);
             distanceTolerance = DISTANCE_TOLERANCE_HIGH_SPEED;
             headingTolerance = HEADING_TOLERANCE_HIGH_SPEED;
-            velocityTolerance = VELOCITY_TOLERANCE_HIGH_SPEED * drive.getMaxVelocity();
+            velocityTolerance = maxSpeed * drive.getMaxVelocity();
+            //velocityTolerance = VELOCITY_TOLERANCE_HIGH_SPEED * drive.getMaxVelocity();
         } else {
             headingPID.setCoefficients(headingLowSpeedPIDFCoefficients);
             drivePID.setCoefficients(driveLowSpeedPIDFCoefficients);
@@ -200,10 +206,10 @@ public class DriveControl extends Thread {
             }
 
             double scale = 1;
-            if (power + Math.abs(turn) > MAX_SPEED) {
-                scale = (power + Math.abs(turn)) / MAX_SPEED;
-            }  else if (power + Math.abs(turn) < MIN_SPEED) {
-                scale = (power + Math.abs(turn)) / MIN_SPEED;
+            if (power + Math.abs(turn) > maxSpeed) {
+                scale = (power + Math.abs(turn)) / maxSpeed;
+            }  else if (power + Math.abs(turn) < minSpeed) {
+                scale = (power + Math.abs(turn)) / minSpeed;
             }
 
             double leftFrontPower  = (power * (cos / max) + turn) / scale;
@@ -217,11 +223,14 @@ public class DriveControl extends Thread {
                               rightRearPower * maxVelocity);
 
             double currentVelocity = drive.getCurrentVelocity();
+            nearPose = currentVelocity / maxVelocity <= 0.20 && power < 0.5 && turn < 0.4;
 
-            Pose otosPose = localizerOTOS.getPose();
+            //Pose rawPose = localizer.getRawPose();
+            //Pose otosPose = localizerOTOS.getPose();
             Logger.verbose("%s",
                     String.format("x: %-5.1f  y: %-5.1f  h: %-5.1f  ", currentX, currentY, Math.toDegrees(currentHeading)) +
-                    String.format("x: %-5.1f  y: %-5.1f  h: %-5.1f  ", currentX-otosPose.getX(), currentY-otosPose.getY(), Math.toDegrees(currentHeading-otosPose.getHeading())) +
+                    //String.format("x: %-5.1f  y: %-5.1f  h: %-5.1f  ", rawPose.getX(), rawPose.getY(), Math.toDegrees(rawPose.getHeading())) +
+                    //String.format("x: %-5.1f  y: %-5.1f  h: %-5.1f  ", currentX-otosPose.getX(), currentY-otosPose.getY(), Math.toDegrees(currentHeading-otosPose.getHeading())) +
                     String.format("a: %5.1f  b: %5.1f  distance: %5.2f  ", a, b, distance) +
                     String.format("heading error: %6.1f  ", Math.toDegrees(headingError)) +
                     String.format("angle: %4.0f  ", Math.toDegrees(angle)) +
@@ -229,6 +238,7 @@ public class DriveControl extends Thread {
                     String.format("turn: %5.2f  power: %4.2f  sin: %5.2f  cos: %5.2f  ", turn, power, sin, cos) +
                     String.format("wheels: %5.2f  %5.2f  %5.2f  %5.2f   ", leftFrontPower, rightFrontPower, leftRearPower, rightRearPower) +
                     String.format("velocity: %6.1f   ", currentVelocity) +
+                            String.format("near: %b  ", nearPose) +
                     String.format("time: %4.0f   ", timeoutTimer.milliseconds())
             );
 
@@ -277,7 +287,7 @@ public class DriveControl extends Thread {
         // Looping until we move the desired distance
         while (opMode.opModeIsActive() && !interruptAction) {
 
-            double maxVelocity = drive.getMaxVelocity() * maxSpeed;
+            double maxVelocity = drive.getMaxVelocity();
             Pose pose = getPose();
 
             double currentX = pose.getX();
@@ -505,13 +515,14 @@ public class DriveControl extends Thread {
             this.targetY = targetY;
             this.targetHeading = targetHeading;
             this.maxSpeed = maxSpeed;
+            this.minSpeed = MIN_SPEED;
             this.timeout = timeout;
             driveState = DRIVE_STATE.MOVING_TO_COORDINATE;
         }
     }
 
     public void moveToCoordinate(double targetX, double targetY, double targetHeading, double timeout) {
-        moveToCoordinate(targetX, targetY, targetHeading, MIN_SPEED, timeout);
+        moveToCoordinate(targetX, targetY, targetHeading, MAX_SPEED, timeout);
     }
 
     public void turnBy(double degrees, double timeout) {
@@ -526,6 +537,8 @@ public class DriveControl extends Thread {
             this.targetX = pose.getX();
             this.targetY = pose.getY();
             this.targetHeading = heading;
+            this.maxSpeed = MAX_TURN_SPEED;
+            this.minSpeed = MIN_TURN_SPEED;
             this.timeout = timeout;
             driveState = DRIVE_STATE.TURN_TO;
         }
@@ -584,6 +597,13 @@ public class DriveControl extends Thread {
     public void setPose(Pose pose) {
         localizer.setPose(pose);
         localizerOTOS.setPose(pose);            // todo for testing
+    }
+
+    public boolean nearPose() {
+        if (driveState == DRIVE_STATE.IDLE) {
+            return true;
+        }
+        return nearPose;
     }
 }
 
