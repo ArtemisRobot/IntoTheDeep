@@ -7,13 +7,15 @@ import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 
 public class DriveGamepad extends Thread {
 
-    public final double BUCKET_X = 14;
-    public final double BUCKET_Y = 128;
+    public final double BUCKET_X = 15.5;
+    public final double BUCKET_Y = 126.5;
     public final double BUCKET_HEADING = 135;
 
     public final double SUBMERSIBLE_X = 60;
     public final double SUBMERSIBLE_Y = 130;
     public final double SUBMERSIBLE_HEADING = 270;
+
+    private final double MAX_WAYPOINT_SPEED = 0.4;
 
     private enum PoseButton { A, B, X, Y}
     private final int poseCount = PoseButton.values().length;
@@ -150,7 +152,7 @@ public class DriveGamepad extends Thread {
             double heading = Math.toDegrees(pose.getHeading());
 
             Logger.message("%s  move to (%.1f, %.1f) heading: %.0f", button, x, y, heading);
-            driveControl.moveToCoordinate(x, y, heading, 4000 );
+            driveControl.moveToCoordinate(x, y, heading, MAX_WAYPOINT_SPEED, 4000 );
         }
     }
 }
