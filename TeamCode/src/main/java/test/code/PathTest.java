@@ -130,7 +130,7 @@ public class PathTest extends LinearOpMode {
             waitForStart();
 
             //runDriveToCoordinateTest();
-            competitionTest2();
+            competitionTest1();
 
         } catch (Exception e) {
             Logger.error(e, "Exception");
@@ -213,20 +213,20 @@ public class PathTest extends LinearOpMode {
     public static double START_Y = 102.5;
     public static double START_HEADING = 90;
 
-    public static double BUCKET_X = 15;
-    public static double BUCKET_Y = 127;
+    public static double BUCKET_X = 15.5;
+    public static double BUCKET_Y = 126.5;
     public static double BUCKET_HEADING = 135;
 
-    public static double YELLOW_RIGHT_X = 34;
+    public static double YELLOW_RIGHT_X = 33;
     public static double YELLOW_RIGHT_Y = 120;
     public static double YELLOW_RIGHT_HEADING = 0;
 
-    public static double YELLOW_MIDDLE_X = 34;
+    public static double YELLOW_MIDDLE_X = 33;
     public static double YELLOW_MIDDLE_Y = 130;
     public static double YELLOW_MIDDLE_HEADING = 0;
 
-    public static double YELLOW_LEFT_X = 47.5;
-    public static double YELLOW_LEFT_Y = 128.5;
+    public static double YELLOW_LEFT_X = 47;
+    public static double YELLOW_LEFT_Y = 127.5;
     public static double YELLOW_LEFT_HEADING = 90;
 
     private void competitionTest1() {
@@ -301,16 +301,21 @@ public class PathTest extends LinearOpMode {
 
         moveFromTo (START_X, START_Y, START_HEADING, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
         waitUntilNotMoving();
-        moveFromTo (BUCKET_X, BUCKET_Y, BUCKET_HEADING, YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING);
+        //moveFromTo (BUCKET_X, BUCKET_Y, BUCKET_HEADING, YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING);
     }
 
     private void moveFromTo(double startX, double startY, double startHeading, double targetX, double targetY, double targetHeading) {
         double timeout = 5000;
 
-        driveControl.setPose(new Pose(startX, startY, Math.toRadians(startHeading)));
-        driveControl.moveToCoordinate(targetX, targetY, targetHeading, timeout);
-        waitUntilNotMoving();
-
+        for (int i = 0; i < 10; i++) {
+            driveControl.setPose(new Pose(startX, startY, Math.toRadians(startHeading)));
+            driveControl.moveToCoordinate(targetX, targetY, targetHeading, timeout);
+            waitUntilNotMoving();
+            sleep(1000);
+            driveControl.moveToCoordinate(startX, startY, startHeading, timeout);
+            waitUntilNotMoving();
+            sleep(1000);
+        }
     }
 
     private void waitUntilNotMoving() {
