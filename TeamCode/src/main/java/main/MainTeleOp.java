@@ -33,7 +33,7 @@ import common.Robot;
                 "  right bumper - picker up / down\n" +
                 "  left bumper - picker rotate\n" +
                 "  dpad up - lifter up\n" +
-                "  dpad down - lifer down\n" +
+                "  dpad down - lifer down / down\n" +
                 "  dpad left - dropper to dropping position\n" +
                 "  dpad right - drop in bucket\n" +
                 "  left stick - arm manual control\n" +
