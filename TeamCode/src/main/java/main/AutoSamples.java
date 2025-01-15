@@ -32,8 +32,8 @@ public class AutoSamples extends LinearOpMode {
     public static double YELLOW_LEFT_Y = 127.5;
     public static double YELLOW_LEFT_HEADING = 90;
 
-    public static double PARK_X = START_X+10;
-    public static double PARK_Y = START_Y;
+    public static double PARK_X = 12;
+    public static double PARK_Y = 120;
     public static double PARK_HEADING = START_HEADING;
 
     Auto auto;
