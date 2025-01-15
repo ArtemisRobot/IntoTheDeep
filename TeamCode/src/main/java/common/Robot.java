@@ -63,8 +63,8 @@ public class Robot extends Thread {
     private final double DROPPER_SPECIMEN_UP   = 0.550;
     private final double DROPPER_SPECIMEN_DOWN = 0.550;
 
-    private final double DROPPER_FINGER_CLOSED = 0.463;
-    private final double DROPPER_FINGER_OPEN   = 0.58;
+    private final double DROPPER_FINGER_CLOSED = 0.415;
+    private final double DROPPER_FINGER_OPEN   = 0.590;
 
     private final double SPECIMEN_STOP_POSTION = 5;
 
@@ -94,7 +94,7 @@ public class Robot extends Thread {
     // Declare OpMode members.
     private final LinearOpMode opMode;
 
-    private enum ROBOT_STATE { IDLE, SET_TO_START_POSITION, SET_TO_STOP_POSITION, PICKUP_SAMPLE, MOVE_SAMPLE_TO_DROPPER, DROP_SAMPLE_INTO_TOP_BUCKET, SCORE_SPECIMEN }
+    private enum ROBOT_STATE { IDLE, SET_TO_START_POSITION, SET_TO_STOP_POSITION, PICKUP_SAMPLE, PICKUP_ROTATED_SAMPLE, MOVE_SAMPLE_TO_DROPPER, DROP_SAMPLE_INTO_TOP_BUCKET, SCORE_SPECIMEN }
     private ROBOT_STATE robotState = ROBOT_STATE.IDLE;
 
     private int pickingPosition = AMR_OUT_PART_WAY;
@@ -235,6 +235,24 @@ public class Robot extends Thread {
                     Logger.message("\n** Pickup sample ends, time %d", System.currentTimeMillis()-start);
                     break;
 
+                case PICKUP_ROTATED_SAMPLE:
+                    Logger.message("\n** Pickup rotated sample");
+                    start = System.currentTimeMillis();
+                    synchronized (this) {
+                        pickerClose();
+                        dropperOpen();
+                        dropperDown();
+                        delay(350);
+                        armMoveTo(ARM_EXCHANGE, ARM_HIGH_SPEED);
+                        delay(200);
+                        pickerUp();
+                        pickerRotateTo(PICKER_YAW_0_DEGREES);
+                        setOkToMove(true);
+                        robotState = ROBOT_STATE.IDLE;
+                    }
+                    Logger.message("\n** Pickup sample rotated ends, time %d", System.currentTimeMillis()-start);
+                    break;
+
                 case MOVE_SAMPLE_TO_DROPPER:
                     Logger.message("\n** move sample to dropper");
                     start = System.currentTimeMillis();
@@ -245,7 +263,7 @@ public class Robot extends Thread {
                             delay(10);
                         }
                         dropperClose();
-                        delay(300);          // wait for the dropper to get to the closed position
+                        delay(200);          // wait for the dropper to get to the closed position
                         pickerOpen();
                         delay(100);
                         setOkToLift(true);
@@ -624,6 +642,13 @@ public class Robot extends Thread {
         synchronized (this) {
             pickingPosition = position;
             robotState = ROBOT_STATE.SET_TO_START_POSITION;
+        }
+    }
+
+    public void pickUpRotatedSample() {
+        synchronized (this) {
+        robotState = ROBOT_STATE.PICKUP_ROTATED_SAMPLE;
+            setOkToMove(false);
         }
     }
 
