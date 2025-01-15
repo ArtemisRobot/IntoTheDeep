@@ -40,7 +40,8 @@ public class Robot extends Thread {
     public final int    AMR_OUT_PART_WAY = 750;
     public final int    ARM_OUT_START = 190;
     public final int    ARM_EXCHANGE = 270;
-    public final int    ARM_AUTO_PICK = 560;
+    public final int    ARM_AUTO_PICK = 620;
+    public final int    ARM_AUTO_PICK_ROTATED = 560;
     public final double ARM_SPEED = 0.5;
     public final double ARM_HIGH_SPEED = 0.75;
 
@@ -147,7 +148,7 @@ public class Robot extends Thread {
             extendingArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
             extendingArmControl = new MotorControl(opMode, extendingArm);
-            extendingArmControl.setRange(ARM_IN, ARM_OUT);
+            extendingArmControl.setRange(ARM_IN, ARM_OUT);                     // ToDo should we do this?
             extendingArmControl.setName("extendingArm");
             extendingArmControl.start();
 
@@ -157,7 +158,7 @@ public class Robot extends Thread {
 
         try {
             lifter = new Lifter(opMode);
-            lifter.setRange(LIFTER_DOWN_POSITION, LIFTER_UP_POSITION);
+            lifter.setRange(LIFTER_DOWN_POSITION, LIFTER_UP_POSITION);         // ToDo should we do this?
             lifter.setLowSpeedThreshold(LIFTER_STOP_TICKS);
             lifter.start();
 
@@ -244,7 +245,7 @@ public class Robot extends Thread {
                         dropperDown();
                         delay(350);
                         armMoveTo(ARM_EXCHANGE, ARM_HIGH_SPEED);
-                        delay(200);
+                        delay(400);
                         pickerUp();
                         pickerRotateTo(PICKER_YAW_0_DEGREES);
                         setOkToMove(true);

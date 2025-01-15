@@ -23,7 +23,7 @@ public class DriveControl extends Thread {
     public static double MAX_SPEED       = 0.6;
     public static double MAX_STICK_SPEED = 0.90;
     public static double MAX_TURN_SPEED  = 0.5;
-    public static double MIN_SPEED       = 0.025;
+    public static double MIN_SPEED       = 0.10;
     public static double MIN_TURN_SPEED  = 0.100;
 
     public static double DISTANCE_TOLERANCE_HIGH_SPEED = 10;
@@ -39,7 +39,7 @@ public class DriveControl extends Thread {
             0.3, 0, 0, 0);
 
     public static CustomPIDFCoefficients driveLowSpeedPIDFCoefficients = new CustomPIDFCoefficients(
-            0.09, 0, 0, 0);
+            0.07, 0, 0, 0);
 
     public static CustomPIDFCoefficients headingHighSpeedPIDFCoefficients = new CustomPIDFCoefficients(
             2.5, 0, 0, 0);

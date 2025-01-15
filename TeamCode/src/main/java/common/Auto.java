@@ -97,7 +97,7 @@ public class Auto {
                 case YELLOW_LEFT:
                     waitUntilNotMoving();
                     robot.pickerRotateTo(robot.PICKER_YAW_90_DEGREES);
-                    robot.armMoveTo(robot.ARM_AUTO_PICK);
+                    robot.armMoveTo(robot.ARM_AUTO_PICK_ROTATED);
                     opMode.sleep(200);
                     waitUntilRobotIdIdle();
                     waitForButtonPress();
@@ -281,7 +281,7 @@ public class Auto {
         }
         Pose pose = navigator.getPose();
         Logger.message("pose: %5.1f %5.1f  target: %5.1f %5.1f  busy %b", pose.getX(), pose.getY(), targetX, targetY, navigator.isBusy());
-        Logger.message("done waiting");
+        Logger.message("done waiting, time: %5.0f", timer.milliseconds());
     }
 
     private void waitUntilRobotIdIdle() {
@@ -305,7 +305,7 @@ public class Auto {
                 break;
             }
         }
-        Logger.message("done waiting");
+        Logger.message("done waiting, time: %5.0f", timer.milliseconds());
     }
 
     private void waitUntilOkToLift() {
@@ -322,7 +322,7 @@ public class Auto {
                 break;
             }
         }
-        Logger.message("done waiting");
+        Logger.message("done waiting, time: %5.0f", timer.milliseconds());
     }
 
     private Pose createPose(double x, double y, double heading) {

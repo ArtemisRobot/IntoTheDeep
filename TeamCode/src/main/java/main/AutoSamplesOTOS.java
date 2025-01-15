@@ -20,11 +20,11 @@ public class AutoSamplesOTOS extends LinearOpMode {
     public static double BUCKET_Y = 127.5;
     public static double BUCKET_HEADING = 135;
 
-    public static double YELLOW_RIGHT_X = 33;
+    public static double YELLOW_RIGHT_X = 32.5;
     public static double YELLOW_RIGHT_Y = 117.5;
     public static double YELLOW_RIGHT_HEADING = 0;
 
-    public static double YELLOW_MIDDLE_X = 33;
+    public static double YELLOW_MIDDLE_X = 32.5;
     public static double YELLOW_MIDDLE_Y = 128;
     public static double YELLOW_MIDDLE_HEADING = 0;
 
