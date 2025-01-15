@@ -109,8 +109,8 @@ import common.Robot;
         telemetry.addData("\n Grabber Controls", "\n" +
                 "  y - picker up\n" +
                 "  a - picker down\n" +
-                "  x - picker open / close\n" +
-                "  b - picker open / close\n" +
+                "  x - picker open\n" +
+                "  b - picker close\n" +
                 "  right bumper - picker rotate\n" +
                 "\n");
     }
@@ -119,8 +119,8 @@ import common.Robot;
         telemetry.addData("\n Dropper Controls", "\n" +
                 "  y - drop up\n" +
                 "  a - drop down\n" +
-                "  x - drop open / close\n" +
-                "  b - drop open / close\n" +
+                "  x - drop open\n" +
+                "  b - drop close\n" +
                 "\n");
     }
 
