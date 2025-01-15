@@ -10,8 +10,8 @@ import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 public class Auto {
 
     public static boolean enableLifter = false;
-    public static boolean enableDropper = false;
-    public static boolean enableWait = true;
+    public static boolean enableDropper = true;
+    public static boolean enableWait = false;
 
     private enum PathState {
         START_YELLOW, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, YELLOW_LEFT, BUCKET4, PARK,
@@ -66,10 +66,10 @@ public class Auto {
                 case BUCKET2:
                 case BUCKET3:
                 case BUCKET4:
-                    waitUntilOkToLift();
-                    waitUntilNotMoving();
+                    //waitUntilNotMoving();
                     waitUntilRobotIdIdle();
                     waitForButtonPress();
+                    waitUntilOkToLift();
                     if (enableLifter)
                         robot.lifterUp();
                     waitUntilRobotIdIdle();
@@ -101,12 +101,9 @@ public class Auto {
                     opMode.sleep(200);
                     waitUntilRobotIdIdle();
                     waitForButtonPress();
-                    robot.pickUpSample();
+                    robot.pickUpRotatedSample();
                     followPath();
                     waitUntilRobotIdIdle();
-                    robot.armMoveTo(robot.ARM_EXCHANGE);
-                    opMode.sleep(200);
-                    robot.pickerRotateTo(robot.PICKER_YAW_0_DEGREES);
                     robot.moveSampleToDropper();
                     break;
 
