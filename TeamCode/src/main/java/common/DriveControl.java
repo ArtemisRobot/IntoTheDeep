@@ -18,6 +18,8 @@ import org.firstinspires.ftc.teamcode.pedroPathing.util.PIDFController;
 
 public class DriveControl extends Thread {
 
+    public static boolean pinpointLocalizer = true;
+
     public static double MAX_SPEED       = 0.6;
     public static double MAX_STICK_SPEED = 0.90;
     public static double MAX_TURN_SPEED  = 0.5;
@@ -76,8 +78,7 @@ public class DriveControl extends Thread {
     private DRIVE_STATE driveState;
 
     private final Drive drive;
-    PinpointLocalizer localizer;
-    Localizer localizerOTOS;
+    Localizer localizer;
     LinearOpMode opMode;
 
     public DriveControl(LinearOpMode opMode, Drive drive) {
@@ -89,9 +90,11 @@ public class DriveControl extends Thread {
         timeoutTimer = new ElapsedTime();
 
         try {
-            localizerOTOS = new OTOSLocalizer(opMode.hardwareMap);
-            //localizer = new OTOSLocalizer(opMode.hardwareMap);
-            localizer = new PinpointLocalizer(opMode.hardwareMap);
+            if (pinpointLocalizer) {
+                localizer = new PinpointLocalizer(opMode.hardwareMap);
+            } else {
+                localizer = new OTOSLocalizer(opMode.hardwareMap);
+            }
 
         } catch (Exception e) {
             Logger.error(e, "Optical Tracking Odometry Sensor not found");
@@ -110,6 +113,7 @@ public class DriveControl extends Thread {
         while (opMode.opModeIsActive()) {
             switch (driveState) {
                 case IDLE:
+                    if (isEmergencyStop()) drive.stopRobot();
                     Thread.yield();
                     continue;
 
@@ -258,7 +262,7 @@ public class DriveControl extends Thread {
                 break;
             }
 
-            if (emergencyStop()) {
+            if (isEmergencyStop()) {
                 break;
             }
 
@@ -345,7 +349,7 @@ public class DriveControl extends Thread {
                 break;
             }
 
-            if (emergencyStop()) {
+            if (isEmergencyStop()) {
                 break;
             }
         }
@@ -463,7 +467,7 @@ public class DriveControl extends Thread {
                 break;
             }
 
-            if (emergencyStop()) {
+            if (isEmergencyStop()) {
                 break;
             }
         }
@@ -502,8 +506,16 @@ public class DriveControl extends Thread {
         }
     }
 
-    private boolean emergencyStop() {
-        return opMode.gamepad1.back;
+    private boolean isEmergencyStop() {
+        return opMode.gamepad1.back;        // todo remove
+    }
+
+    public void emergencyStop() {
+        synchronized (this) {
+            interruptAction();
+            drive.stopRobot();
+            driveState = DRIVE_STATE.IDLE;
+        }
     }
 
     public void moveToCoordinate(double targetX, double targetY, double targetHeading, double maxSpeed, double timeout) {
@@ -596,7 +608,6 @@ public class DriveControl extends Thread {
     
     public void setPose(Pose pose) {
         localizer.setPose(pose);
-        localizerOTOS.setPose(pose);            // todo for testing
     }
 
     public boolean nearPose() {
@@ -605,6 +616,7 @@ public class DriveControl extends Thread {
         }
         return nearPose;
     }
+    
 }
 
 
