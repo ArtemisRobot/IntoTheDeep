@@ -64,7 +64,7 @@ public class DriveGamepad extends Thread {
             }
 
             if (gamepad.back) {
-                opMode.requestOpModeStop();      // ToDo remove, emergency stop for testing
+                driveControl.emergencyStop();
                 break;
             }
 
