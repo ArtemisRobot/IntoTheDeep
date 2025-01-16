@@ -52,6 +52,14 @@ public class Lifter extends Thread {
         this.setName("lifter");
     }
 
+    public void resetEncoders () {
+        for (DcMotor motor : motors) {
+            DcMotor.RunMode mode = motor.getMode();
+            motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            motor.setMode(mode);
+        }
+    }
+
     /**
      * Control the lifter on a separate thread to avoid blocking
      */
