@@ -242,7 +242,7 @@ public class DriveControl extends Thread {
                     String.format("turn: %5.2f  power: %4.2f  sin: %5.2f  cos: %5.2f  ", turn, power, sin, cos) +
                     String.format("wheels: %5.2f  %5.2f  %5.2f  %5.2f   ", leftFrontPower, rightFrontPower, leftRearPower, rightRearPower) +
                     String.format("velocity: %6.1f   ", currentVelocity) +
-                            String.format("near: %b  ", nearPose) +
+                    String.format("near: %b  ", nearPose) +
                     String.format("time: %4.0f   ", timeoutTimer.milliseconds())
             );
 
