@@ -108,8 +108,11 @@ public class Auto {
                     break;
 
                 case PARK:
+                    robot.armMoveTo(robot.ARM_IN, robot.ARM_HIGH_SPEED);
+                    waitUntilRobotIdIdle();
                     robot.setToStopPosition();
                     waitUntilRobotIdIdle();
+                    waitUntilNotMoving();
                     running = false;
                     break;
             }
