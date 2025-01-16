@@ -66,6 +66,11 @@ public class AutoSamples extends LinearOpMode {
 
             sleep(1000); // wait for pinpoint hardware to reset
 
+            telemetry.addData("Lifter enabled", Auto.enableLifter);
+            telemetry.addData("Dropper enabled", Auto.enableDropper);
+            telemetry.addData("wait enabled", Auto.enableWait);
+            telemetry.update();
+
             waitForStart();
 
             auto.runSamplesAuto();
