@@ -4,12 +4,14 @@ import android.annotation.SuppressLint;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import common.Logger;
 import common.Robot;
 
+@Disabled
 @TeleOp(name="AutoTest", group = "Test")
 
 public class AutoTest extends LinearOpMode {
