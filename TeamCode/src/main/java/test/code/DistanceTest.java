@@ -1,10 +1,12 @@
 package test.code;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import common.Robot;
 
+@Disabled
 @TeleOp(name="Distance Test", group="Test")
 
 public class DistanceTest extends LinearOpMode {

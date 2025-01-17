@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import common.Auto;
 
-
+@Disabled
 @Autonomous(name="Auto Specimens (Red/Blue)", group = "Main")
 
  public class AutoSpecimens extends LinearOpMode {
