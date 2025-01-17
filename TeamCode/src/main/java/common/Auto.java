@@ -9,7 +9,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 
 public class Auto {
 
-    public static boolean enableLifter = false;
+    public static boolean enableLifter = true;
     public static boolean enableDropper = true;
     public static boolean enableWait = false;
 
