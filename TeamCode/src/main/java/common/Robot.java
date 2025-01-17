@@ -148,7 +148,7 @@ public class Robot extends Thread {
             extendingArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
             extendingArmControl = new MotorControl(opMode, extendingArm);
-            extendingArmControl.setRange(ARM_IN, ARM_OUT);                     // ToDo should we do this?
+            //extendingArmControl.setRange(ARM_IN, ARM_OUT);                     // ToDo should we do this?
             extendingArmControl.setName("extendingArm");
             extendingArmControl.start();
 
@@ -158,7 +158,7 @@ public class Robot extends Thread {
 
         try {
             lifter = new Lifter(opMode);
-            lifter.setRange(LIFTER_DOWN_POSITION, LIFTER_UP_POSITION);         // ToDo should we do this?
+            //lifter.setRange(LIFTER_DOWN_POSITION, LIFTER_UP_POSITION);         // ToDo should we do this?
             lifter.setLowSpeedThreshold(LIFTER_STOP_TICKS);
             lifter.start();
 
@@ -169,6 +169,14 @@ public class Robot extends Thread {
 
         if (! testRobot)
             start();
+    }
+
+    public void resetEncoders () {
+        DcMotor.RunMode mode = extendingArm.getMode();
+        extendingArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        extendingArm.setMode(mode);
+
+        lifter.resetEncoders();
     }
 
     public void startDriveGamepad() {
