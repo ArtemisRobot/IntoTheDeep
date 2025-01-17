@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+import common.DriveGamepad;
 import common.Robot;
 
 @TeleOp(name="MainTeleOp", group = "Main")
@@ -54,6 +55,8 @@ import common.Robot;
     private void robotHandleGamepad () {
 
         Gamepad gamepad = gamepad2;
+
+        handleReset();
 
         if (gamepad.x) {
             // toggle the picker open or closed
@@ -115,14 +118,14 @@ import common.Robot;
         } else if (gamepad.left_stick_y > 0) {
             // retract the arm
             robot.amrRetract();
-            while (gamepad.left_stick_y > 0 && robot.armRetractable())
+            while (gamepad.left_stick_y > 0)
                 sleep(10);
             robot.armStop();
 
         } else if (gamepad.left_stick_y < 0) {
             // extend the arm
             robot.armExtend();
-            while (gamepad.left_stick_y < 0 && robot.armExtendable()) {
+            while (gamepad.left_stick_y < 0) {
                 sleep(10);
             }
             robot.armStop();
@@ -155,5 +158,21 @@ import common.Robot;
             robot.pickerRotate();
             while (gamepad.left_bumper) sleep(10);
         }
+    }
+
+    private boolean handleReset() {
+
+        Gamepad gamepad = gamepad1;
+        boolean handled = false;
+        if (gamepad.right_bumper) {
+            while (gamepad.right_bumper)
+                if (gamepad.start) {
+                    robot.resetEncoders();
+                    handled = true;
+                    break;
+                }
+            while (gamepad.left_bumper || gamepad.start) Thread.yield();
+        }
+        return handled;
     }
 }
