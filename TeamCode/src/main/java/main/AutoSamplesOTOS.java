@@ -8,7 +8,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import common.Auto;
 import common.Logger;
 
-@Disabled
 @Autonomous(name="Auto Samples OTOS (Yellow)", group = "Main")
 @Config
 

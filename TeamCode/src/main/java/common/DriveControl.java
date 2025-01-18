@@ -18,7 +18,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.util.PIDFController;
 
 public class DriveControl extends Thread {
 
-    public static boolean pinpointLocalizer = true;
+    public static boolean pinpointLocalizer = false;
 
     public static double MAX_SPEED       = 0.6;
     public static double MAX_STICK_SPEED = 0.90;
