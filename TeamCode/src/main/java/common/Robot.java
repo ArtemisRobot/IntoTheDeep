@@ -183,8 +183,22 @@ public class Robot extends Thread {
         driveGamepad.start();
     }
 
-    public void run () {
-        Logger.message("robot thread started");
+    public void run() {
+
+        try {
+            Logger.message("robot thread started");
+
+            runRobot();
+            
+            Logger.message("robot thread stopped");
+
+        }  catch (Exception e) {
+            Logger.error(e, "Exception");
+            throw e;
+        }
+    }
+
+    public void runRobot () {
 
         while (!opMode.isStarted()) Thread.yield();
 
@@ -332,8 +346,6 @@ public class Robot extends Thread {
                     }
             }
         }
-
-        Logger.message("robot thread stopped");
     }
 
     private void delay (long milliseconds) {
