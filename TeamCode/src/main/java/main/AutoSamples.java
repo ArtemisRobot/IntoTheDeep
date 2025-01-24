@@ -10,7 +10,7 @@ import common.Logger;
 
 @Autonomous(name="Auto Samples (Yellow)", group = "Main")
 @Config
-@Disabled
+
 public class AutoSamples extends LinearOpMode {
 
     public static double START_X = 8.5;
