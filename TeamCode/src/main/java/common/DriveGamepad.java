@@ -5,12 +5,14 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 
+import main.AutoSamples;
+
 public class DriveGamepad extends Thread {
+
 
     public final double BUCKET_X = 15.5;
     public final double BUCKET_Y = 126.5;
     public final double BUCKET_HEADING = 135;
-
     public final double SUBMERSIBLE_X = 60;
     public final double SUBMERSIBLE_Y = 130;
     public final double SUBMERSIBLE_HEADING = 270;
@@ -29,7 +31,7 @@ public class DriveGamepad extends Thread {
         this.opMode = opMode;
         this.driveControl = driveControl;
 
-        //setPosePosition(PoseButton.A, BUCKET_X, BUCKET_Y, BUCKET_HEADING);
+        setPosePosition(PoseButton.A, AutoSamples.BUCKET_X, AutoSamples.BUCKET_Y, AutoSamples.BUCKET_HEADING);
         //setPosePosition(PoseButton.B, SUBMERSIBLE_X, SUBMERSIBLE_Y, SUBMERSIBLE_HEADING);
     }
 

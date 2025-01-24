@@ -35,9 +35,11 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.WhiteBalanceControl;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
@@ -49,6 +51,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.MathFunctions;
 import org.firstinspires.ftc.teamcode.pedroPathing.util.CustomPIDFCoefficients;
 import org.firstinspires.ftc.teamcode.pedroPathing.util.PIDFController;
 
+import common.Config;
 import common.Drive;
 import common.DriveControl;
 import common.DriveGamepad;
@@ -129,8 +132,7 @@ public class PathTest extends LinearOpMode {
             telemetry.update();
             waitForStart();
 
-            //runDriveToCoordinateTest();
-            competitionTest1();
+            competitionTest1(false);
 
         } catch (Exception e) {
             Logger.error(e, "Exception");
@@ -162,8 +164,6 @@ public class PathTest extends LinearOpMode {
         double y = 20;
         double startHeading = 90;
         double targetHeading = 90;
-
-        //printAngle(x, y, targetHeading, currentHeading);
 
         driveControl.setPose(new Pose(0, 0, Math.toRadians(startHeading)));
         localizer.setPose(new Pose(0, 0, Math.toRadians(startHeading)));
@@ -229,11 +229,15 @@ public class PathTest extends LinearOpMode {
     public static double YELLOW_LEFT_Y = 127.5;
     public static double YELLOW_LEFT_HEADING = 90;
 
-    private void competitionTest1() {
+    private void competitionTest1(boolean setStartPose) {
 
         double timeout = 5000;
 
-        driveControl.setPose(new Pose(START_X, START_Y, Math.toRadians(START_HEADING)));
+        initDistanceSensors();
+
+        if (setStartPose) {
+            driveControl.setPose(new Pose(START_X, START_Y, Math.toRadians(START_HEADING)));
+        }
 
         while (opModeIsActive()) {
 
@@ -260,6 +264,11 @@ public class PathTest extends LinearOpMode {
             if (gamepad1.right_bumper) {
                 driveControl.moveToCoordinate(START_X, START_Y, START_HEADING, timeout);
                 while (gamepad1.right_bumper) sleep(10);
+            }
+
+            if (gamepad1.left_bumper) {
+                alignInCorner();
+                while (gamepad1.left_bumper) sleep(10);
             }
 
             displayPose(true);
@@ -840,12 +849,16 @@ public class PathTest extends LinearOpMode {
         String str3 = String.format("x %5.1f  y %5.1f  heading %5.1f", otosPose.x, otosPose.y, Math.toDegrees(otosPose.h));
         String str4 = String.format("x %5.1f  y %5.1f  heading %5.1f", pinpointPose.getX(DistanceUnit.INCH), pinpointPose.getY(DistanceUnit.INCH), pinpointPose.getHeading(AngleUnit.DEGREES));
         String str5 = String.format("x %5.1f  y %5.1f  heading %5.1f", pose.getX() - pose2.getX(), pose.getY() - pose2.getY(), Math.toDegrees(pose.getHeading()-pose2.getHeading()));
+        String str6 = String.format("x %d  y %d", pinpoint.getEncoderX(), pinpoint.getEncoderY());
+        //String srt7 = String.format("%6.2f", drive.distanceToObject());
 
         telemetry.addData("localizer otos", str1);
         telemetry.addData("localizer pinpoint", str2);
         telemetry.addData("otos pose", str3);
         telemetry.addData("pinpoint pose", str4);
         telemetry.addData("delta", str5);
+        telemetry.addData("encoders", str6);
+       //telemetry.addData("distance", srt7);
         telemetry.update();
 
         if (! telemetryOnly) {
@@ -906,23 +919,95 @@ public class PathTest extends LinearOpMode {
         }
     }
 
-        /*
-    Pose testPose = new Pose(0, 0, 0);
-    ElapsedTime poseTimer = new ElapsedTime();
-    double posePreviousTime = 0;
+    private double CORNER_DISTANCE_X = 8;
+    private double CORNER_DISTANCE_Y = 8;
+    private DistanceSensor leftFrontSensor;
+    private DistanceSensor rightFrontSensor;
 
-    private Pose getPose(double power) {
-        if (testPose.getX() == 0 && testPose.getY() == 0) {
-            poseTimer.reset();
-            posePreviousTime = 0;
+    private void initDistanceSensors() {
+
+        try {
+            leftFrontSensor = hardwareMap.get(DistanceSensor.class, Config.LEFT_FRONT_SENSOR);
+        } catch (Exception e) {
+            Logger.error(e, "Left distance sensor not found");
         }
-        double currentTime = poseTimer.seconds();
-        double delta = (currentTime - posePreviousTime);
-        double x = testPose.getX() + (delta * power * 10);
-        testPose.setX(x);
-        posePreviousTime = currentTime;
-        return testPose;
-    }
-     */
 
+        try {
+            rightFrontSensor = hardwareMap.get(DistanceSensor.class, Config.RIGHT_FRONT_SENSOR);
+        } catch (Exception e) {
+            Logger.error(e, "Right distance sensor not found");
+        }
+    }
+
+    private void alignInCorner() {
+
+        double distanceX = 0;
+        double distanceY = 0;
+        double samples = 5;
+        for (int i = 0; i < samples; i++) {
+            distanceX += leftFrontSensor.getDistance(DistanceUnit.INCH);
+            distanceY += rightFrontSensor.getDistance(DistanceUnit.INCH);
+        }
+        distanceX /= samples;
+        distanceY /= samples;
+
+        Pose pose = driveControl.getPose();
+        double x = pose.getX() - (distanceX - CORNER_DISTANCE_X);
+        double y = pose.getY() + (distanceY - CORNER_DISTANCE_Y);
+
+        driveControl.moveToCoordinate(x, y, Math.toDegrees(pose.getHeading()), 2000);
+        Logger.message("distance x: %6.1f  y: %6.1f   from x: %5.1f  y: %5.1f    to x: %5.1f  y: %5.1f ", distanceX, distanceY,pose.getX(), pose.getY(), x, y);
+    }
+
+    private void distanceTest2() {
+
+        initDistanceSensors();
+
+        while (opModeIsActive()) {
+            if (gamepad1.x) {
+                driveControl.setPose(new Pose(START_X, START_Y, Math.toRadians(START_HEADING)));
+                alignInCorner();
+                while (gamepad1.x) sleep(100);
+            }
+        }
+    }
+
+    private void distanceTest() {
+
+        initDistanceSensors();
+
+        double minX = 1000000;
+        double minY = 1000000;
+        double maxX = 0;
+        double maxY = 0;
+        double x;
+        double y;
+        double avgX = 0;
+        double avgY = 0;
+        double samples = 5;
+
+        Logger.message("get distance");
+        for (int i = 0; i < samples; i++) {
+            avgX += leftFrontSensor.getDistance(DistanceUnit.INCH);
+            avgY += rightFrontSensor.getDistance(DistanceUnit.INCH);
+        }
+        avgX /= samples;
+        avgY /= samples;
+        Logger.message("x %6.1f  y %6.1f", avgX, avgY);
+
+        while (opModeIsActive()) {
+            x = leftFrontSensor.getDistance(DistanceUnit.INCH);
+            y = rightFrontSensor.getDistance(DistanceUnit.INCH);
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+
+            telemetry.addData("distance", "x %6.1f  y %6.1f", x, y);
+            telemetry.addData("min", "x %6.1f  y %6.1f", minX, minY);
+            telemetry.addData("max", "x %6.1f  y %6.1f", maxX, maxY);
+            telemetry.update();
+            sleep(100);
+        }
+    }
 }

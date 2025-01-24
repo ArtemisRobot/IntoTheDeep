@@ -9,7 +9,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 
 public class Auto {
 
-    public static boolean enableLifter = true;
+    public static boolean enableLifter = false;
     public static boolean enableDropper = true;
     public static boolean enableWait = false;
 
@@ -44,6 +44,7 @@ public class Auto {
         this.opMode = opMode;
         robot = new Robot(opMode);
         navigator = robot.getDriveControl();
+        navigator.resetIMU();
     }
 
     public void  runSamplesAuto() {
@@ -275,7 +276,7 @@ public class Auto {
             Logger.warning("navigator is not busy");
         timer.reset();
         while (navigator.isBusy() &&  opMode.opModeIsActive()) {
-            displayPose();
+            //displayPose();
 
             if (timer.milliseconds() > 3000) {
                 Logger.warning("navigator timed out");

@@ -53,6 +53,8 @@ public class PinpointLocalizer extends Localizer {
     private double previousHeading;
     private double totalHeading;
 
+    public Pose rawPose;
+
     /**
      * This creates a new PinpointLocalizer from a HardwareMap, with a starting Pose at (0,0)
      * facing 0 heading.
@@ -76,10 +78,9 @@ public class PinpointLocalizer extends Localizer {
         //This uses mm, to use inches divide these numbers by 25.4
         //odo.setOffsets(-84.0, -168.0); //these are tuned for 3110-0002-0001 Product Insight #1
 
-        //odo.setOffsets(196.0, -160.0); //these are tuned for 3110-0002-0001 Product Insight #1
-        odo.setOffsets(196.0, -160.0); //these are tuned for 3110-0002-0001 Product Insight #1
+        odo.setOffsets(196.0, -160.0);
         //TODO: If you find that the gobilda Yaw Scaling is incorrect you can edit this here
-      //  odo.setYawScalar(1.0);
+        //  odo.setYawScalar(1.0);
         //TODO: Set your encoder resolution here, I have the Gobilda Odometry products already included.
         //TODO: If you would like to use your own odometry pods input the ticks per mm in the commented part below
         //odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
@@ -93,24 +94,11 @@ public class PinpointLocalizer extends Localizer {
         //TODO: Set encoder directions
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
 
-        odo.resetPosAndIMU();
-        long time = System.currentTimeMillis();
-        do {
-            odo.update();
-            GoBildaPinpointDriver.DeviceStatus status = odo.getDeviceStatus();
-            if (status == GoBildaPinpointDriver.DeviceStatus.READY) {
-                Logger.message("pinpoint sensor is ready, time %d", System.currentTimeMillis() - time);
-                break;
-            } else if (System.currentTimeMillis() - time > 2000) {
-                Logger.warning("pinpoint sensor not ready");
-            }
-        } while (true);
-
         setStartPose(setStartPose);
         totalHeading = 0;
         previousHeading = startPose.getHeading();
 
-        resetPinpoint();
+        //resetPinpoint();
     }
 
     /**
@@ -123,7 +111,12 @@ public class PinpointLocalizer extends Localizer {
         Pose2D rawPose = odo.getPosition();
         Pose pose = new Pose(rawPose.getX(DistanceUnit.INCH), rawPose.getY(DistanceUnit.INCH), rawPose.getHeading(AngleUnit.RADIANS));
 
+        this.rawPose = pose;
         return MathFunctions.addPoses(startPose, MathFunctions.rotatePose(pose, startPose.getHeading(), false));
+    }
+
+    public Pose getRawPose() {
+            return rawPose;
     }
 
     /**
@@ -227,7 +220,8 @@ public class PinpointLocalizer extends Localizer {
      */
     @Override
     public void resetIMU() {
-    odo.recalibrateIMU();
+        odo.recalibrateIMU();
+        waitUnitReady();
     }
 
     /**
@@ -235,5 +229,20 @@ public class PinpointLocalizer extends Localizer {
      */
     public void resetPinpoint(){
         odo.resetPosAndIMU();
+        waitUnitReady();
+    }
+
+    public void waitUnitReady(){
+        long time = System.currentTimeMillis();
+        do {
+            odo.update();
+            GoBildaPinpointDriver.DeviceStatus status = odo.getDeviceStatus();
+            if (status == GoBildaPinpointDriver.DeviceStatus.READY) {
+                Logger.message("pinpoint sensor is ready, time %d", System.currentTimeMillis() - time);
+                break;
+            } else if (System.currentTimeMillis() - time > 2000) {
+                Logger.warning("pinpoint sensor not ready");
+            }
+        } while (true);
     }
 }
