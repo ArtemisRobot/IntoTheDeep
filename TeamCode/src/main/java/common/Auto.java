@@ -12,8 +12,9 @@ public class Auto {
     public static boolean enableLifter = false;
     public static boolean enableDropper = true;
     public static boolean enableWait = false;
+    private static boolean enableAscent = false;
 
-    private enum PathState {
+    public enum PathState {
         START_YELLOW, BUCKET1, YELLOW_RIGHT, BUCKET2, YELLOW_MIDDLE, BUCKET3, YELLOW_LEFT, BUCKET4, PARK,
         START_BLUE_RED, BAR1, SPECIMEN_RIGHT, OBSERVE_ZONE1, SPECIMEN_MIDDLE, OBSERVE_ZONE2, SPECIMEN_LEFT, OBSERVE_ZONE3, PICKUP_ZONE1, BAR2, PICKUP_ZONE2, BAR3, PICKUP_ZONE3, BAR4;
 
@@ -67,7 +68,6 @@ public class Auto {
                 case BUCKET2:
                 case BUCKET3:
                 case BUCKET4:
-                    //waitUntilNotMoving();
                     waitUntilRobotIdIdle();
                     waitForButtonPress();
                     waitUntilOkToLift();
@@ -110,7 +110,7 @@ public class Auto {
 
                 case PARK:
                     robot.armMoveTo(robot.ARM_IN, robot.ARM_HIGH_SPEED);
-                    waitUntilRobotIdIdle();
+                    waitUntilRobotIdIdle();                         // todo necessary?
                     robot.setToStopPosition();
                     waitUntilRobotIdIdle();
                     waitUntilNotMoving();
@@ -192,7 +192,7 @@ public class Auto {
         paths[PathState.index(PathState.YELLOW_LEFT)]   = createPose(yellowLeftX, yellowLeftY, yellowLeftHeading);
         paths[PathState.index(PathState.BUCKET4)]       = createPose(bucketX, bucketY, bucketHeading);
         paths[PathState.index(PathState.PARK)]          = createPose(parkX, parkY, parkHeading);
-        
+
         pathState = PathState.START_YELLOW;
     }
 
@@ -276,8 +276,6 @@ public class Auto {
             Logger.warning("navigator is not busy");
         timer.reset();
         while (navigator.isBusy() &&  opMode.opModeIsActive()) {
-            //displayPose();
-
             if (timer.milliseconds() > 3000) {
                 Logger.warning("navigator timed out");
                 break;
@@ -329,21 +327,6 @@ public class Auto {
         Logger.message("done waiting, time: %5.0f", timer.milliseconds());
     }
 
-    private Pose createPose(double x, double y, double heading) {
-        return new Pose(x, y, Math.toRadians(heading));
-    }
-
-    private void displayPose () {
-        Pose pose = navigator.getPose();
-        opMode.telemetry.addData("Path", pathState);
-        opMode.telemetry.addData("pose", "x %5.1f  y %5.1f  heading %5.1f  is busy %b",
-                pose.getX(),
-                pose.getY(),
-                Math.toDegrees(pose.getHeading()),
-                navigator.isBusy());
-        opMode.telemetry.update();
-    }
-
     private void waitForButtonPress() {
 
         if (! enableWait) return;
@@ -365,5 +348,27 @@ public class Auto {
         Logger.message("done waiting for button press");
     }
 
+    private Pose createPose(double x, double y, double heading) {
+        return new Pose(x, y, Math.toRadians(heading));
+    }
+
+    private void displayPose () {
+        Pose pose = navigator.getPose();
+        opMode.telemetry.addData("Path", pathState);
+        opMode.telemetry.addData("pose", "x %5.1f  y %5.1f  heading %5.1f  is busy %b",
+                pose.getX(),
+                pose.getY(),
+                Math.toDegrees(pose.getHeading()),
+                navigator.isBusy());
+        opMode.telemetry.update();
+    }
+
+    public void createPath (PathState path,  double x, double y, double heading) {
+        paths[PathState.index(path)]  = createPose(x, y, heading);
+    }
+
+    public void setStartPath (PathState path) {
+        pathState = path;
+    }
 }
 
