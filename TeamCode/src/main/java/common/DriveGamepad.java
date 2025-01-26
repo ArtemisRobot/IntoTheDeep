@@ -76,12 +76,17 @@ public class DriveGamepad extends Thread {
             } else if (gamepad.b) {
                 moveToPose(PoseButton.B);
                 while (gamepad.b) Thread.yield();
-            }if (gamepad.x) {
+            } else if (gamepad.x) {
                 moveToPose(PoseButton.X);
                 while (gamepad.x) Thread.yield();
-            }if (gamepad.y) {
+            } else if (gamepad.y) {
                 moveToPose(PoseButton.Y);
                 while (gamepad.y) Thread.yield();
+            }
+
+            if (gamepad.right_bumper) {
+                driveControl.alignInCorner();
+                while (gamepad.right_bumper)  Thread.yield();
             }
 
             if (gamepad.left_bumper) {

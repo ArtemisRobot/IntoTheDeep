@@ -3,8 +3,11 @@ package common;
 import android.annotation.SuppressLint;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Localizer;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.localizers.OTOSLocalizer;
@@ -27,6 +30,9 @@ public class DriveControl extends Thread {
     public static double MAX_TURN_SPEED  = 0.5;
     public static double MIN_SPEED       = 0.10;
     public static double MIN_TURN_SPEED  = 0.100;
+
+    private double CORNER_DISTANCE_X = 8;
+    private double CORNER_DISTANCE_Y = 8;
 
     public static double DISTANCE_TOLERANCE_HIGH_SPEED = 10;
     public static double DISTANCE_TOLERANCE_LOW_SPEED = 0.5;
@@ -82,6 +88,11 @@ public class DriveControl extends Thread {
     private final Drive drive;
     Localizer localizer;
     LinearOpMode opMode;
+    VoltageSensor voltageSensor;
+    private DistanceSensor leftFrontSensor;
+    private DistanceSensor rightFrontSensor;
+
+
 
     public DriveControl(LinearOpMode opMode, Drive drive) {
 
@@ -90,6 +101,9 @@ public class DriveControl extends Thread {
         this.drive = drive;
         driveState = DRIVE_STATE.IDLE;
         timeoutTimer = new ElapsedTime();
+
+        voltageSensor = opMode.hardwareMap.voltageSensor.iterator().next();
+        initDistanceSensors();
 
         try {
             if (pinpointLocalizer) {
@@ -102,6 +116,23 @@ public class DriveControl extends Thread {
             Logger.error(e, "Odometry Sensor not found");
         }
     }
+
+    private void initDistanceSensors() {
+
+        try {
+            leftFrontSensor = opMode.hardwareMap.get(DistanceSensor.class, Config.LEFT_FRONT_SENSOR);
+        } catch (Exception e) {
+            Logger.error(e, "Left distance sensor not found");
+        }
+
+        try {
+            rightFrontSensor = opMode.hardwareMap.get(DistanceSensor.class, Config.RIGHT_FRONT_SENSOR);
+        } catch (Exception e) {
+            Logger.error(e, "Right distance sensor not found");
+        }
+    }
+
+
 
     /**
      * Control the motor on a separate thread to avoid blocking
@@ -261,7 +292,8 @@ public class DriveControl extends Thread {
                     String.format("turn: %5.2f  power: %4.2f  sin: %5.2f  cos: %5.2f  ", turn, power, sin, cos) +
                     String.format("wheels: %5.2f  %5.2f  %5.2f  %5.2f   ", leftFrontPower, rightFrontPower, leftRearPower, rightRearPower) +
                     String.format("velocity: %6.1f   ", currentVelocity) +
-                    String.format("near: %b  ", nearPose) +
+                    String.format("near: %5b  ", nearPose) +
+                    String.format("volts: %4.1f  ", voltageSensor.getVoltage()) +
                     String.format("time: %4.0f   ", timeoutTimer.milliseconds())
             );
             trace("7");
@@ -531,6 +563,26 @@ public class DriveControl extends Thread {
 
     private boolean isEmergencyStop() {
         return opMode.gamepad1.back;        // todo remove
+    }
+
+    public void alignInCorner() {
+
+        double distanceX = 0;
+        double distanceY = 0;
+        double samples = 5;
+        for (int i = 0; i < samples; i++) {
+            distanceX += leftFrontSensor.getDistance(DistanceUnit.INCH);
+            distanceY += rightFrontSensor.getDistance(DistanceUnit.INCH);
+        }
+        distanceX /= samples;
+        distanceY /= samples;
+
+        Pose pose = getPose();
+        double x = pose.getX() - (distanceX - CORNER_DISTANCE_X);
+        double y = pose.getY() + (distanceY - CORNER_DISTANCE_Y);
+
+        moveToCoordinate(x, y, Math.toDegrees(pose.getHeading()), 2000);
+        Logger.message("distance x: %6.1f  y: %6.1f   from x: %5.1f  y: %5.1f    to x: %5.1f  y: %5.1f ", distanceX, distanceY,pose.getX(), pose.getY(), x, y);
     }
 
     public void emergencyStop() {
