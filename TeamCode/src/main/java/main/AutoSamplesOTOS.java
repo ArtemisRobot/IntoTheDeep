@@ -10,6 +10,7 @@ import common.Logger;
 
 @Autonomous(name="Auto Samples OTOS (Yellow)", group = "Main")
 @Config
+@Disabled
 
 public class AutoSamplesOTOS extends LinearOpMode {
 

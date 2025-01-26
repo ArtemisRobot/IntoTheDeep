@@ -2,6 +2,7 @@ package main;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import common.Auto;
@@ -9,6 +10,7 @@ import common.Logger;
 
 @Autonomous(name="Auto Samples Park OTOS (Yellow)", group = "Main")
 @Config
+@Disabled
 
 public class AutoSamplesParkOTOS extends LinearOpMode {
 
