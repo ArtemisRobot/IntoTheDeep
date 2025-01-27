@@ -132,6 +132,7 @@ public class PathTest extends LinearOpMode {
             telemetry.update();
             waitForStart();
 
+            //distanceTest();
             competitionTest1(false);
 
         } catch (Exception e) {
@@ -229,6 +230,14 @@ public class PathTest extends LinearOpMode {
     public static double YELLOW_LEFT_Y = 127.5;
     public static double YELLOW_LEFT_HEADING = 90;
 
+    public static double PARK_X = 63;
+    public static double PARK_Y = 104;
+    public static double PARK_HEADING = 270;
+
+    public static double ASCENT_X = 63;
+    public static double ASCENT_Y = 95.5 ;
+    public static double ASCENT_HEADING = 270;
+
     private void competitionTest1(boolean setStartPose) {
 
         double timeout = 5000;
@@ -259,6 +268,16 @@ public class PathTest extends LinearOpMode {
             if (gamepad1.y) {
                 driveControl.moveToCoordinate(YELLOW_LEFT_X, YELLOW_LEFT_Y, YELLOW_LEFT_HEADING, timeout);
                 while (gamepad1.y) sleep(10);
+            }
+
+            if (gamepad1.dpad_up) {
+                driveControl.moveToCoordinate(PARK_X, PARK_Y, PARK_HEADING, timeout);
+                while (gamepad1.dpad_up) sleep(10);
+            }
+
+            if (gamepad1.dpad_down) {
+                driveControl.moveToCoordinate(ASCENT_X, ASCENT_Y, ASCENT_HEADING, 0.2, timeout);
+                while (gamepad1.dpad_down) sleep(10);
             }
 
             if (gamepad1.right_bumper) {
