@@ -31,8 +31,8 @@ public class DriveControl extends Thread {
     public static double MIN_SPEED       = 0.10;
     public static double MIN_TURN_SPEED  = 0.100;
 
-    private double CORNER_DISTANCE_X = 8;
-    private double CORNER_DISTANCE_Y = 8;
+    private double CORNER_DISTANCE_X = 4;
+    private double CORNER_DISTANCE_Y = 4;
 
     public static double DISTANCE_TOLERANCE_HIGH_SPEED = 10;
     public static double DISTANCE_TOLERANCE_LOW_SPEED = 0.5;
