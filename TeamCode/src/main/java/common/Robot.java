@@ -46,8 +46,8 @@ public class Robot extends Thread {
     public final double ARM_HIGH_SPEED = 0.75;
 
     // Grabbers
-    private final double PICKER_UP_POSITION    = 0.230;
-    private final double PICKER_DOWN_POSITION  = 0.890;
+    private final double PICKER_UP_POSITION   = 0.230;
+    private final double PICKER_DOWN_POSITION = 0.890;
 
     private final double PICKER_FINGER_CLOSED  = 0.400;
     private final double PICKER_FINGER_OPEN    = 0.670;
@@ -57,9 +57,10 @@ public class Robot extends Thread {
     public  final double PICKER_YAW_90_DEGREES  = 0.494;
     public  final double PICKER_YAW_135_DEGREES = 0.657;
 
-    private final double DROPPER_UP_POSITION   = 0.672;
-    private final double DROPPER_DROP_POSITION = 0.280;
-    private final double DROPPER_DOWN_POSITION = 0.020;
+    private final double DROPPER_UP_POSITION     = 0.672;
+    private final double DROPPER_ASCENT_POSITION = 0.600;
+    private final double DROPPER_DROP_POSITION   = 0.280;
+    private final double DROPPER_DOWN_POSITION   = 0.020;
 
     private final double DROPPER_SPECIMEN_UP   = 0.550;
     private final double DROPPER_SPECIMEN_DOWN = 0.550;
@@ -595,6 +596,11 @@ public class Robot extends Thread {
 
     public void dropperSpecimenDown() {
         dropperWrist.setPosition(DROPPER_SPECIMEN_DOWN);
+        dropperUp = false;
+    }
+
+    public void dropperAscent() {
+        dropperWrist.setPosition(DROPPER_ASCENT_POSITION);
         dropperUp = false;
     }
 

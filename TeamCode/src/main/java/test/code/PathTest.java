@@ -133,7 +133,7 @@ public class PathTest extends LinearOpMode {
             waitForStart();
 
             //distanceTest();
-            competitionTest1(false);
+            competitionTest1(true);
 
         } catch (Exception e) {
             Logger.error(e, "Exception");

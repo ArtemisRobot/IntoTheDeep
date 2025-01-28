@@ -33,8 +33,8 @@ public class AutoSamplesParkAscent extends LinearOpMode {
     public static double YELLOW_LEFT_Y = 127.5;
     public static double YELLOW_LEFT_HEADING = 90;
 
-    public static double PARK_X = 50;
-    public static double PARK_Y = 110;
+    public static double PARK_X = 63;
+    public static double PARK_Y = 95.5;
     public static double PARK_HEADING = 270;
 
     Auto auto;
@@ -56,6 +56,7 @@ public class AutoSamplesParkAscent extends LinearOpMode {
             auto.createPath(Auto.PathState.PARK,                   PARK_X,          PARK_Y,          PARK_HEADING);
 
             auto.setStartPath(Auto.PathState.START_YELLOW);
+            auto.enableAscent(true);
 
             sleep(1000); // wait for pinpoint hardware to reset
 

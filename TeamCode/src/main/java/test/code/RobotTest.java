@@ -12,7 +12,7 @@ import common.Robot;
  public class RobotTest extends LinearOpMode {
 
     private enum GAMEPAD_MODE { PICKER, DROPPER, ARM, LIFTER, ROBOT, AUTO, SPECIMEN }
-    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.AUTO;
+    GAMEPAD_MODE gamepadMode = GAMEPAD_MODE.DROPPER;
 
     Robot   robot;
 
@@ -117,10 +117,11 @@ import common.Robot;
 
     private void displayDropperControls() {
         telemetry.addData("\n Dropper Controls", "\n" +
-                "  y - drop up\n" +
-                "  a - drop down\n" +
-                "  x - drop open\n" +
-                "  b - drop close\n" +
+                "  y - up\n" +
+                "  a - down\n" +
+                "  x - open\n" +
+                "  b - close\n" +
+                "  right bumper - ascent position\n" +
                 "\n");
     }
 
@@ -234,6 +235,12 @@ import common.Robot;
                 robot.dropperOpen();
             }
             while (gamepad.left_bumper) sleep(10);
+        }
+
+        else if (gamepad.right_bumper) {
+            robot.dropperAscent();
+            sleep(50);
+            requestOpModeStop();
         }
     }
 
