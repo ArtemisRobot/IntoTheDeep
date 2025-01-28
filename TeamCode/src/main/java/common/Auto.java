@@ -110,10 +110,17 @@ public class Auto {
 
                 case PARK:
                     robot.armMoveTo(robot.ARM_IN, robot.ARM_HIGH_SPEED);
-                    waitUntilRobotIdIdle();                         // todo necessary?
-                    robot.setToStopPosition();
+                    //waitUntilRobotIdIdle();                         // todo necessary?
+                    if (! enableAscent)
+                        robot.setToStopPosition();
+                    else
+                        robot.dropperClose();
                     waitUntilRobotIdIdle();
                     waitUntilNotMoving();
+                    if (enableAscent) {
+                       robot.dropperAscent();
+                       opMode.sleep(50);
+                    }
                     running = false;
                     break;
             }
@@ -369,6 +376,10 @@ public class Auto {
 
     public void setStartPath (PathState path) {
         pathState = path;
+    }
+
+    public void enableAscent(boolean enable) {
+        enableAscent = enable;
     }
 }
 
